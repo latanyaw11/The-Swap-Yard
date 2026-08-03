@@ -1,0 +1,77 @@
+# The Swap Yard — Netlify Configuration
+# Buy, Sell, Trade & Barter · theswapyard.com
+
+[build]
+  publish   = "."
+  command   = "echo 'Static site - no build step'"
+  functions = "netlify/functions"
+
+[dev]
+  port = 8888
+
+# Redirects
+[[redirects]]
+  from = "/vendor"
+  to = "/vendor-dashboard.html"
+  status = 200
+
+[[redirects]]
+  from = "/taxes"
+  to = "/tax-guide.html"
+  status = 200
+
+[[redirects]]
+  from = "/legal"
+  to = "/terms.html"
+  status = 200
+
+[[redirects]]
+  from = "/eco"
+  to = "/index.html#sustainability"
+  status = 200
+
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "/.netlify/functions/sitemap"
+  status = 200
+
+[[redirects]]
+  from = "/share-target"
+  to = "/.netlify/functions/share-target"
+  status = 200
+
+# Security Headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+# Functions
+[functions]
+  node_bundler = "esbuild"
+
+[functions."saved-search-alerts"]
+  schedule = "0 8 * * *"
+
+[functions."listing-expire"]
+  schedule = "0 6 * * *"
+
+[functions."analytics"]
+  schedule = "0 1 * * *"
+
+[functions."payout-schedule"]
+  schedule = "0 9 * * 1"

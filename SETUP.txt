@@ -1,0 +1,53 @@
+════════════════════════════════════════════════════════════════
+ THE SWAP YARD — FIRST THING TO DO BEFORE UPLOADING TO GITHUB
+════════════════════════════════════════════════════════════════
+
+Open these 3 files in a text editor (VS Code, Notepad++, or even
+plain Notepad) and replace the placeholder text with your real keys.
+Use Find & Replace (Ctrl+H) for each one.
+
+━━━ FILE 1: index.html  (3 replacements) ━━━━━━━━━━━━━━━━━━━━
+
+Find:     REPLACE_WITH_YOUR_SUPABASE_URL
+Replace:  https://abcdefgh.supabase.co    ← your actual Supabase URL
+
+Find:     REPLACE_WITH_YOUR_SUPABASE_ANON_KEY
+Replace:  eyJhbGci...                     ← your anon public key
+
+Find:     REPLACE_WITH_YOUR_STRIPE_PUBLISHABLE_KEY
+Replace:  pk_test_51...                   ← your Stripe publishable key
+
+━━━ FILE 2: vendor-dashboard.html  (2 replacements) ━━━━━━━━━━
+
+Find:     REPLACE_WITH_YOUR_SUPABASE_URL
+Replace:  https://abcdefgh.supabase.co    ← same Supabase URL
+
+Find:     REPLACE_WITH_YOUR_SUPABASE_ANON_KEY
+Replace:  eyJhbGci...                     ← same anon public key
+
+━━━ FILE 3: affiliate-admin.html  (2 replacements) ━━━━━━━━━━━
+
+Find:     REPLACE_WITH_YOUR_SUPABASE_URL
+Replace:  https://abcdefgh.supabase.co    ← same Supabase URL
+
+Find:     REPLACE_WITH_YOUR_SUPABASE_ANON_KEY
+Replace:  eyJhbGci...                     ← same anon public key
+
+━━━ WHERE TO GET YOUR KEYS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Supabase URL and Anon Key:
+  supabase.com → your project → Project Settings (gear icon) → API
+
+Stripe Publishable Key:
+  stripe.com → Developers → API Keys → Publishable key (pk_test_...)
+
+━━━ AFTER REPLACING ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Save all 3 files, then upload everything to GitHub.
+See GoLiveGuide.docx in the admin package for the complete
+step-by-step instructions for the rest of the setup.
+
+⚠️  IMPORTANT: If you skip this step, the site will appear to
+load but nothing will be clickable. This is the most common issue.
+
+════════════════════════════════════════════════════════════════

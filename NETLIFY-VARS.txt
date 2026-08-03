@@ -1,0 +1,121 @@
+THE SWAP YARD — NETLIFY ENVIRONMENT VARIABLES
+================================================
+Netlify → your site → Site configuration → Environment variables → Add a variable
+
+━━━ REQUIRED AT LAUNCH (9 variables) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SUPABASE_URL
+  Value:  https://your-project.supabase.co
+  Source: Supabase → Settings → API → Project URL
+
+SUPABASE_ANON_KEY
+  Value:  eyJ... (long string)
+  Source: Supabase → Settings → API → anon public key
+  Note:   Also paste into YOUR HTML FILES (index.html, vendor-dashboard.html, tax-guide.html)
+
+SUPABASE_SERVICE_ROLE_KEY  ⚠️ SECRET — never put in HTML
+  Value:  eyJ... (longer string)
+  Source: Supabase → Settings → API → service_role key
+
+RESEND_API_KEY
+  Value:  re_...
+  Source: resend.com → API Keys → Create API Key
+
+FROM_EMAIL
+  Value:  noreply@theswapyard.com
+  Note:   Type this exactly as-is
+
+ANTHROPIC_API_KEY  ⚠️ SECRET
+  Value:  sk-ant-...
+  Source: console.anthropic.com → API Keys → Create Key
+
+ADMIN_EMAIL
+  Value:  your-personal@email.com
+  Note:   Receives fraud alerts and admin notifications
+
+URL
+  Value:  https://sparkly-abc123.netlify.app  (update to real domain later)
+  Note:   Your Netlify site URL
+
+AMAZON_AFFILIATE_TAG
+  Value:  theswapyard-20  (your tag from Amazon Associates)
+  Source: affiliate-program.amazon.com
+
+
+━━━ STRIPE (card payments + vendor payouts) ━━━━━━━━━━━━━━━━━━━━━━━━━
+
+STRIPE_PUBLISHABLE_KEY
+  Value:  pk_test_...  (pk_live_... when going live)
+  Source: stripe.com → Developers → API Keys
+  Note:   Also paste into index.html as YOUR_STRIPE_PUBLISHABLE_KEY
+
+STRIPE_SECRET_KEY  ⚠️ SECRET — never put in HTML
+  Value:  sk_test_...  (sk_live_... when going live)
+  Source: stripe.com → Developers → API Keys → Reveal
+
+STRIPE_WEBHOOK_SECRET  ⚠️ SECRET
+  Value:  whsec_...
+  Source: stripe.com → Developers → Webhooks → your endpoint → Signing secret
+
+
+━━━ TWILIO (SMS phone verification) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TWILIO_ACCOUNT_SID
+  Value:  AC...
+  Source: twilio.com → Console → Account SID
+
+TWILIO_AUTH_TOKEN  ⚠️ SECRET
+  Value:  your 32-char token
+  Source: twilio.com → Console → Auth Token (click eye to reveal)
+
+TWILIO_FROM_NUMBER
+  Value:  +19195551234  (your purchased Twilio number)
+  Source: twilio.com → Phone Numbers → Manage → your number
+
+
+━━━ PUSH NOTIFICATIONS (add after launch) ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+VAPID_PUBLIC_KEY
+  Value:  your key
+  Source: web-push-codelab.glitch.me → Generate
+
+VAPID_PRIVATE_KEY  ⚠️ SECRET
+  Value:  your key
+  Source: Same tool
+
+VAPID_EMAIL
+  Value:  mailto:admin@theswapyard.com
+  Note:   Type exactly as-is
+
+
+━━━ AFTER ADDING ALL VARIABLES ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Netlify → Deploys → Trigger deploy → Deploy site
+2. Wait ~60 seconds
+3. Test your site — all services now connected
+
+━━━ ALSO PASTE INTO HTML FILES ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+In index.html, vendor-dashboard.html, and tax-guide.html, search for
+these placeholders and replace them with your actual values:
+
+  YOUR_SUPABASE_PROJECT_URL  →  https://your-project.supabase.co
+  YOUR_SUPABASE_ANON_KEY     →  eyJ...
+  YOUR_STRIPE_PUBLISHABLE_KEY→  pk_test_...  (index.html only)
+
+After replacing, re-upload the files to GitHub.
+
+━━━ VARIABLES AT A GLANCE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Required now (9):  SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY,
+                   RESEND_API_KEY, FROM_EMAIL, ANTHROPIC_API_KEY,
+                   ADMIN_EMAIL, URL, AMAZON_AFFILIATE_TAG
+
+For Stripe (3):    STRIPE_PUBLISHABLE_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+
+
+For SMS (3):       TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER
+
+For Push (3):      VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_EMAIL
+
+TOTAL: 20 variables

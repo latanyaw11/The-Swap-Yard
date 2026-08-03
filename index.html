@@ -1,0 +1,2427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Swap Yard — Buy, Sell, Trade &amp; Barter · Research Triangle</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+/* ── DESIGN TOKENS ─────────────────────────────────────── */
+:root {
+  --bg:      #ffffff;
+  --bg-tint: linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02));
+  --surface: #ffffff;
+  --surface2:#f3f4f6;
+  --border:  #e5e7eb;
+  --accent:  #7c3aed;
+  --accent2: #a855f7;
+  --green:   #059669;
+  --amber:   #d97706;
+  --red:     #dc2626;
+  --blue:    #2563eb;
+  --stripe:  #635bff;
+  --text:    #111827;
+  --text2:   #374151;
+  --text3:   #9ca3af;
+  --ink:     #111827;
+  --ink2:    #1e1b4b;
+  --lime:    #a855f7;
+  --teal:    #059669;
+  --coral:   #dc2626;
+  --violet:  #7c3aed;
+  --warm:    #ffffff;
+  --warm2:   #f3f4f6;
+  --mono:    'JetBrains Mono', monospace;
+  --sans:    'Inter', sans-serif;
+}
+
+/* ── RESET ─────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;font-size:16px;}
+body{background:linear-gradient(160deg,rgba(5,150,105,.04) 0%,rgba(5,150,105,.01) 100%) fixed, #ffffff;color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.6;}
+a{text-decoration:none;color:inherit;}
+button{font-family:'Inter',sans-serif;}
+img{max-width:100%;}
+
+/* ── SCROLLBAR ─────────────────────────────────────────── */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+/* ── TOP ANNOUNCEMENT BAR ──────────────────────────────── */
+.announce-bar{background:#111827;color:#c4b5fd;font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.08em;text-align:center;padding:.5rem;display:flex;align-items:center;justify-content:center;gap:1.5rem;}
+.announce-bar span{opacity:.5;}
+
+/* ── NAV ───────────────────────────────────────────────── */
+.nav{position:sticky;top:0;z-index:200;background:rgba(255,255,255,.97);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 2rem;height:58px;display:flex;align-items:center;justify-content:space-between;}
+.nav-logo{font-size:1.25rem;font-weight:900;letter-spacing:-.04em;display:flex;align-items:center;gap:.5rem;color:var(--ink);}
+.logo-mark{width:28px;height:28px;background:#111827;border-radius:6px;display:flex;align-items:center;justify-content:center;}
+.logo-mark svg{width:16px;height:16px;}
+.nav-links{display:flex;gap:.25rem;margin-left:.5rem;}
+.nav-link{font-size:.82rem;font-weight:600;color:var(--text2);text-decoration:none;transition:color .15s;white-space:nowrap;}
+.nav-link:hover,.nav-link.active{color:var(--accent);}
+.nav-spacer{flex:1;}
+.nav-right{display:flex;align-items:center;gap:.5rem;}
+.nav-location{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3);padding:.35rem .65rem;border:1px solid var(--border);border-radius:100px;white-space:nowrap;}
+#navEmail{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--text3);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.msg-wrap{position:relative;}
+.unread-dot{position:absolute;top:2px;right:2px;width:7px;height:7px;background:var(--coral);border-radius:50%;border:1.5px solid var(--warm);display:none;}
+.unread-dot.show{display:block;}
+
+/* ── BUTTONS ───────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.4rem;font-family:'Inter',sans-serif;font-size:.8rem;font-weight:700;letter-spacing:-.01em;border:none;border-radius:8px;padding:.55rem 1.1rem;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn-xs{padding:.3rem .65rem;font-size:.7rem;border-radius:5px;}
+.btn-sm{padding:.42rem .85rem;font-size:.75rem;}
+.btn-lg{padding:.8rem 1.6rem;font-size:.9rem;}
+.btn-ink{background:#111827;color:#fff;}
+.btn-ink:hover{background:var(--ink2);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.2);}
+.btn-lime{background:var(--lime);color:var(--ink);}
+.btn-lime:hover{background:var(--lime2);transform:translateY(-1px);}
+.btn-outline{background:transparent;color:var(--text);border:1.5px solid var(--border2);}
+.btn-outline:hover{border-color:var(--text);background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04));}
+.btn-teal{background:var(--teal);color:#fff;}
+.btn-teal:hover{background:#00b085;transform:translateY(-1px);}
+.btn-violet{background:var(--violet);color:#fff;}
+.btn-violet:hover{background:#6a4de8;transform:translateY(-1px);}
+.btn-coral{background:transparent;color:var(--coral);border:1.5px solid var(--coral);}
+.btn-coral:hover{background:var(--coral);color:#fff;}
+.btn-ghost{background:transparent;color:var(--text3);padding:.42rem .75rem;}
+.btn-ghost:hover{background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04));color:var(--text);}
+
+/* ── TAGS & BADGES ─────────────────────────────────────── */
+.tag{display:inline-flex;align-items:center;gap:.25rem;font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:.2rem .5rem;border-radius:20px;border:1px solid;}
+.tag-goods{background:rgba(245,166,35,.1);color:#c47a00;}
+.tag-service{background:rgba(124,92,252,.1);color:var(--violet);}
+.tag-digital{background:rgba(0,200,150,.1);color:#009e78;}
+.tag-event{background:rgba(255,92,58,.1);color:var(--coral);}
+.tag-barter{background:rgba(0,200,150,.12);color:var(--teal);}
+.tag-certified{background:rgba(184,242,65,.15);color:#5a8a00;border:1px solid rgba(184,242,65,.3);}
+.pill{display:inline-flex;align-items:center;gap:.3rem;font-size:.7rem;font-weight:600;padding:.22rem .6rem;border-radius:100px;border:1.5px solid;}
+.pill-cash{border-color:#b8a000;color:#8a7800;}
+
+.pill-card{border-color:var(--stripe);color:var(--stripe);}
+
+  .pill-barter{border-color:var(--teal);color:var(--teal);}
+
+/* ── HERO ──────────────────────────────────────────────── */
+.hero{background:#111827;color:#fff;padding:5rem 1.5rem 4rem;position:relative;overflow:hidden;}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 60% 40%, rgba(184,242,65,.08) 0%, transparent 70%);pointer-events:none;}
+.hero-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;}
+.hero-eyebrow{font-family:'JetBrains Mono',monospace;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--lime);margin-bottom:1.5rem;display:flex;align-items:center;gap:.5rem;}
+.hero-eyebrow::before{content:'';width:18px;height:1.5px;background:var(--lime);}
+.hero h1{font-size:clamp(2.6rem,4.5vw,4rem);font-weight:900;line-height:.96;letter-spacing:-.04em;margin-bottom:1.25rem;}
+.hero h1 em{font-style:normal;color:var(--lime);}
+.hero-sub{font-size:.95rem;line-height:1.7;color:rgba(255,255,255,.6);max-width:420px;margin-bottom:2rem;}
+.hero-cta{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:3rem;}
+.hero-stats{display:flex;gap:2.5rem;}
+.h-stat-num{font-size:1.6rem;font-weight:900;letter-spacing:-.04em;color:var(--lime);}
+.h-stat-label{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-top:.1rem;}
+
+/* hero right — floating cards */
+.hero-cards{position:relative;height:360px;}
+.hc{position:absolute;background:var(--ink2);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.25rem;}
+.hc-1{width:240px;top:20px;left:0;transform:rotate(-2.5deg);animation:hf1 4s ease-in-out infinite;}
+.hc-2{width:220px;top:110px;right:0;transform:rotate(2deg);animation:hf2 5s ease-in-out infinite;border-color:rgba(184,242,65,.2);}
+.hc-3{width:210px;bottom:10px;left:55px;transform:rotate(-1deg);animation:hf3 4.5s ease-in-out infinite;}
+@keyframes hf1{0%,100%{transform:rotate(-2.5deg) translateY(0);}50%{transform:rotate(-2.5deg) translateY(-8px);}}
+@keyframes hf2{0%,100%{transform:rotate(2deg) translateY(0);}50%{transform:rotate(2deg) translateY(-6px);}}
+@keyframes hf3{0%,100%{transform:rotate(-1deg) translateY(0);}50%{transform:rotate(-1deg) translateY(-9px);}}
+.hc-title{font-weight:700;font-size:.88rem;color:#fff;margin:.5rem 0 .25rem;}
+.hc-meta{font-size:.72rem;color:rgba(255,255,255,.45);}
+.hc-price{font-family:'JetBrains Mono',monospace;font-size:.95rem;font-weight:600;color:var(--lime);margin-top:.75rem;}
+.hc-stars{color:var(--amber);font-size:.75rem;margin-top:.3rem;}
+
+/* ── LOCATION BAND ─────────────────────────────────────── */
+.location-band{background:var(--lime);padding:.65rem 1.5rem;display:flex;align-items:center;justify-content:center;gap:1.5rem;flex-wrap:wrap;}
+.loc-label{font-family:'JetBrains Mono',monospace;font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink);}
+.loc-areas{display:flex;gap:.5rem;flex-wrap:wrap;}
+.loc-chip{background:rgba(0,0,0,.1);font-size:.72rem;font-weight:700;color:var(--ink);padding:.2rem .65rem;border-radius:100px;cursor:pointer;transition:background .15s;}
+.loc-chip:hover,.loc-chip.active{background:rgba(0,0,0,.22);}
+
+/* ── PAGE WRAPPER ──────────────────────────────────────── */
+.page{max-width:1200px;margin:0 auto;padding:2.5rem 1.5rem;}
+
+/* ── SECTION TITLES ────────────────────────────────────── */
+.section-eyebrow,.sec-mono{font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin-bottom:.5rem;}
+.section-title{font-size:1.5rem;font-weight:800;letter-spacing:-.03em;}
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:1.5rem;gap:1rem;flex-wrap:wrap;}
+
+/* ── FILTER BAR ─────────────────────────────────────────── */
+.filters{display:flex;gap:.4rem;margin-bottom:1.25rem;flex-wrap:wrap;align-items:center;}
+.filt{font-size:.75rem;font-weight:600;padding:.35rem .85rem;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;font-family:var(--sans);}
+.filt:hover{border-color:var(--accent);color:var(--accent);background:rgba(124,58,237,.05);}
+.filt.on{background:#111827;color:#fff;border-color:var(--ink);}
+.search-wrap{display:flex;align-items:center;gap:.5rem;margin-bottom:1.25rem;}
+.search-input{flex:1;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:.6rem 1rem .6rem 2.5rem;font-size:.85rem;color:var(--text);outline:none;transition:border-color .15s;font-family:'Inter',sans-serif;}
+.search-input:focus{border-color:var(--ink);}
+.search-wrap-inner{position:relative;flex:1;}
+.search-icon{position:absolute;left:.8rem;top:50%;transform:translateY(-50%);color:var(--text3);font-size:.85rem;pointer-events:none;}
+.radius-select{background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:.58rem .75rem;font-size:.78rem;color:var(--text);outline:none;font-family:'Inter',sans-serif;cursor:pointer;}
+
+/* ── LISTINGS LAYOUT ───────────────────────────────────── */
+.listings-layout{display:grid;grid-template-columns:1fr 260px;gap:1.5rem;align-items:start;}
+.listings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1px;background:rgba(5,150,105,.15);border:1px solid rgba(5,150,105,.2);border-radius:12px;overflow:hidden;}
+
+/* ── LISTING CARD ──────────────────────────────────────── */
+.lcard{background:linear-gradient(135deg, rgba(5,150,105,.06), rgba(5,150,105,.02));padding:1.5rem;cursor:pointer;transition:all .15s;position:relative;}
+.lcard:hover{background:var(--bg);}
+.lcard-img{width:100%;height:130px;border-radius:8px;background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04));display:flex;align-items:center;justify-content:center;font-size:2.8rem;margin-bottom:.9rem;overflow:hidden;}
+.lcard-title{font-size:.92rem;font-weight:700;line-height:1.3;margin-bottom:.25rem;}
+.lcard-desc{font-size:.76rem;color:var(--text3);line-height:1.5;margin-bottom:.75rem;}
+.lcard-footer{display:flex;justify-content:space-between;align-items:flex-end;padding-top:.65rem;border-top:1px solid var(--border);}
+.lcard-price{font-family:'JetBrains Mono',monospace;font-size:.95rem;font-weight:600;color:var(--text);}
+.lcard-seller{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text3);}
+.lcard-actions{display:flex;gap:.35rem;margin-top:.65rem;}
+.lcard-actions .btn{flex:1;font-size:.68rem;padding:.4rem;}
+.lcard-badge{position:absolute;top:.75rem;right:.75rem;}
+.lcard-own{position:absolute;top:.75rem;left:.75rem;font-family:'JetBrains Mono',monospace;font-size:.55rem;background:var(--amber);color:var(--ink);padding:.15rem .4rem;border-radius:3px;font-weight:700;}
+.lcard-sponsored{background:linear-gradient(135deg,rgba(184,242,65,.04),var(--surface));border-left:2px solid var(--lime);}
+.lcard-sponsored-tag{position:absolute;top:.75rem;right:.75rem;font-family:'JetBrains Mono',monospace;font-size:.55rem;background:rgba(184,242,65,.15);color:#5a8a00;padding:.12rem .35rem;border-radius:3px;border:1px solid rgba(184,242,65,.3);}
+.lcard-location{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text3);display:flex;align-items:center;gap:.2rem;margin-top:.3rem;}
+.stars-sm{color:var(--amber);font-size:.72rem;}
+.rating-row{display:flex;align-items:center;gap:.3rem;margin-top:.3rem;}
+.rating-num{font-family:'JetBrains Mono',monospace;font-size:.65rem;font-weight:600;}
+.rating-ct{font-size:.62rem;color:var(--text3);}
+
+/* ── AD SIDEBAR ────────────────────────────────────────── */
+.ad-sidebar{position:sticky;top:70px;display:flex;flex-direction:column;gap:.75rem;}
+.ad-block{width:100%;border:1.5px dashed var(--border2);border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.35rem;background:var(--surface);font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text3);padding:1rem;}
+.ad-block-sm{height:130px;}
+.ad-block-med{height:250px;}
+.ad-block-tall{height:500px;}
+.ad-cta-card{background:#111827;border-radius:10px;padding:1.25rem;text-align:center;}
+.ad-cta-card p{font-size:.75rem;color:rgba(255,255,255,.6);line-height:1.5;margin-bottom:.75rem;}
+.ad-cta-card .btn{width:100%;}
+
+/* ── LOADING ─────────────────────────────────────────────  */
+.loading{text-align:center;padding:3rem;font-family:'JetBrains Mono',monospace;font-size:.75rem;color:var(--text3);}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--ink);border-radius:50%;animation:spin .6s linear infinite;margin-right:.5rem;vertical-align:middle;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── MODAL ──────────────────────────────────────────────── */
+.overlay{position:fixed;inset:0;background:rgba(10,10,10,.6);z-index:400;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(6px);}
+.overlay.on{opacity:1;pointer-events:all;}
+.modal{background:var(--surface);border-radius:16px;padding:2rem;width:100%;max-height:90vh;overflow-y:auto;transform:translateY(12px);transition:transform .2s;box-shadow:var(--shadow-lg);}
+.overlay.on .modal{transform:translateY(0);}
+.modal-sm{max-width:420px;}
+.modal-md{max-width:560px;}
+.modal-lg{max-width:720px;}
+.modal-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;}
+.modal-title{font-size:1.1rem;font-weight:800;letter-spacing:-.02em;}
+.xbtn{background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04));border:none;color:var(--text3);cursor:pointer;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:all .15s;flex-shrink:0;}
+.xbtn:hover{background:var(--border2);color:var(--text);}
+
+/* ── LISTING DETAIL ─────────────────────────────────────── */
+.detail-price{font-family:'JetBrains Mono',monospace;font-size:1.8rem;font-weight:700;letter-spacing:-.03em;margin:.75rem 0;}
+.detail-seller{display:flex;align-items:center;gap:.75rem;padding:.75rem;background:var(--bg);border-radius:10px;margin-bottom:1rem;}
+.seller-av{width:36px;height:36px;border-radius:50%;background:#111827;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;flex-shrink:0;}
+.seller-name{font-weight:700;font-size:.85rem;}
+.seller-meta{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text3);}
+.detail-body{font-size:.85rem;color:var(--text2);line-height:1.7;margin-bottom:1.25rem;}
+.detail-pills{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:1.25rem;}
+.detail-actions{display:flex;gap:.6rem;flex-wrap:wrap;}
+.detail-actions .btn{flex:1;min-width:100px;}
+.stripe-note{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text3);text-align:center;margin-top:.5rem;}
+
+/* ── REVIEWS ────────────────────────────────────────────── */
+.reviews-wrap{margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border);}
+.rev-summary{display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;}
+.rev-avg{font-size:1.4rem;font-weight:900;letter-spacing:-.03em;}
+.stars{display:inline-flex;gap:1px;font-size:.85rem;}
+.star{color:var(--border2);cursor:pointer;}
+.star.on{color:var(--amber);}
+.rev-item{padding:.65rem 0;border-bottom:1px solid var(--border);}
+.rev-item:last-child{border-bottom:none;}
+.rev-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.25rem;}
+.rev-author{font-weight:700;font-size:.8rem;}
+.rev-date{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--text3);}
+.rev-text{font-size:.8rem;color:var(--text2);line-height:1.5;}
+.write-rev{margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border);}
+.rev-ta{width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:.6rem .8rem;font-size:.82rem;font-family:'Inter',sans-serif;color:var(--text);outline:none;resize:vertical;min-height:70px;margin:.4rem 0 .5rem;transition:border-color .15s;}
+.rev-ta:focus{border-color:var(--ink);}
+
+/* ── MESSAGES PANEL ─────────────────────────────────────── */
+.msg-panel{position:fixed;right:0;top:58px;bottom:0;width:360px;background:var(--surface);border-left:1px solid var(--border);z-index:300;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .25s;box-shadow:-4px 0 20px rgba(0,0,0,.08);}
+.msg-panel.on{transform:translateX(0);}
+.msg-ph{padding:.9rem 1.25rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.msg-ph-title{font-weight:800;font-size:.95rem;}
+.msg-tabs{display:flex;background:var(--bg);margin:.5rem .75rem;border-radius:8px;padding:.2rem;}
+.msg-tab{flex:1;padding:.4rem;text-align:center;font-size:.72rem;font-weight:600;cursor:pointer;border-radius:6px;color:var(--text3);border:none;background:none;transition:all .15s;}
+.msg-tab.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.msg-list{flex:1;overflow-y:auto;}
+.msg-thread{padding:.85rem 1.25rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;}
+.msg-thread:hover,.msg-thread.on{background:var(--bg);}
+.msg-th{display:flex;justify-content:space-between;align-items:center;margin-bottom:.2rem;}
+.msg-tname{font-weight:700;font-size:.82rem;}
+.msg-ttime{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--text3);}
+.msg-tprev{font-size:.75rem;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:.4rem;}
+.msg-unread{width:7px;height:7px;background:var(--lime);border-radius:50%;flex-shrink:0;}
+.msg-convo{display:none;flex-direction:column;height:100%;}
+.msg-convo.on{display:flex;}
+.msg-ch{padding:.85rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.65rem;}
+.msg-back{background:none;border:none;cursor:pointer;color:var(--text3);font-size:1.1rem;}
+.msg-ctitle{font-weight:700;font-size:.88rem;}
+.msg-csub{font-size:.7rem;color:var(--text3);}
+.msg-body{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.65rem;}
+.bubble{max-width:78%;padding:.55rem .9rem;border-radius:12px;font-size:.8rem;line-height:1.5;}
+.bubble.sent{background:#111827;color:#fff;align-self:flex-end;border-bottom-right-radius:3px;}
+.bubble.recv{background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04));color:var(--text);align-self:flex-start;border-bottom-left-radius:3px;}
+.bubble-time{font-family:'JetBrains Mono',monospace;font-size:.52rem;opacity:.5;margin-top:.2rem;}
+.trade-card{background:rgba(0,200,150,.06);border:1.5px solid rgba(0,200,150,.2);border-radius:10px;padding:.85rem;margin:.2rem 0;}
+.trade-card-label{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);margin-bottom:.35rem;}
+.trade-card p{font-size:.78rem;color:var(--text2);}
+.trade-card-acts{display:flex;gap:.4rem;margin-top:.6rem;}
+.msg-input-row{padding:.65rem 1rem;border-top:1px solid var(--border);display:flex;gap:.5rem;align-items:flex-end;}
+.msg-ta{flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:.5rem .75rem;font-size:.8rem;font-family:'Inter',sans-serif;color:var(--text);outline:none;resize:none;max-height:80px;transition:border-color .15s;}
+.msg-ta:focus{border-color:var(--ink);}
+.msg-send{background:#111827;border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;transition:background .15s;}
+.msg-send:hover{background:var(--ink2);}
+
+/* ── VENDOR DASHBOARD ────────────────────────────────────  */
+.vdash{background:linear-gradient(135deg, rgba(5,150,105,.06), rgba(5,150,105,.02));border:1px solid rgba(5,150,105,.2);border-radius:12px;padding:1.75rem;margin-top:2rem;}
+.vdash-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem;}
+.vdash-title{font-size:1.1rem;font-weight:800;letter-spacing:-.02em;}
+.vdash-acts{display:flex;gap:.4rem;}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:1.5rem;}
+.kpi{background:var(--bg);padding:1rem;text-align:center;}
+.kpi-val{font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:700;color:var(--text);}
+.kpi-label{font-size:.68rem;color:var(--text3);margin-top:.2rem;}
+.kpi-delta{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--teal);margin-top:.1rem;}
+
+/* orders table */
+.table-wrap{overflow-x:auto;}
+.otable{width:100%;border-collapse:collapse;font-size:.78rem;}
+.otable th{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);padding:.5rem .75rem;border-bottom:1.5px solid var(--border);text-align:left;white-space:nowrap;}
+.otable td{padding:.6rem .75rem;border-bottom:1px solid var(--border);}
+.otable tr:last-child td{border-bottom:none;}
+.ostatus{font-family:'JetBrains Mono',monospace;font-size:.6rem;padding:.15rem .45rem;border-radius:4px;font-weight:600;}
+.os-pending{background:rgba(245,166,35,.12);color:#9a6500;}
+.os-shipped{background:rgba(124,92,252,.12);color:var(--violet);}
+.os-delivered{background:rgba(0,200,150,.12);color:var(--teal);}
+.os-cancelled{background:rgba(255,92,58,.1);color:var(--coral);}
+
+/* revenue chart */
+.rev-chart{margin-top:1.5rem;}
+.rev-chart-title{font-weight:700;font-size:.85rem;margin-bottom:.75rem;}
+.chart-bars{display:flex;align-items:flex-end;gap:.5rem;height:80px;padding:.5rem 0;}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:.25rem;}
+.bar{background:var(--lime);border-radius:3px 3px 0 0;width:100%;min-height:4px;transition:height .3s;}
+.bar-label{font-family:'JetBrains Mono',monospace;font-size:.55rem;color:var(--text3);}
+
+/* ── BARTER REPORT ──────────────────────────────────────── */
+.barter-report{background:linear-gradient(135deg, rgba(5,150,105,.06), rgba(5,150,105,.02));border:1px solid rgba(5,150,105,.2);border-radius:12px;padding:1.5rem;margin-top:1.5rem;}
+.br-title{font-weight:700;font-size:.9rem;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;}
+.br-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border:1.5px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:1rem;}
+.br-stat{background:var(--surface);padding:.85rem;text-align:center;}
+.br-val{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;}
+.br-label{font-size:.65rem;color:var(--text3);margin-top:.2rem;}
+.br-alert{background:rgba(245,166,35,.08);border:1.5px solid rgba(245,166,35,.25);border-radius:8px;padding:.85rem 1rem;font-size:.78rem;color:var(--text2);line-height:1.6;display:flex;gap:.6rem;}
+.br-alert-icon{font-size:1.1rem;flex-shrink:0;}
+
+/* ── FORM ELEMENTS ──────────────────────────────────────── */
+.form-group{margin-bottom:1rem;}
+.form-label{display:block;font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:.4rem;}
+.form-input,.form-select,.form-ta{width:100%;padding:.65rem .9rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;font-family:var(--sans);font-size:.88rem;color:var(--text);outline:none;transition:border-color .15s;}
+.form-input:focus,.form-select:focus,.form-ta:focus{border-color:var(--ink);background:var(--surface);}
+.form-ta{resize:vertical;min-height:90px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+.form-hint{font-size:.7rem;color:var(--text3);margin-top:.3rem;line-height:1.5;}
+.pay-checks{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.4rem;}
+.pcheck{display:flex;align-items:center;gap:.3rem;cursor:pointer;padding:.3rem .6rem;border:1.5px solid var(--border);border-radius:100px;transition:all .15s;font-size:.72rem;font-weight:600;}
+.pcheck:hover{border-color:var(--ink);}
+.pcheck input[type="checkbox"]{width:12px;height:12px;accent-color:var(--ink);}
+.form-submit{width:100%;padding:.85rem;font-size:.85rem;margin-top:.4rem;border-radius:10px;}
+.auth-note{background:rgba(184,242,65,.1);border:1.5px solid rgba(184,242,65,.3);border-radius:8px;padding:.85rem 1rem;font-size:.8rem;color:var(--ink);margin-bottom:1.25rem;display:none;line-height:1.5;}
+.auth-note.on{display:block;}
+.auth-note a{font-weight:700;color:var(--ink);text-decoration:underline;}
+
+/* FMV widget */
+.fmv-widget{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:1rem;margin-top:.5rem;}
+.fmv-title{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem;}
+.fmv-sources{display:flex;flex-direction:column;gap:.4rem;}
+.fmv-source{display:flex;align-items:center;justify-content:space-between;font-size:.78rem;padding:.4rem .6rem;background:var(--surface);border-radius:6px;cursor:pointer;transition:background .15s;border:1px solid var(--border);}
+.fmv-source:hover,.fmv-source.on{border-color:var(--ink);background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04));}
+.fmv-source input[type="radio"]{accent-color:var(--ink);}
+
+/* shipping widget */
+.ship-widget{background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:1rem;margin-top:.5rem;display:none;}
+.ship-widget.on{display:block;}
+.ship-rates{display:flex;flex-direction:column;gap:.4rem;margin-top:.5rem;}
+.ship-rate{display:flex;align-items:center;justify-content:space-between;padding:.5rem .75rem;background:var(--surface);border-radius:7px;border:1.5px solid var(--border);cursor:pointer;transition:all .15s;}
+.ship-rate:hover,.ship-rate.on{border-color:var(--ink);}
+.ship-carrier{font-weight:700;font-size:.8rem;}
+.ship-eta{font-size:.7rem;color:var(--text3);}
+.ship-price{font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:600;color:var(--teal);}
+.ship-loading{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text3);padding:.5rem;}
+
+/* ── EVENTS ─────────────────────────────────────────────── */
+.events-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1px;background:var(--border);border:1.5px solid var(--border);border-radius:14px;overflow:hidden;}
+.ecard{background:var(--surface);padding:1.25rem;cursor:pointer;transition:background .15s;position:relative;}
+.ecard:hover{background:var(--bg);}
+.ecard-date-block{background:#111827;color:#fff;border-radius:8px;padding:.6rem .9rem;display:inline-flex;flex-direction:column;align-items:center;margin-bottom:.85rem;}
+.ecard-month{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);}
+.ecard-day{font-size:1.4rem;font-weight:900;letter-spacing:-.04em;line-height:1;color:var(--lime);}
+.ecard-title{font-size:.95rem;font-weight:700;margin-bottom:.3rem;}
+.ecard-loc{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text3);margin-bottom:.5rem;display:flex;align-items:center;gap:.25rem;}
+.ecard-desc{font-size:.76rem;color:var(--text3);line-height:1.5;}
+.ecard-footer{display:flex;justify-content:space-between;align-items:center;margin-top:.75rem;padding-top:.65rem;border-top:1px solid var(--border);}
+.ecard-type{font-family:'JetBrains Mono',monospace;font-size:.58rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+.et-yard{color:#c47a00;}
+.et-estate{color:var(--violet);}
+.et-popup{color:var(--teal);}
+.et-swap{color:var(--coral);}
+
+/* ── PLANS ──────────────────────────────────────────────── */
+.plans-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1.5px solid var(--border);border-radius:16px;overflow:hidden;}
+.plan{background:var(--surface);padding:1.75rem;position:relative;}
+.plan.featured{background:#111827;}
+.plan-popular{position:absolute;top:.75rem;right:.75rem;background:var(--lime);color:var(--ink);font-family:'JetBrains Mono',monospace;font-size:.58rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.15rem .4rem;border-radius:3px;}
+.plan-tier{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:.5rem;}
+.plan.featured .plan-tier{color:rgba(255,255,255,.4);}
+.plan-price{font-size:1.9rem;font-weight:900;letter-spacing:-.04em;}
+.plan.featured .plan-price{color:var(--lime);}
+.plan-period{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text3);}
+.plan.featured .plan-period{color:rgba(255,255,255,.4);}
+.plan-desc{font-size:.78rem;color:var(--text3);margin:1rem 0;line-height:1.5;}
+.plan.featured .plan-desc{color:rgba(255,255,255,.55);}
+.plan-features{list-style:none;margin-bottom:1.25rem;}
+.plan-feat{font-size:.78rem;color:var(--text2);padding:.2rem 0;display:flex;align-items:flex-start;gap:.4rem;line-height:1.4;}
+.plan.featured .plan-feat{color:rgba(255,255,255,.7);}
+.plan-feat::before{content:'✓';color:var(--teal);font-weight:800;font-size:.7rem;flex-shrink:0;margin-top:.15rem;}
+.plan.featured .plan-feat::before{color:var(--lime);}
+.plan-btn{width:100%;justify-content:center;padding:.7rem;border-radius:8px;}
+
+/* ── AUTH MODAL ─────────────────────────────────────────── */
+.auth-tabs{display:flex;background:var(--bg);border-radius:8px;padding:.2rem;margin-bottom:1.25rem;}
+.auth-tab{flex:1;padding:.45rem;text-align:center;font-size:.78rem;font-weight:700;cursor:pointer;border-radius:6px;color:var(--text3);border:none;background:none;transition:all .15s;}
+.auth-tab.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.08);}
+.auth-err{background:rgba(255,92,58,.07);border:1.5px solid rgba(255,92,58,.2);border-radius:7px;padding:.65rem .9rem;font-size:.78rem;color:var(--coral);margin-bottom:.9rem;display:none;}
+.auth-err.on{display:block;}
+.auth-ok{background:rgba(0,200,150,.07);border:1.5px solid rgba(0,200,150,.2);border-radius:7px;padding:.65rem .9rem;font-size:.78rem;color:var(--teal);margin-bottom:.9rem;display:none;}
+.auth-ok.on{display:block;}
+
+/* ── VERIFY BADGE STRIP ─────────────────────────────────── */
+.verify-strip{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.75rem;}
+.v-badge{display:inline-flex;align-items:center;gap:.25rem;font-size:.68rem;font-weight:600;padding:.22rem .6rem;border-radius:100px;border:1.5px solid;}
+.v-done{border-color:var(--teal);color:var(--teal);background:rgba(0,200,150,.07);}
+.v-todo{border-color:var(--border2);color:var(--text3);cursor:pointer;transition:all .15s;}
+.v-todo:hover{border-color:var(--ink);color:var(--text);}
+
+/* ── TOAST ──────────────────────────────────────────────── */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#111827;color:#fff;border-radius:10px;padding:.85rem 1.25rem;font-size:.82rem;z-index:1000;transform:translateY(100px);opacity:0;transition:all .3s;display:flex;align-items:center;gap:.65rem;max-width:300px;box-shadow:var(--shadow-lg);}
+.toast.on{transform:translateY(0);opacity:1;}
+
+/* ── SPONSOR STRIP ──────────────────────────────────────── */
+.sponsor-strip{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:1.25rem 1.5rem;background:var(--surface);}
+.sponsor-inner{max-width:1200px;margin:0 auto;}
+.sponsor-label{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);text-align:center;margin-bottom:1rem;}
+.sponsor-logos{display:flex;gap:.65rem;justify-content:center;flex-wrap:wrap;}
+.sponsor-slot{width:140px;height:50px;border:1.5px dashed var(--border2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--border2);flex-direction:column;gap:.2rem;cursor:pointer;transition:all .15s;text-decoration:none;}
+.sponsor-slot:hover{border-color:var(--ink);color:var(--text);}
+
+/* ── FOOTER ─────────────────────────────────────────────── */
+footer{background:#111827;color:rgba(255,255,255,.5);padding:2.5rem 1.5rem;margin-top:0;}
+.foot-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:2rem;align-items:start;}
+.foot-logo{font-size:1.2rem;font-weight:900;color:#fff;letter-spacing:-.04em;margin-bottom:.5rem;}
+.foot-logo em{font-style:normal;color:var(--lime);}
+.foot-tagline{font-size:.78rem;color:rgba(255,255,255,.4);line-height:1.5;}
+.foot-col-title{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:.75rem;}
+.foot-links{list-style:none;display:flex;flex-direction:column;gap:.35rem;}
+.foot-links a{font-size:.8rem;color:rgba(255,255,255,.5);transition:color .15s;}
+.foot-links a:hover{color:#fff;}
+.foot-bottom{max-width:1200px;margin:1.5rem auto 0;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,.08);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;}
+.foot-copy{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(255,255,255,.3);}
+.foot-naics{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:rgba(255,255,255,.2);}
+
+/* ── RESPONSIVE ─────────────────────────────────────────── */
+@media(max-width:1024px){.listings-layout{grid-template-columns:1fr;}.ad-sidebar{display:none;}.plans-grid{grid-template-columns:repeat(2,1fr);}.foot-inner{grid-template-columns:1fr 1fr;}}
+@media(max-width:768px){.hero-inner{grid-template-columns:1fr;}.hero-cards{display:none;}.nav-links{display:none;}.form-row{grid-template-columns:1fr;}.kpi-grid{grid-template-columns:repeat(2,1fr);}.br-grid{grid-template-columns:repeat(2,1fr);}.foot-inner{grid-template-columns:1fr;}.plans-grid{grid-template-columns:1fr;}.hero h1{font-size:2.4rem;}}
+</style>
+</head>
+<body>
+
+<!-- ANNOUNCE BAR -->
+<div class="announce-bar">
+  <span>🌱 Every trade = one less item in a landfill</span>
+  <span>|</span>
+  <span>💳 Stripe · 💵 Cash · 📲 Venmo · 💜 Zelle · 🅿️ PayPal · 💚 Cash App · ⇄ Barter</span>
+  <span>|</span>
+  <span>🌎 Nationwide · Rooted in RTP, NC</span>
+</div>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="#" class="nav-logo">
+    <div class="logo-mark"><svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M8 3l5 5-5 5" stroke="#b8f241" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    The Swap Yard
+  </a>
+  <div class="nav-links">
+    <a href="#listings" class="nav-link active">Browse</a>
+    <a href="#events" class="nav-link">Events</a>
+    <a href="#plans" class="nav-link">Plans</a>
+    <a href="#list" class="nav-link">List Item</a>
+    <a href="terms.html" class="nav-link">Safety & Legal</a>
+  </div>
+  <div class="nav-spacer"></div>
+  <div class="nav-right">
+    <div class="nav-location">🌎 Nationwide · Est. RTP, NC</div>
+    <span id="navEmail"></span>
+    <div class="msg-wrap">
+      <button class="btn btn-ghost btn-sm" id="msgBtn" onclick="toggleMsg()" style="display:none">💬</button>
+      <div class="unread-dot" id="unreadDot"></div>
+    </div>
+    <button class="btn btn-outline btn-sm" id="authBtn" onclick="openAuth()">Sign In</button>
+    <button class="btn btn-ink btn-sm" onclick="goList()">+ List</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-eyebrow">🌱 Nationwide Marketplace · Trade Green · Rooted in RTP, NC</div>
+      <h1>Buy. Sell.<br><em>Trade</em> Anything.</h1>
+      <p class="hero-sub">The Swap Yard connects buyers, sellers, and traders across the nation. Pay by card via Stripe, cash, Venmo, Zelle, PayPal, Cash App, or barter — whatever works for you and the seller.. Every deal backed by Trust & Safety.</p>
+      <div class="hero-cta">
+        <a href="#listings" class="btn btn-lime btn-lg">Browse Listings ↓</a>
+        <button class="btn btn-outline btn-lg" onclick="goList()" style="border-color:rgba(255,255,255,.2);color:#fff">List Something</button>
+        <a href="#events" class="btn btn-ghost btn-lg" style="color:rgba(255,255,255,.6)">📅 Events</a>
+      </div>
+      <div class="hero-stats">
+        <div><div class="h-stat-num" id="hStatListings">—</div><div class="h-stat-label">Listings</div></div>
+        <div><div class="h-stat-num">847</div><div class="h-stat-label">Traders</div></div>
+        <div><div class="h-stat-num">4.8★</div><div class="h-stat-label">Avg Rating</div></div>
+        <div><div class="h-stat-num" id="hStatEvents">12</div><div class="h-stat-label">Events This Month</div></div>
+      </div>
+    </div>
+    <div class="hero-cards">
+      <div class="hc hc-1">
+        <span class="tag tag-barter">⇄ Barter</span>
+        <div class="hc-title">Vintage Peugeot Bike</div>
+        <div class="hc-meta">Durham, NC · Local or Ships</div>
+        <div class="hc-price">Trade Only</div>
+        <div class="hc-stars">★★★★★</div>
+      </div>
+      <div class="hc hc-2">
+        <span class="tag tag-service">Service</span>
+        <div class="hc-title">Web Design — 1hr</div>
+        <div class="hc-meta">✅ Verified Specialist · RTP</div>
+        <div class="hc-price">$60 / hr</div>
+        <div class="hc-stars">★★★★★ 31 reviews</div>
+      </div>
+      <div class="hc hc-3">
+        <span class="tag tag-goods">Goods</span>
+        <div class="hc-title">Sony A7III Camera</div>
+        <div class="hc-meta">Cary, NC · Ships nationally</div>
+        <div class="hc-price">$750</div>
+        <div class="hc-stars">★★★★½</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOCATION BAND -->
+<div class="location-band">
+  <div class="loc-label">📍 Browse by area:</div>
+  <div class="loc-areas">
+    <div class="loc-chip active" onclick="setArea('all',this)">🌎 Nationwide</div>
+    <div class="loc-chip" onclick="setArea('rtp',this)">📍 RTP Area</div>
+    <div class="loc-chip" onclick="setArea('durham',this)">Durham</div>
+    <div class="loc-chip" onclick="setArea('raleigh',this)">Raleigh</div>
+    <div class="loc-chip" onclick="setArea('chapel_hill',this)">Chapel Hill</div>
+    <div class="loc-chip" onclick="setArea('cary',this)">Cary</div>
+    <div class="loc-chip" onclick="setArea('apex',this)">Apex</div>
+    <div class="loc-chip" onclick="setArea('morrisville',this)">Morrisville</div>
+    <div class="loc-chip" onclick="setArea('nearby',this)">📍 Near Me</div>
+  </div>
+</div>
+
+<!-- AD SLOT 1 -->
+<div style="background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;min-height:72px;padding:.5rem 1.5rem;position:relative;">
+  <span style="font-family:'JetBrains Mono',monospace;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;color:var(--border2);position:absolute;top:4px;left:8px;">Advertisement</span>
+  <div style="width:728px;max-width:100%;height:72px;border:1.5px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;gap:.75rem;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text3);">🏠 Leaderboard 728×90 — Replace with AdSense or Sponsor code</div>
+</div>
+
+<!-- LISTINGS -->
+<div class="page" id="listings">
+  <div class="section-head">
+    <div>
+      <div class="section-eyebrow">Open Marketplace</div>
+      <h2 class="section-title">Current Listings</h2>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="goList()">+ Add Yours</button>
+  </div>
+
+  <div class="search-wrap">
+    <div class="search-wrap-inner">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="searchInput" placeholder="Search listings, services, barter…" oninput="doSearch()">
+    </div>
+    <select class="radius-select" id="radiusSelect" onchange="doSearch()">
+      <option value="all">Any Distance</option>
+      <option value="5">Within 5 mi</option>
+      <option value="10">Within 10 mi</option>
+      <option value="25" selected>Within 25 mi</option>
+      <option value="50">Within 50 mi</option>
+    </select>
+  </div>
+
+  <div class="filters">
+    <button class="filt on" onclick="filt('all',this)">All</button>
+    <button class="filt" onclick="filt('goods',this)">🛒 Goods</button>
+    <button class="filt" onclick="filt('service',this)">🛠 Services</button>
+    <button class="filt" onclick="filt('digital',this)">💾 Digital</button>
+    <button class="filt" onclick="filt('barter',this)">⇄ Barter</button>
+    
+    <button class="filt" onclick="filt('certified',this)">✅ Certified</button>
+    <button class="filt" onclick="filt('local',this)">📍 Local Only</button>
+  </div>
+
+  <div class="listings-layout">
+    <div>
+      <!-- AD SLOT 2 -->
+      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;display:flex;align-items:center;min-height:72px;margin-bottom:1rem;position:relative;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:.52rem;color:var(--border2);position:absolute;top:4px;left:8px;letter-spacing:.08em;text-transform:uppercase;">Sponsored</span>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:1rem;padding:1rem 1.5rem;border:1.5px dashed var(--border);border-radius:8px;margin:.4rem;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text3);">🔨 Inline Banner — Replace with AdSense or sponsor code</div>
+      </div>
+      <div id="listingsGrid"><div class="loading"><span class="spin"></span>Loading listings…</div></div>
+    </div>
+    <aside class="ad-sidebar">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;color:var(--border2)">Sponsored</span>
+      <div class="ad-block ad-block-med">📦<span>300×250</span><span>AdSense / Sponsor</span></div>
+      <div class="ad-block ad-block-tall">⚡<span>300×600</span><span>Premium Placement</span></div>
+      <div class="ad-cta-card">
+        <p>Reach thousands of active buyers and traders — locally and nationwide.</p>
+        <button class="btn btn-lime btn-sm" onclick="showToast('📧','Advertising inquiry sent!')">Advertise Here</button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- SPONSOR STRIP -->
+<div class="sponsor-strip">
+  <div class="sponsor-inner">
+    <div class="sponsor-label">Our Partners & Sponsors</div>
+    <div class="sponsor-logos">
+      <a class="sponsor-slot" onclick="showToast('📧','Sponsor inquiry!')"><span>🏠</span><span>Your Logo</span></a>
+      <a class="sponsor-slot" onclick="showToast('📧','Sponsor inquiry!')"><span>🔧</span><span>Your Logo</span></a>
+      <a class="sponsor-slot" onclick="showToast('📧','Sponsor inquiry!')"><span>🚗</span><span>Your Logo</span></a>
+      <a class="sponsor-slot" onclick="showToast('📧','Sponsor inquiry!')"><span>🎵</span><span>Your Logo</span></a>
+      <a class="sponsor-slot" onclick="showToast('📧','Sponsor inquiry!')"><span>💳</span><span>Your Logo</span></a>
+    </div>
+  </div>
+</div>
+
+<!-- EVENTS -->
+<div class="page" id="events">
+  <div class="section-head">
+    <div>
+      <div class="section-eyebrow">Events · RTP Area &amp; Nationwide</div>
+      <h2 class="section-title">Yard Sales & Estate Sales</h2>
+    </div>
+    <button class="btn btn-ink btn-sm" onclick="openEventForm()">+ Post Event</button>
+  </div>
+  <div class="filters" style="margin-bottom:1.25rem;">
+    <button class="filt on" onclick="filtEvent('all',this)">All Events</button>
+    <button class="filt" onclick="filtEvent('yard_sale',this)">🏡 Yard Sales</button>
+    <button class="filt" onclick="filtEvent('estate_sale',this)">🏛 Estate Sales</button>
+    <button class="filt" onclick="filtEvent('pop_up',this)">🎪 Pop-Up Markets</button>
+    <button class="filt" onclick="filtEvent('swap_meet',this)">⇄ Swap Meets</button>
+    <button class="filt" onclick="filtEvent('auction',this)">🔨 Auctions</button>
+  </div>
+  <div id="eventsGrid"><div class="loading"><span class="spin"></span>Loading events…</div></div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div style="background:#111827;padding:3rem 1.5rem;border-top:1px solid rgba(255,255,255,.06);">
+  <div style="max-width:1200px;margin:0 auto;">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:.5rem;">Simple Process</div>
+    <h2 style="font-size:1.5rem;font-weight:800;letter-spacing:-.03em;color:#fff;margin-bottom:2rem;">How The Swap Yard Works</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;">
+      <div style="background:var(--ink2);padding:1.75rem;"><div style="font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--lime);margin-bottom:.75rem;">01</div><div style="font-size:1.75rem;margin-bottom:.75rem;">📋</div><div style="font-weight:700;font-size:.9rem;color:#fff;margin-bottom:.4rem;">List</div><div style="font-size:.76rem;color:rgba(255,255,255,.5);line-height:1.6;">Post goods, services, or events. Set price, FMV, and accepted payment types.</div></div>
+      <div style="background:var(--ink2);padding:1.75rem;"><div style="font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--lime);margin-bottom:.75rem;">02</div><div style="font-size:1.75rem;margin-bottom:.75rem;">💬</div><div style="font-weight:700;font-size:.9rem;color:#fff;margin-bottom:.4rem;">Negotiate</div><div style="font-size:.76rem;color:rgba(255,255,255,.5);line-height:1.6;">Message sellers, propose trades, negotiate terms — all inside The Swap Yard.</div></div>
+      <div style="background:var(--ink2);padding:1.75rem;"><div style="font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--lime);margin-bottom:.75rem;">03</div><div style="font-size:1.75rem;margin-bottom:.75rem;">💳</div><div style="font-weight:700;font-size:.9rem;color:#fff;margin-bottom:.4rem;">Pay Securely</div><div style="font-size:.76rem;color:rgba(255,255,255,.5);line-height:1.6;">Card via Stripe with buyer protection, cash.</div></div>
+      <div style="background:var(--ink2);padding:1.75rem;"><div style="font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--lime);margin-bottom:.75rem;">04</div><div style="font-size:1.75rem;margin-bottom:.75rem;">📦</div><div style="font-weight:700;font-size:.9rem;color:#fff;margin-bottom:.4rem;">Meet or Arrange Shipping</div><div style="font-size:.76rem;color:rgba(255,255,255,.5);line-height:1.6;">Meet safely at a public location in the Triangle, or arrange your own shipping directly with the buyer/seller.</div></div>
+      <div style="background:var(--ink2);padding:1.75rem;"><div style="font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--lime);margin-bottom:.75rem;">05</div><div style="font-size:1.75rem;margin-bottom:.75rem;">⭐</div><div style="font-weight:700;font-size:.9rem;color:#fff;margin-bottom:.4rem;">Rate & Review</div><div style="font-size:.76rem;color:rgba(255,255,255,.5);line-height:1.6;">Build your reputation. Verified reviews protect every member of the community.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PRICING PLANS -->
+<div class="page" id="plans">
+  <div class="section-head">
+    <div>
+      <div class="section-eyebrow">Pricing</div>
+      <h2 class="section-title">Vendor Plans</h2>
+    </div>
+    <div style="font-size:.78rem;color:var(--text3)">All plans include Stripe payments & buyer protection</div>
+  </div>
+  <div class="plans-grid">
+    <div class="plan">
+      <div class="plan-tier">Free</div>
+      <div class="plan-price">$0</div>
+      <div class="plan-period">/ forever</div>
+      <div class="plan-desc">For occasional sellers and casual traders.</div>
+      <ul class="plan-features">
+        <li class="plan-feat">5 active listings</li>
+        <li class="plan-feat">5% transaction fee</li>
+        <li class="plan-feat">Basic messaging</li>
+        <li class="plan-feat">Reviews & ratings</li>
+        <li class="plan-feat">FMV input tool</li>
+      </ul>
+      <button class="btn btn-outline plan-btn" onclick="showToast('✅','You\'re on the Free plan!')">Get Started Free</button>
+    </div>
+    <div class="plan">
+      <div class="plan-tier">Trader Pro</div>
+      <div class="plan-price">$9.99</div>
+      <div class="plan-period">/ year</div>
+      <div class="plan-desc">For active sellers who need more reach.</div>
+      <ul class="plan-features">
+        <li class="plan-feat">Unlimited listings</li>
+        <li class="plan-feat">4% transaction fee</li>
+                <li class="plan-feat">Order & inventory dashboard</li>
+        <li class="plan-feat">Revenue tracking</li>
+        <li class="plan-feat">Barter reporting tools</li>
+        <li class="plan-feat">Certification eligible</li>
+      </ul>
+      <button class="btn btn-outline plan-btn" onclick="showToast('💳','Redirecting to checkout...')">Start Trader Pro</button>
+    </div>
+    <div class="plan featured">
+      <div class="plan-popular">Popular</div>
+      <div class="plan-tier">Verified Vendor</div>
+      <div class="plan-price">$29.99</div>
+      <div class="plan-period">/ year</div>
+      <div class="plan-desc">For serious vendors who want max visibility.</div>
+      <ul class="plan-features">
+        <li class="plan-feat">Everything in Trader Pro</li>
+        <li class="plan-feat">3% transaction fee</li>
+        <li class="plan-feat">✅ Verified Vendor badge</li>
+        <li class="plan-feat">Priority listing placement</li>
+        <li class="plan-feat">Specialist certification</li>
+        <li class="plan-feat">Analytics dashboard</li>
+        <li class="plan-feat">Priority support</li>
+      </ul>
+      <button class="btn btn-lime plan-btn" onclick="showToast('💳','Redirecting...')">Become Verified Vendor</button>
+    </div>
+    <div class="plan">
+      <div class="plan-tier">Business</div>
+      <div class="plan-price">$79.00</div>
+      <div class="plan-period">/ year</div>
+      <div class="plan-desc">For high-volume operations & integrations.</div>
+      <ul class="plan-features">
+        <li class="plan-feat">Everything in Verified Vendor</li>
+        <li class="plan-feat">2% transaction fee</li>
+        <li class="plan-feat">API access</li>
+        <li class="plan-feat">Bulk listing tools</li>
+        <li class="plan-feat">Dedicated account manager</li>
+        <li class="plan-feat">White-label options</li>
+        <li class="plan-feat">Advanced analytics & exports</li>
+      </ul>
+      <button class="btn btn-outline plan-btn" onclick="showToast('📧','Our team will contact you!')">Contact Sales</button>
+    </div>
+  </div>
+</div>
+
+<!-- LIST ITEM -->
+<div style="background:#111827;border-top:1px solid rgba(255,255,255,.06);padding:3rem 1.5rem;" id="list">
+  <div style="max-width:680px;margin:0 auto;">
+    <div style="font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:.5rem;">Sellers & Traders</div>
+    <h2 style="font-size:1.5rem;font-weight:800;letter-spacing:-.03em;color:#fff;margin-bottom:.4rem;">List an Item or Service</h2>
+    <p style="font-size:.82rem;color:rgba(255,255,255,.5);margin-bottom:1.5rem;">Free to list. By listing you agree to our <a href="terms.html" style="color:var(--lime)">Terms & Safety Policy</a>.</p>
+
+    <div style="background:var(--surface);border-radius:16px;padding:2rem;">
+      <div class="auth-note" id="authNote">🔒 <a href="#" onclick="openAuth();return false;">Sign in or create a free account</a> to publish listings.</div>
+
+      <div class="form-group">
+        <label class="form-label">Listing Type</label>
+        <select class="form-select" id="lType"><option value="">— Select —</option><option value="goods">Physical Goods</option><option value="digital">Digital Product</option><option value="service">Service</option></select>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="lTitle" placeholder="e.g. Vintage Bicycle"></div>
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select class="form-select" id="lCat"><option value="">— Category —</option><option>Electronics</option><option>Vehicles</option><option>Furniture</option><option>Clothing</option><option>Tools</option><option>Art & Collectibles</option><option>Music & Audio</option><option>Web & Tech Services</option><option>Creative Services</option><option>Automotive Services</option><option>Home Services</option><option>Tutoring & Coaching</option><option>Other</option></select>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">Description</label><textarea class="form-ta" id="lDesc" placeholder="Describe the item. Include condition, dimensions, trade preferences…"></textarea></div>
+
+      <!-- IMAGE UPLOAD -->
+      <div class="form-group" id="imgUploadGroup">
+        <label class="form-label">📸 Product Photos <span style="font-weight:400;color:var(--text3);">(up to 5 · optional)</span></label>
+        <div id="imgDropZone" style="
+          border:2px dashed rgba(5,150,105,.3);
+          border-radius:10px;
+          padding:1.25rem;
+          text-align:center;
+          cursor:pointer;
+          transition:all .2s;
+          background:linear-gradient(135deg,rgba(5,150,105,.04),rgba(5,150,105,.01));
+        "
+          onclick="document.getElementById('lImages').click()"
+          ondragover="event.preventDefault();this.style.borderColor='#7c3aed';this.style.background='rgba(124,58,237,.05)'"
+          ondragleave="this.style.borderColor='rgba(5,150,105,.3)';this.style.background='linear-gradient(135deg,rgba(5,150,105,.04),rgba(5,150,105,.01))'"
+          ondrop="handleImgDrop(event)"
+          role="button"
+          tabindex="0"
+          aria-label="Upload product photos — click or drag and drop"
+          onkeydown="if(event.key==='Enter'||event.key===' ')document.getElementById('lImages').click()">
+          <div style="font-size:1.75rem;margin-bottom:.4rem;">📷</div>
+          <div style="font-size:.82rem;font-weight:600;color:var(--text2);margin-bottom:.2rem;">Click to upload or drag &amp; drop</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text3);letter-spacing:.06em;">JPG · PNG · WebP · Max 5MB each</div>
+        </div>
+        <input type="file" id="lImages" multiple accept="image/jpeg,image/png,image/webp" style="display:none;" aria-hidden="true">
+        <div id="lImgPreview" style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.75rem;" aria-live="polite" aria-label="Image previews"></div>
+        <div id="lImgCount" style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--text3);margin-top:.35rem;"></div>
+      </div>
+
+      <!-- FMV WIDGET -->
+      <div class="form-group">
+        <label class="form-label">💰 Asking Price (USD)</label>
+        <input class="form-input" type="number" id="lPrice" placeholder="0.00" min="0">
+        <div class="fmv-widget">
+          <div class="fmv-title">📊 Fair Market Value (FMV) — Required for barter reporting & tax compliance</div>
+          <div class="form-row" style="margin-bottom:.75rem;">
+            <div><label class="form-label">FMV Amount ($)</label><input class="form-input" type="number" id="lFMV" placeholder="0.00"></div>
+            <div>
+              <label class="form-label">FMV Source</label>
+              <select class="form-select" id="lFMVSource">
+                <option value="seller_estimate">My Estimate</option>
+                
+                <option value="kelley_market_data">Kelley Market Pricing</option>
+                <option value="appraisal">Professional Appraisal</option>
+                <option value="retail_price">Original Retail Price</option>
+              </select>
+            </div>
+          </div>
+          <div class="fmv-sources">
+            <a class="fmv-source" href="https://www.<a class="fmv-source" href="https://www.kbb.com" target="_blank">🚗 Kelley Market Pricing →</a>
+          </div>
+          <div class="form-hint">⚖️ FMV is used for IRS barter reporting. If this item is traded, both parties must report the FMV as income. <a href="terms.html#barter" style="color:var(--teal)">Learn more →</a></div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Accepted Payment Methods</label>
+        <div class="pay-checks" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:.4rem;">
+          <label class="pcheck"><input type="checkbox" value="card" checked> 💳 Card (Stripe)</label>
+          <label class="pcheck"><input type="checkbox" value="cash" checked> 💵 Cash</label>
+          <label class="pcheck"><input type="checkbox" value="venmo"> 📲 Venmo</label>
+          <label class="pcheck"><input type="checkbox" value="zelle"> 💜 Zelle</label>
+          <label class="pcheck"><input type="checkbox" value="paypal"> 🅿️ PayPal</label>
+          <label class="pcheck"><input type="checkbox" value="cashapp"> 💚 Cash App</label>
+          <label class="pcheck"><input type="checkbox" value="barter"> ⇄ Barter / Trade</label>
+        </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Fulfillment</label>
+          <select class="form-select" id="lFulfill" onchange="toggleShipping()">
+            <option value="local">Local pickup / Meetup</option>
+            <option value="shipping">I'll ship it myself</option>
+            <option value="both">Both available</option>
+            <option value="digital">Digital delivery</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Your ZIP Code</label>
+          <input class="form-input" id="lZip" placeholder="e.g. 27701">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">Display Name</label><input class="form-input" id="lName" placeholder="@username"></div>
+        <div class="form-group"><label class="form-label">Contact</label><input class="form-input" id="lContact" placeholder="you@email.com"></div>
+      </div>
+
+      <div style="background:var(--bg);border-radius:8px;padding:.75rem 1rem;font-size:.72rem;color:var(--text2);line-height:1.5;margin-bottom:1rem;">
+        ⚖️ By listing, you confirm this item complies with The Swap Yard's <a href="terms.html#prohibited" style="color:var(--teal)">Prohibited Items Policy</a> and <a href="terms.html" style="color:var(--teal)">Terms of Service</a>.
+      </div>
+      <button class="btn btn-ink form-submit" id="submitBtn" onclick="submitListing()">🚀 Publish Listing</button>
+    </div>
+
+    <!-- VENDOR DASHBOARD -->
+    <div class="vdash" id="vdash" style="display:none;">
+      <div class="vdash-head">
+        <div class="vdash-title">📊 Vendor Dashboard</div>
+        <div class="vdash-acts">
+          <button class="btn btn-outline btn-sm" onclick="showToast('📦','Opening shipping center...')">📦 Print Labels</button>
+          <button class="btn btn-outline btn-sm" onclick="showToast('🔗','Opening Stripe Connect...')">💳 Connect Stripe</button>
+          <button class="btn btn-outline btn-sm" onclick="showToast('📊','Opening analytics...')">📊 Analytics</button>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi"><div class="kpi-val" id="kpiListings">0</div><div class="kpi-label">My Listings</div><div class="kpi-delta">Active</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpiRevenue">$0</div><div class="kpi-label">Total Revenue</div><div class="kpi-delta">All time</div></div>
+        <div class="kpi"><div class="kpi-val" id="kpiOrders">0</div><div class="kpi-label">Total Orders</div><div class="kpi-delta"></div></div>
+        <div class="kpi"><div class="kpi-val" id="kpiRating">—</div><div class="kpi-label">Avg Rating</div><div class="kpi-delta">★★★★★</div></div>
+      </div>
+
+      <!-- Revenue Chart -->
+      <div class="rev-chart">
+        <div class="rev-chart-title">Revenue — Last 6 Months</div>
+        <div class="chart-bars" id="revChart">
+          <div class="bar-wrap"><div class="bar" style="height:35%"></div><div class="bar-label">Nov</div></div>
+          <div class="bar-wrap"><div class="bar" style="height:55%"></div><div class="bar-label">Dec</div></div>
+          <div class="bar-wrap"><div class="bar" style="height:40%"></div><div class="bar-label">Jan</div></div>
+          <div class="bar-wrap"><div class="bar" style="height:70%"></div><div class="bar-label">Feb</div></div>
+          <div class="bar-wrap"><div class="bar" style="height:60%"></div><div class="bar-label">Mar</div></div>
+          <div class="bar-wrap"><div class="bar" style="height:85%"></div><div class="bar-label">Apr</div></div>
+        </div>
+      </div>
+
+      <!-- Orders Table -->
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:.5rem;margin-top:1.5rem;">Recent Orders</div>
+      <div class="table-wrap">
+        <table class="otable">
+          <thead><tr><th>Order ID</th><th>Item</th><th>Buyer</th><th>Amount</th><th>Fee</th><th>Your Payout</th><th>Status</th><th>Tracking</th><th>Action</th></tr></thead>
+          <tbody id="ordersBody"><tr><td colspan="9" style="text-align:center;color:var(--text3);padding:2rem;font-size:.78rem;">No orders yet</td></tr></tbody>
+        </table>
+      </div>
+
+      <!-- Barter Report -->
+      <div class="barter-report">
+        <div class="br-title">⇄ Barter Activity & Tax Report <span style="font-family:'JetBrains Mono',monospace;font-size:.6rem;font-weight:400;color:var(--text3)">Tax Year 2026</span></div>
+        <div class="br-grid">
+          <div class="br-stat"><div class="br-val" id="brTotal">$0</div><div class="br-label">Total Barter FMV Received</div></div>
+          <div class="br-stat"><div class="br-val" id="brCount">0</div><div class="br-label">Barter Transactions</div></div>
+          <div class="br-stat"><div class="br-val" id="brThresh">$600</div><div class="br-label">IRS 1099-B Threshold</div></div>
+        </div>
+        <div class="br-alert">
+          <div class="br-alert-icon">⚠️</div>
+          <div>
+            <strong style="display:block;font-weight:700;margin-bottom:.2rem;">Barter Reporting Strategy</strong>
+            Under IRS rules, the fair market value of goods or services you receive in a barter exchange is taxable income. The Swap Yard tracks your barter FMV automatically.
+            <br><br>
+            <strong>Your obligations:</strong> Report all barter income on Schedule C or Schedule 1 of your tax return. If your total barter FMV for the year exceeds $600, The Swap Yard will issue a 1099-B form.
+            <br><br>
+            <strong>Best practice:</strong> Set FMV on every listing, confirm FMV at time of trade, and keep records of all exchanges. Export your barter log below for your accountant.
+            <br><br>
+            <button class="btn btn-outline btn-xs" onclick="showToast('📄','Barter report exported!')">📄 Export Barter Log (CSV)</button>
+            <a href="terms.html#barter" style="font-size:.72rem;color:var(--teal);margin-left:.75rem;">View full barter policy →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Verification Status -->
+      <div style="margin-top:1.5rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:.6rem;">Account Verification</div>
+        <div class="verify-strip">
+          <span class="v-badge v-done">✓ Email Verified</span>
+          <span class="v-badge v-todo" onclick="showToast('📱','Phone verification coming soon!')">+ Verify Phone</span>
+          <span class="v-badge v-todo" onclick="showToast('🪪','ID verification coming soon!')">+ Verify ID</span>
+          <span class="v-badge v-todo" onclick="showToast('✅','Certification application coming soon!')">+ Get Certified</span>
+          <span class="v-badge v-todo" onclick="stripeOnboard()">+ Connect Stripe Payouts</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AD FOOTER -->
+<div style="background:var(--surface);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:center;min-height:72px;padding:.5rem 1.5rem;position:relative;">
+  <span style="font-family:'JetBrains Mono',monospace;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;color:var(--border2);position:absolute;top:4px;left:8px;">Advertisement</span>
+  <div style="width:728px;max-width:100%;height:72px;border:1.5px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;gap:.75rem;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text3);">⚡ Footer Leaderboard 728×90 — Replace with AdSense or Sponsor code</div>
+</div>
+
+<!-- FOOTER -->
+
+<!-- ══════════════════════════════════════════════════════
+     SUSTAINABILITY SECTION
+     ══════════════════════════════════════════════════════ -->
+<section id="sustainability" style="padding:5rem 2rem;background:linear-gradient(135deg,rgba(5,150,105,.07),rgba(5,150,105,.03));border-top:1px solid rgba(5,150,105,.2);border-bottom:1px solid rgba(5,150,105,.2);" aria-labelledby="eco-title">
+  <div style="max-width:1100px;margin:0 auto;">
+
+    <div style="text-align:center;margin-bottom:3rem;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.2em;text-transform:uppercase;color:#059669;margin-bottom:.75rem;">♻️ Trade Green</div>
+      <h2 id="eco-title" style="font-size:clamp(1.8rem,3vw,2.8rem);font-weight:900;letter-spacing:-.03em;color:#111827;margin-bottom:1rem;">
+        Every Trade is a <span style="color:#059669;">Win for the Planet</span>
+      </h2>
+      <p style="font-size:1rem;color:#374151;max-width:600px;margin:0 auto;line-height:1.7;">
+        The Swap Yard is the eco-conscious alternative to buying new. When you trade, sell, or buy secondhand, you're keeping goods out of landfills and reducing demand for new manufacturing. That's real environmental impact — and it costs nothing extra.
+      </p>
+    </div>
+
+    <!-- Impact Stats -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1.5rem;margin-bottom:3rem;">
+      <div style="background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.03));border:1px solid rgba(5,150,105,.25);border-radius:12px;padding:1.75rem;text-align:center;">
+        <div style="font-size:2.5rem;font-weight:900;color:#059669;letter-spacing:-.03em;">0</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:#9ca3af;margin-top:.4rem;">Items Sent to Landfill</div>
+        <div style="font-size:.8rem;color:#374151;margin-top:.4rem;">Every item traded stays in circulation</div>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.03));border:1px solid rgba(5,150,105,.25);border-radius:12px;padding:1.75rem;text-align:center;">
+        <div style="font-size:2.5rem;font-weight:900;color:#059669;letter-spacing:-.03em;" id="eco-trades-count">0</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:#9ca3af;margin-top:.4rem;">Items Traded &amp; Rehomed</div>
+        <div style="font-size:.8rem;color:#374151;margin-top:.4rem;">Goods given a second life on The Swap Yard</div>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.03));border:1px solid rgba(5,150,105,.25);border-radius:12px;padding:1.75rem;text-align:center;">
+        <div style="font-size:2.5rem;font-weight:900;color:#059669;letter-spacing:-.03em;">♻️</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:#9ca3af;margin-top:.4rem;">Circular Economy</div>
+        <div style="font-size:.8rem;color:#374151;margin-top:.4rem;">Keeping goods in use, not in waste</div>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.03));border:1px solid rgba(5,150,105,.25);border-radius:12px;padding:1.75rem;text-align:center;">
+        <div style="font-size:2.5rem;font-weight:900;color:#059669;letter-spacing:-.03em;">🏙️</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:#9ca3af;margin-top:.4rem;">RTP Community</div>
+        <div style="font-size:.8rem;color:#374151;margin-top:.4rem;">Built for the Triangle's eco-aware community</div>
+      </div>
+    </div>
+
+    <!-- Why Trade Secondhand -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:3rem;">
+      <div style="background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02));border:1px solid rgba(5,150,105,.2);border-radius:12px;padding:1.75rem;">
+        <div style="font-size:1.5rem;margin-bottom:.75rem;">🌍</div>
+        <h3 style="font-size:.95rem;font-weight:700;color:#111827;margin-bottom:.5rem;">Less Manufacturing Waste</h3>
+        <p style="font-size:.82rem;color:#374151;line-height:1.6;">Every secondhand purchase means one fewer item manufactured — reducing the raw materials, energy, and emissions tied to producing something new.</p>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02));border:1px solid rgba(5,150,105,.2);border-radius:12px;padding:1.75rem;">
+        <div style="font-size:1.5rem;margin-bottom:.75rem;">🚯</div>
+        <h3 style="font-size:.95rem;font-weight:700;color:#111827;margin-bottom:.5rem;">Fewer Landfill Items</h3>
+        <p style="font-size:.82rem;color:#374151;line-height:1.6;">The average American generates over 4 pounds of trash per day. Trading goods on The Swap Yard directly diverts usable items from that waste stream.</p>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02));border:1px solid rgba(5,150,105,.2);border-radius:12px;padding:1.75rem;">
+        <div style="font-size:1.5rem;margin-bottom:.75rem;">💚</div>
+        <h3 style="font-size:.95rem;font-weight:700;color:#111827;margin-bottom:.5rem;">Community Over Consumption</h3>
+        <p style="font-size:.82rem;color:#374151;line-height:1.6;">Barter and trade build real relationships between neighbors. Swapping a guitar amp for a camera lens creates community in a way that clicking "Add to Cart" never can.</p>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02));border:1px solid rgba(5,150,105,.2);border-radius:12px;padding:1.75rem;">
+        <div style="font-size:1.5rem;margin-bottom:.75rem;">🔄</div>
+        <h3 style="font-size:.95rem;font-weight:700;color:#111827;margin-bottom:.5rem;">Circular Economy in Action</h3>
+        <p style="font-size:.82rem;color:#374151;line-height:1.6;">The Swap Yard operates on circular economy principles — goods flow between people who need them, not from factory to buyer to landfill.</p>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div style="text-align:center;background:linear-gradient(135deg,#111827,#1a3a2a);border-radius:16px;padding:3rem 2rem;color:#fff;">
+      <div style="font-size:2rem;margin-bottom:1rem;">🌱</div>
+      <h3 style="font-size:1.4rem;font-weight:900;margin-bottom:.75rem;letter-spacing:-.02em;">Trade Something Today</h3>
+      <p style="color:rgba(255,255,255,.75);font-size:.9rem;max-width:480px;margin:0 auto 2rem;line-height:1.7;">
+        Every listing you post, every trade you complete, every item you buy secondhand instead of new — it all adds up. Join the community making consumption more sustainable in the Research Triangle and across the nation.
+      </p>
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+        <button onclick="openNewListing?openNewListing():null" style="background:#059669;color:#fff;border:none;padding:.85rem 2rem;border-radius:8px;font-weight:700;font-size:.9rem;cursor:pointer;font-family:'Inter',sans-serif;">🌱 List Something</button>
+        <button onclick="window.scrollTo({top:0,behavior:'smooth'})" style="background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.25);padding:.85rem 2rem;border-radius:8px;font-weight:700;font-size:.9rem;cursor:pointer;font-family:'Inter',sans-serif;">Browse Listings →</button>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+// Animate eco trade count from live listings
+(async function loadEcoCount() {
+  try {
+    const el = document.getElementById('eco-trades-count');
+    if (!el) return;
+    // Use live listing count as proxy for items traded
+    const res  = await fetch(`${window.SUPABASE_URL}/rest/v1/listings?select=id&is_active=eq.true`, {
+      headers: { 'apikey': window.SUPABASE_ANON_KEY, 'Authorization': `Bearer ${window.SUPABASE_ANON_KEY}` }
+    });
+    const data = await res.json();
+    const count = data?.length || 0;
+    // Animate counter
+    let current = 0;
+    const target = count;
+    const step   = Math.ceil(target / 40);
+    const timer  = setInterval(() => {
+      current = Math.min(current + step, target);
+      el.textContent = current.toLocaleString();
+      if (current >= target) clearInterval(timer);
+    }, 50);
+  } catch (e) {}
+})();
+</script>
+
+<footer>
+  <div class="foot-inner">
+    <div>
+      <div class="foot-logo"><em>Swap</em>Yard</div>
+      <div class="foot-tagline">The nationwide open marketplace for goods, services, and trades — rooted in Research Triangle Park, NC.</div>
+    </div>
+    <div>
+      <div class="foot-col-title">Platform</div>
+      <ul class="foot-links">
+        <li><a href="#listings">Browse Listings</a></li>
+        <li><a href="#events">Events</a></li>
+        <li><a href="#plans">Pricing Plans</a></li>
+        <li><a href="#list">List an Item</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="foot-col-title">Legal & Safety</div>
+      <ul class="foot-links">
+        <li><a href="terms.html">Terms of Service</a></li>
+        <li><a href="terms.html#prohibited">Prohibited Items</a></li>
+        <li><a href="terms.html#safety">Safety Guidelines</a></li>
+        <li><a href="terms.html#barter">Barter Policy</a></li>
+        <li><a href="terms.html#privacy">Privacy Policy</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="foot-col-title">Contact</div>
+      <ul class="foot-links">
+        <li><a href="#">About The Swap Yard</a></li>
+        <li><a href="#">Advertise</a></li>
+        <li><a href="#">Support</a></li>
+        <li><a href="#">Certifications</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="foot-bottom">
+    <div class="foot-copy">© 2026 The Swap Yard · Durham, NC · Nationwide</div>
+    <div class="foot-naics">NAICS 519130 · Internet Publishing & Web Search Portals</div>
+  </div>
+</footer>
+
+<!-- LISTING DETAIL MODAL -->
+<div class="overlay" id="detailOverlay" onclick="closeDetail(event)">
+  <div class="modal modal-md" id="detailModal">
+    <div class="modal-head">
+      <div><div id="dTag" style="margin-bottom:.4rem"></div><div class="modal-title" id="dTitle"></div></div>
+      <button class="xbtn" onclick="document.getElementById('detailOverlay').classList.remove('on')">✕</button>
+    </div>
+    <div class="detail-seller" id="dSeller"></div>
+    <div class="detail-price" id="dPrice"></div>
+    <div style="font-size:.76rem;color:var(--text3);margin-bottom:.75rem;display:flex;align-items:center;gap:.3rem;" id="dLocation"></div>
+    <div class="detail-body" id="dBody"></div>
+    <div id="dBarter" style="font-size:.8rem;color:var(--teal);margin-bottom:.75rem;"></div>
+    <div class="detail-pills" id="dPills"></div>
+    <div id="dFMV" style="font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--text3);margin-bottom:1rem;"></div>
+    <div class="detail-actions">
+      <button class="btn btn-ink" onclick="contactSeller()">💬 Message Seller</button>
+      <button class="btn btn-teal" id="dTradeBtn" onclick="openTrade()">⇄ Propose Trade</button>
+      <button class="btn btn-violet" id="dPayBtn" onclick="doCheckout()" style="display:none">
+        💳 Pay $<span id="dPayAmt"></span>
+      </button>
+    </div>
+
+    <!-- PAYMENT CHANNELS — goods only, never barter/trade -->
+    <div id="dOtherPayPanel" style="display:none;margin-top:.85rem;border-radius:12px;overflow:hidden;border:1px solid rgba(5,150,105,.2);">
+      <div style="background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.03));padding:.85rem 1rem .6rem;">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:#059669;margin-bottom:.5rem;">Also pay via</div>
+        <div id="dOtherPayMethods" style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.6rem;"></div>
+      </div>
+      <!-- QR CODES section — shown when vendor has uploaded them -->
+      <div id="dQRSection" style="display:none;padding:.9rem 1rem;border-top:1px solid rgba(5,150,105,.15);background:rgba(255,255,255,.6);">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:.65rem;">Scan to Pay</div>
+        <div id="dQRCodes" style="display:flex;gap:.85rem;flex-wrap:wrap;align-items:flex-start;"></div>
+      </div>
+      <div style="padding:.75rem 1rem;border-top:1px solid rgba(5,150,105,.1);background:rgba(5,150,105,.02);">
+        <p style="font-size:.74rem;color:var(--text2);line-height:1.5;margin-bottom:.5rem;">
+          Message the seller to confirm details. Stripe card checkout above is also available for secure protected payments.
+        </p>
+        <button class="btn btn-ink btn-sm" onclick="contactSeller()">💬 Message to Arrange →</button>
+      </div>
+    </div>
+    <div class="stripe-note" id="dStripeNote" style="display:none;">
+      💳 Powered by Stripe · Secure Checkout · <a href="terms.html#disputes" style="color:var(--teal)">Buyer protection →</a>
+    </div><!-- Other payment channels panel -->
+    <div id="dOtherPay" style="display:none;margin-top:.75rem;background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02));border:1px solid rgba(5,150,105,.2);border-radius:10px;padding:1rem;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:.6rem;">Vendor also accepts</div>
+      <div id="dOtherPayMethods" style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.6rem;"></div>
+      <p style="font-size:.75rem;color:var(--text2);line-height:1.5;margin-bottom:.5rem;">Message the seller to arrange payment via their preferred channel. Stripe card checkout above is also available for secure protected payments.</p>
+      <button class="btn btn-ink btn-sm" onclick="contactSeller()" style="font-size:.75rem;">💬 Message to Arrange →</button>
+    </div>
+    <div class="stripe-note" id="dStripeNote" style="display:none">💳 Powered by Stripe · Secure checkout · <a href="terms.html#disputes" style="color:var(--teal)">Buyer protection →</a></div>
+
+    <!-- REVIEWS -->
+    <div class="reviews-wrap">
+      <div class="rev-summary">
+        <div class="rev-avg" id="dAvg">—</div>
+        <div><div class="stars" id="dStars"></div><div id="dRevCt" style="font-size:.7rem;color:var(--text3);margin-top:.1rem;"></div></div>
+      </div>
+      <div id="dRevList"></div>
+      <div class="write-rev" id="dWriteRev" style="display:none">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:.4rem;">Leave a Review</div>
+        <div class="stars" id="revStarInput" style="font-size:1.3rem;"></div>
+        <textarea class="rev-ta" id="revText" placeholder="Share your experience with this seller…"></textarea>
+        <button class="btn btn-ink btn-sm" onclick="submitReview()">Submit Review</button>
+      </div>
+    </div>
+    <div id="dDeleteWrap" style="margin-top:.75rem;display:none;">
+      <button class="btn btn-coral" style="width:100%" onclick="deleteListing()">🗑 Delete My Listing</button>
+    </div>
+  </div>
+</div>
+
+<!-- TRADE MODAL -->
+<div class="overlay" id="tradeOverlay" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="modal modal-sm">
+    <div class="modal-head"><div class="modal-title">⇄ Propose a Trade</div><button class="xbtn" onclick="document.getElementById('tradeOverlay').classList.remove('on')">✕</button></div>
+    <p style="font-size:.82rem;color:var(--text3);margin-bottom:1rem;line-height:1.6;">Describe what you're offering in exchange. All barter exchanges are at your own risk.</p>
+    <div class="form-group"><label class="form-label">What You're Offering</label><input class="form-input" id="tradeItem" placeholder="e.g. DJ equipment, 2 guitar lessons…"></div>
+    <div class="form-group"><label class="form-label">Your Item's FMV ($)</label><input class="form-input" type="number" id="tradeFMV" placeholder="Estimated fair market value"><div class="form-hint">Both parties must report FMV as taxable income. <a href="terms.html#barter" style="color:var(--teal)">Barter policy →</a></div></div>
+    <div class="form-group"><label class="form-label">Message to Seller</label><textarea class="form-ta" id="tradeMsg" placeholder="Tell them more about your offer…" style="min-height:70px;"></textarea></div>
+    <div style="background:rgba(0,200,150,.06);border:1.5px solid rgba(0,200,150,.18);border-radius:8px;padding:.75rem 1rem;font-size:.74rem;color:var(--text2);margin-bottom:.75rem;line-height:1.6;">⚠️ Barter exchanges are NOT covered by buyer protection. Meet in a safe public location. <a href="terms.html#barter" style="color:var(--teal)">Read policy →</a></div>
+    <button class="btn btn-ink" style="width:100%" onclick="sendTrade()">Send Trade Proposal</button>
+  </div>
+</div>
+
+<!-- EVENT FORM MODAL -->
+<div class="overlay" id="eventOverlay" onclick="if(event.target===this)this.classList.remove('on')">
+  <div class="modal modal-md">
+    <div class="modal-head"><div class="modal-title">📅 Post an Event</div><button class="xbtn" onclick="document.getElementById('eventOverlay').classList.remove('on')">✕</button></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Event Title</label><input class="form-input" id="evTitle" placeholder="e.g. Neighborhood Yard Sale"></div>
+      <div class="form-group">
+        <label class="form-label">Event Type</label>
+        <select class="form-select" id="evType">
+          <option value="yard_sale">🏡 Yard Sale</option>
+          <option value="estate_sale">🏛 Estate Sale</option>
+          <option value="pop_up">🎪 Pop-Up Market</option>
+          <option value="swap_meet">⇄ Swap Meet</option>
+          <option value="auction">🔨 Auction</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Date & Time</label><input class="form-input" type="datetime-local" id="evDate"></div>
+      <div class="form-group"><label class="form-label">End Time (optional)</label><input class="form-input" type="datetime-local" id="evEnd"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Address</label><input class="form-input" id="evAddress" placeholder="123 Main St, Durham, NC 27701"></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">City</label><select class="form-select" id="evCity"><option>Durham</option><option>Raleigh</option><option>Chapel Hill</option><option>Cary</option><option>Apex</option><option>Morrisville</option><option>Other</option></select></div>
+      <div class="form-group"><label class="form-label">ZIP Code</label><input class="form-input" id="evZip" placeholder="27701"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Description</label><textarea class="form-ta" id="evDesc" placeholder="What will be for sale? Any specialties? Admission cost? Accepts cash, card, trade?"></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Contact Name</label><input class="form-input" id="evContact" placeholder="Your name"></div>
+      <div class="form-group"><label class="form-label">Contact Email / Phone</label><input class="form-input" id="evContactInfo" placeholder="info@example.com"></div>
+    </div>
+    <div style="background:var(--bg);border-radius:8px;padding:.7rem 1rem;font-size:.72rem;color:var(--text3);line-height:1.5;margin-bottom:1rem;">By posting an event you agree to our <a href="terms.html" style="color:var(--teal)">Terms of Service</a>. Meet-up events are at participants' own risk.</div>
+    <button class="btn btn-ink" style="width:100%;padding:.85rem;" onclick="submitEvent()">📅 Post Event</button>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="overlay" id="authOverlay" onclick="closeAuthEv(event)">
+  <div class="modal modal-sm">
+    <div class="modal-head"><div class="modal-title" id="authModalTitle">Welcome back</div><button class="xbtn" onclick="document.getElementById('authOverlay').classList.remove('on')">✕</button></div>
+    <div class="auth-tabs">
+      <button class="auth-tab on" id="atIn" onclick="switchAuth('in')">Sign In</button>
+      <button class="auth-tab" id="atUp" onclick="switchAuth('up')">Sign Up</button>
+    </div>
+    <p style="font-size:.8rem;color:var(--text3);margin-bottom:1.25rem;" id="authSub">Sign in to list items, message sellers, and track orders.</p>
+    <div class="auth-err" id="authErr"></div>
+    <div class="auth-ok" id="authOk"></div>
+    <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="authEmail" type="email" placeholder="you@email.com"></div>
+    <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="authPw" type="password" placeholder="••••••••"></div>
+    <button class="btn btn-ink" style="width:100%;padding:.85rem;font-size:.85rem;" id="authBtn2" onclick="doAuth()">Sign In</button>
+    <div style="margin-top:.6rem;"><button class="btn btn-outline" style="width:100%;font-size:.78rem;" onclick="doGoogle()">🔑 Continue with Google</button></div>
+  </div>
+</div>
+
+<!-- MESSAGES PANEL -->
+<div class="msg-panel" id="msgPanel">
+  <div class="msg-ph">
+    <div class="msg-ph-title">💬 Messages</div>
+    <button class="xbtn" onclick="toggleMsg()">✕</button>
+  </div>
+  <div class="msg-tabs">
+    <button class="msg-tab on" onclick="msgTab('inbox',this)">Inbox</button>
+    <button class="msg-tab" onclick="msgTab('trades',this)">Trades</button>
+    <button class="msg-tab" onclick="msgTab('sent',this)">Sent</button>
+  </div>
+  <div id="msgThreadList" class="msg-list">
+    <div class="msg-thread on" onclick="openConvo('c1','@pedalpete','Re: Vintage Peugeot Bike')">
+      <div class="msg-th"><span class="msg-tname">@pedalpete</span><span class="msg-ttime">2h ago</span></div>
+      <div class="msg-tprev"><div class="msg-unread"></div>Still interested in the bike?</div>
+    </div>
+    <div class="msg-thread" onclick="openConvo('c2','@designstudio_k','Trade: Logo Design')">
+      <div class="msg-th"><span class="msg-tname">@designstudio_k</span><span class="msg-ttime">Yesterday</span></div>
+      <div class="msg-tprev">Trade offer: Logo design for…</div>
+    </div>
+    <div class="msg-thread" onclick="openConvo('c3','@buildright','Order #SW-2041')">
+      <div class="msg-th"><span class="msg-tname">@buildright</span><span class="msg-ttime">3 days ago</span></div>
+      <div class="msg-tprev">Your order has shipped! Tracking: 1Z999…</div>
+    </div>
+  </div>
+  <div class="msg-convo" id="msgConvo">
+    <div class="msg-ch">
+      <button class="msg-back" onclick="closeConvo()">←</button>
+      <div><div class="msg-ctitle" id="convName">@pedalpete</div><div class="msg-csub" id="convSub">Re: Vintage Peugeot Bike</div></div>
+    </div>
+    <div class="msg-body" id="convBody">
+      <div class="bubble recv">Hi! Is the bike still available?<div class="bubble-time">10:15 AM</div></div>
+      <div class="bubble sent">Yes! Are you buying or trading?<div class="bubble-time">10:22 AM</div></div>
+      <div class="bubble recv">Looking to trade — I have DJ gear.<div class="bubble-time">10:30 AM</div></div>
+      <div class="trade-card">
+        <div class="trade-card-label">⇄ Trade Proposal</div>
+        <p>Pioneer DDJ-400 DJ Controller · FMV: ~$280 · In exchange for the Peugeot PX10 bike (FMV: $300)</p>
+        <div class="trade-card-acts">
+          <button class="btn btn-teal btn-xs" onclick="showToast('✅','Trade accepted! See barter report for tax info.')">Accept</button>
+          <button class="btn btn-outline btn-xs" onclick="showToast('↩','Counter offer sent')">Counter</button>
+          <button class="btn btn-coral btn-xs" onclick="showToast('❌','Trade declined')">Decline</button>
+        </div>
+      </div>
+    </div>
+    <div class="msg-input-row">
+      <textarea class="msg-ta" id="msgIn" placeholder="Type a message…" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
+      <button class="msg-send" onclick="sendMsg()">↑</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="tIcon"></span><span id="tMsg"></span></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  KEYS — replace these three values with your actual keys
+//  from Supabase (Settings → API) and Stripe (Developers → API Keys)
+// ══════════════════════════════════════════════════════════
+const SB_URL  = 'REPLACE_WITH_YOUR_SUPABASE_URL';
+const SB_KEY  = 'REPLACE_WITH_YOUR_SUPABASE_ANON_KEY';
+const STR_KEY = 'REPLACE_WITH_YOUR_STRIPE_PUBLISHABLE_KEY';
+
+const { createClient } = supabase;
+const sb     = (SB_URL.startsWith('https://') && SB_KEY.length > 20)
+               ? createClient(SB_URL, SB_KEY)
+               : { from:()=>({select:()=>({data:[],error:null})}), auth:{onAuthStateChange:()=>{},signInWithPassword:()=>({}),signUp:()=>({}),signOut:()=>({})}, storage:{from:()=>({upload:()=>({}),getPublicUrl:()=>({data:{publicUrl:''}})}) } };
+const stripe = (STR_KEY.startsWith('pk_') && window.Stripe)
+               ? Stripe(STR_KEY)
+               : null;
+
+let user = null, listings = [], events = [], activeFilt = 'all', activeArea = 'all', activeEvFilt = 'all', revRating = 0, currentListing = null, authMode = 'in';
+
+// ── AUTH ─────────────────────────────────────────────────
+sb.auth.onAuthStateChange((ev, session) => {
+  user = session?.user || null;
+  refreshNav();
+  refreshAuthNote();
+  if (ev === 'SIGNED_IN') { closeAuth(); showToast('👋','Welcome!'); loadListings(); }
+  if (ev === 'SIGNED_OUT') { showToast('👋','Signed out.'); loadListings(); }
+});
+
+function refreshNav() {
+  const btn = document.getElementById('authBtn');
+  const em = document.getElementById('navEmail');
+  const mb = document.getElementById('msgBtn');
+  const vd = document.getElementById('vdash');
+  if (user) {
+    btn.textContent = 'Sign Out'; btn.onclick = () => sb.auth.signOut();
+    em.textContent = user.email.split('@')[0];
+    mb.style.display = 'inline-flex';
+    vd.style.display = 'block';
+    loadVendorStats();
+  } else {
+    btn.textContent = 'Sign In'; btn.onclick = openAuth;
+    em.textContent = ''; mb.style.display = 'none'; vd.style.display = 'none';
+  }
+}
+
+function refreshAuthNote() {
+  document.getElementById('authNote').classList.toggle('on', !user);
+}
+
+function openAuth() { document.getElementById('authOverlay').classList.add('on'); setTimeout(()=>document.getElementById('authEmail').focus(),120); }
+function closeAuthEv(e) { if (e.target===document.getElementById('authOverlay')) document.getElementById('authOverlay').classList.remove('on'); }
+function closeAuth() { document.getElementById('authOverlay').classList.remove('on'); }
+
+function switchAuth(mode) {
+  authMode = mode;
+  document.getElementById('atIn').classList.toggle('on', mode==='in');
+  document.getElementById('atUp').classList.toggle('on', mode==='up');
+  document.getElementById('authModalTitle').textContent = mode==='in'?'Welcome back':'Create account';
+  document.getElementById('authSub').textContent = mode==='in'?'Sign in to list items, message sellers, and track orders.':'Free account — no credit card required.';
+  document.getElementById('authBtn2').textContent = mode==='in'?'Sign In':'Create Account';
+  document.getElementById('authErr').classList.remove('on');
+  document.getElementById('authOk').classList.remove('on');
+}
+
+async function doAuth() {
+  const email = document.getElementById('authEmail').value.trim();
+  const pw = document.getElementById('authPw').value;
+  const err = document.getElementById('authErr'), ok = document.getElementById('authOk'), btn = document.getElementById('authBtn2');
+  err.classList.remove('on'); ok.classList.remove('on');
+  btn.textContent = '⏳ Please wait…'; btn.disabled = true;
+  try {
+    const r = authMode==='in' ? await sb.auth.signInWithPassword({email,password:pw}) : await sb.auth.signUp({email,password:pw});
+    if (r.error) { err.textContent = r.error.message; err.classList.add('on'); }
+    else if (authMode==='up') { ok.textContent = '✅ Check your email to confirm, then sign in.'; ok.classList.add('on'); }
+  } catch(e) { err.textContent = 'Something went wrong.'; err.classList.add('on'); }
+  btn.textContent = authMode==='in'?'Sign In':'Create Account'; btn.disabled = false;
+}
+
+async function doGoogle() { await sb.auth.signInWithOAuth({provider:'google'}); }
+
+// ── LOAD LISTINGS ─────────────────────────────────────────
+async function loadListings() {
+  document.getElementById('listingsGrid').innerHTML = '<div class="loading"><span class="spin"></span>Loading…</div>';
+  try {
+    const {data,error} = await sb.from('listings').select('*').eq('status','active').order('created_at',{ascending:false});
+    if (error) throw error;
+    listings = data || [];
+  } catch(e) { listings = DEMO_LISTINGS; }
+  document.getElementById('hStatListings').textContent = listings.length || '—';
+  renderListings();
+}
+
+function getTags(l) {
+  const t = [];
+  if (['goods','digital'].includes(l.type)) t.push('goods');
+  if (l.type==='service') t.push('service');
+  if (l.type==='digital') t.push('digital');
+  if (l.accepts?.includes('barter')) t.push('barter');
+  if (l.accepts?.includes('crypto')) t.push('crypto');
+  if (l.certified) t.push('certified');
+  if (l.local_only || !l.ships) t.push('local');
+  return t;
+}
+
+function doSearch() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const filtered = listings.filter(l =>
+    !q || l.title?.toLowerCase().includes(q) || l.description?.toLowerCase().includes(q) || l.category?.toLowerCase().includes(q)
+  );
+  renderListingsData(filtered);
+}
+
+function renderListings() { renderListingsData(listings); }
+
+function renderListingsData(data) {
+  const grid = document.getElementById('listingsGrid');
+  let filtered = activeFilt === 'all' ? data : data.filter(l => getTags(l).includes(activeFilt));
+  if (activeArea !== 'all' && activeArea !== 'nearby') {
+    filtered = filtered.filter(l => l.city?.toLowerCase().replace(' ','_') === activeArea || l.zip_code?.startsWith(AREA_ZIPS[activeArea]||''));
+  }
+
+  const sponsored = `<div class="lcard lcard-sponsored" onclick="showToast('🏠','Redirecting to sponsor...')"><div class="lcard-sponsored-tag">Sponsored</div><span class="tag tag-goods" style="margin-bottom:.7rem">Partner</span><div class="lcard-img" style="background:rgba(184,242,65,.06);border:1.5px dashed rgba(184,242,65,.2)">🏠</div><div class="lcard-title"></div><div class="lcard-desc">Everything for your next project. Power tools, paint, lumber and more.</div><div class="lcard-footer"><div class="lcard-price" style="color:#5a8a00">Shop Now →</div><div class="lcard-seller">homedepot.com</div></div></div>`;
+
+  if (!filtered.length) { grid.innerHTML = '<div class="loading">No listings found — try broadening your search.</div>'; return; }
+
+  const cards = filtered.map(l => {
+    const price = l.price_usd ? `$${parseFloat(l.price_usd).toFixed(2)}` : (l.accepts?.includes('barter') ? 'Trade Only' : 'Contact for price');
+    const tc = {goods:'tag-goods',service:'tag-service',digital:'tag-digital',event:'tag-event'}[l.type]||'tag-goods';
+    const tl = {goods:'Goods',service:'Service',digital:'Digital',event:'Event'}[l.type]||l.type;
+    const isOwn = user && l.user_id === user.id;
+    const certBadge = l.certified ? `<span class="tag tag-certified" style="margin-bottom:.4rem;display:inline-flex">✅ Verified</span><br>` : '';
+    const ratingRow = l.avg_rating ? `<div class="rating-row"><span class="stars-sm">${'★'.repeat(Math.round(l.avg_rating))}${'☆'.repeat(5-Math.round(l.avg_rating))}</span><span class="rating-num">${parseFloat(l.avg_rating).toFixed(1)}</span><span class="rating-ct">(${l.review_count||0})</span></div>` : '';
+    const locRow = l.city ? `<div class="lcard-location">📍 ${esc(l.city)}${l.ships?'  · 📦 Ships':'  · 🤝 Local only'}</div>` : '';
+    return `<div class="lcard" onclick="openDetail('${l.id}')">${isOwn?'<span class="lcard-own">Yours</span>':''}<span class="tag ${tc}" style="margin-bottom:.7rem">${tl}</span>${certBadge}<div class="lcard-img">${l.emoji||'📦'}</div><div class="lcard-title">${esc(l.title)}</div><div class="lcard-desc">${esc((l.description||'').slice(0,70))}${(l.description||'').length>70?'…':''}</div>${ratingRow}${locRow}<div class="lcard-footer"><div><div class="lcard-price">${price}</div></div><div class="lcard-seller">${esc(l.seller_name||'')}</div></div><div class="lcard-actions"><button class="btn btn-ink" onclick="event.stopPropagation();openDetail('${l.id}')">Buy / Contact</button>${l.accepts?.includes('barter')?`<button class="btn btn-teal" onclick="event.stopPropagation();openDetail('${l.id}')">Trade</button>`:''}</div></div>`;
+  });
+
+  if (cards.length >= 3) cards.splice(2, 0, sponsored); else cards.push(sponsored);
+  grid.innerHTML = cards.join('');
+}
+
+const AREA_ZIPS = { durham:'277', raleigh:'276', chapel_hill:'275', cary:'275', apex:'275', morrisville:'275' };
+
+function filt(f, btn) {
+  activeFilt = f;
+  document.querySelectorAll('.filt').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderListings();
+}
+
+function setArea(a, btn) {
+  activeArea = a;
+  document.querySelectorAll('.loc-chip').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if (a === 'nearby') {
+    navigator.geolocation?.getCurrentPosition(pos => { showToast('📍',`Showing listings near you`); renderListings(); }, () => showToast('⚠️','Location access denied'));
+  } else { renderListings(); }
+}
+
+// ── LISTING DETAIL ────────────────────────────────────────
+function openDetail(id) {
+  const l = listings.find(x=>String(x.id)===String(id));
+  if (!l) return;
+  currentListing = l;
+  const tc = {goods:'tag-goods',service:'tag-service',digital:'tag-digital'}[l.type]||'tag-goods';
+  const tl = {goods:'Goods',service:'Service',digital:'Digital'}[l.type]||l.type;
+  const price = l.price_usd?`$${parseFloat(l.price_usd).toFixed(2)}`:(l.accepts?.includes('barter')?'Trade Only':'Contact for price');
+  const sName = l.seller_name||'anonymous';
+  document.getElementById('dTag').innerHTML = `<span class="tag ${tc}">${tl}</span>${l.certified?'&nbsp;<span class="tag tag-certified">✅ Verified Specialist</span>':''}`;
+  document.getElementById('dTitle').textContent = l.title;
+  document.getElementById('dPrice').textContent = price;
+  document.getElementById('dBody').textContent = l.description||'';
+  document.getElementById('dBarter').textContent = l.barter_for?`⇄ Open to trading for: ${l.barter_for}`:'';
+  document.getElementById('dLocation').innerHTML = l.city ? `📍 ${esc(l.city)}, ${l.state||'NC'}&nbsp;&nbsp;${l.ships?'📦 Ships nationally':'🤝 Local pickup only'}` : '';
+  document.getElementById('dFMV').textContent = l.fmv_usd ? `FMV: $${parseFloat(l.fmv_usd).toFixed(2)} (${l.fmv_source||'seller estimate'}) — used for barter tax reporting` : '';
+  document.getElementById('dSeller').innerHTML = `<div class="seller-av">${sName.replace('@','').charAt(0).toUpperCase()}</div><div><div class="seller-name">${esc(sName)}</div><div class="seller-meta">${esc(l.category||'General')} · ${(l.avg_rating||0).toFixed(1)}★ · ${l.review_count||0} reviews</div></div>`;
+  document.getElementById('dPills').innerHTML = (l.accepts||[]).map(getPill).join('');
+  // Payment options are available on ANY listing type (goods, service,
+  // digital, barter, trade) as long as the vendor has set a price.
+  // This covers "trade + cash" and "barter + cash difference" scenarios.
+  const hasPrice = l.price_usd && parseFloat(l.price_usd) > 0;
+
+  // ── Stripe "Pay with Card" button — any listing with a price ──
+  const payBtn = document.getElementById('dPayBtn');
+  if (payBtn) {
+    payBtn.style.display = hasPrice ? 'inline-flex' : 'none';
+    if (hasPrice) document.getElementById('dPayAmt').textContent = parseFloat(l.price_usd).toFixed(2);
+  }
+
+  // ── Stripe note — shown whenever Pay button is shown ──────
+  const stripeNote = document.getElementById('dStripeNote');
+  if (stripeNote) stripeNote.style.display = hasPrice ? 'block' : 'none';
+
+  // ── Other payment channels (Venmo/Zelle/CashApp/Cash/PayPal) ──
+  const otherPanel = document.getElementById('dOtherPayPanel');
+  if (!hasPrice) {
+    if (otherPanel) otherPanel.style.display = 'none';
+  } else {
+
+  // Payment methods excluding card (shown via Stripe button)
+  // and excluding barter/trade (those are handled by Propose Trade)
+  const excludeFromPanel = new Set(['card', 'barter', 'trade']);
+  const otherMethods = (l.accepts||[]).filter(a => !excludeFromPanel.has(a));
+
+  const otherDiv  = document.getElementById('dOtherPayMethods');
+  const qrSection = document.getElementById('dQRSection');
+  const qrDiv     = document.getElementById('dQRCodes');
+  const methodMeta = {
+    cash:    { label:'💵 Cash',     c:'#b8a000' },
+    venmo:   { label:'📲 Venmo',    c:'#3d95ce' },
+    zelle:   { label:'💜 Zelle',    c:'#6d1ed4' },
+    paypal:  { label:'🅿️ PayPal',  c:'#003087' },
+    cashapp: { label:'💚 Cash App', c:'#00a33c' },
+  };
+
+  if (otherMethods.length && otherPanel) {
+    otherDiv.innerHTML = otherMethods.map(m => {
+      const meta = methodMeta[m] || { label: m, c: 'var(--text3)' };
+      return `<span style="font-size:.75rem;font-weight:600;padding:.22rem .65rem;border-radius:20px;border:1px solid ${meta.c};color:${meta.c};background:${meta.c}15;">${meta.label}</span>`;
+    }).join('');
+    otherPanel.style.display = 'block';
+
+    // QR codes — only venmo, zelle, cashapp
+    const qrMethods  = ['venmo','zelle','cashapp'];
+    const vendorQRs  = l.vendor_qr_codes || {};
+    const qrEntries  = qrMethods.filter(m => otherMethods.includes(m) && vendorQRs[m]);
+    if (qrEntries.length && qrSection && qrDiv) {
+      qrDiv.innerHTML = qrEntries.map(m => {
+        const meta = methodMeta[m];
+        return `<div style="text-align:center;">
+          <img src="${vendorQRs[m]}" alt="${meta.label} QR"
+               style="width:100px;height:100px;border-radius:8px;border:2px solid ${meta.c};object-fit:contain;background:#fff;padding:4px;"
+               onerror="this.parentElement.style.display='none'">
+          <div style="font-size:.68rem;font-weight:600;color:${meta.c};margin-top:.3rem;">${meta.label}</div>
+        </div>`;
+      }).join('');
+      qrSection.style.display = 'block';
+    } else if (qrSection) {
+      qrSection.style.display = 'none';
+    }
+  } else if (otherPanel) {
+    otherPanel.style.display = 'none';
+  }
+  }
+
+  document.getElementById('dTradeBtn').style.display = l.accepts?.includes('barter') ? 'inline-flex' : 'none';
+  document.getElementById('dDeleteWrap').style.display = (user&&l.user_id===user.id)?'block':'none';
+  renderDetailReviews(l);
+  document.getElementById('detailOverlay').classList.add('on');
+}
+
+function closeDetail(e) { if(e.target===document.getElementById('detailOverlay')) document.getElementById('detailOverlay').classList.remove('on'); }
+
+function getPill(a) {
+  return {
+    cash:    '<span class="pill pill-cash">💵 Cash</span>',
+    card:    '<span class="pill pill-card">💳 Card</span>',
+    venmo:   '<span class="pill" style="border-color:#3d95ce;color:#3d95ce;">📲 Venmo</span>',
+    zelle:   '<span class="pill" style="border-color:#6d1ed4;color:#6d1ed4;">💜 Zelle</span>',
+    paypal:  '<span class="pill" style="border-color:#003087;color:#003087;">🅿️ PayPal</span>',
+    cashapp: '<span class="pill" style="border-color:#00d54b;color:#00a33c;">💚 Cash App</span>',
+    barter:  '<span class="pill pill-barter">⇄ Barter</span>',
+    trade:   '<span class="pill pill-barter">🔄 Trade</span>',
+    crypto:  '',
+  }[a]||'';
+}
+
+// ── REVIEWS ───────────────────────────────────────────────
+function starHTML(n, interactive=false) {
+  return [1,2,3,4,5].map(i=>`<span class="star${i<=n?' on':''}" ${interactive?`onclick="setRevRating(${i})"`:''}>${i<=n?'★':'☆'}</span>`).join('');
+}
+
+function setRevRating(n) {
+  revRating = n;
+  document.getElementById('revStarInput').innerHTML = starHTML(n, true);
+}
+
+function renderDetailReviews(l) {
+  const revs = DEMO_REVIEWS.filter(r=>String(r.listing_id)===String(l.id));
+  const avg = revs.length ? revs.reduce((a,r)=>a+r.rating,0)/revs.length : 0;
+  document.getElementById('dAvg').textContent = avg ? avg.toFixed(1) : '—';
+  document.getElementById('dStars').innerHTML = avg ? starHTML(Math.round(avg)) : '';
+  document.getElementById('dRevCt').textContent = revs.length ? `${revs.length} review${revs.length!==1?'s':''}` : 'No reviews yet';
+  document.getElementById('dRevList').innerHTML = revs.map(r=>`<div class="rev-item"><div class="rev-header"><div><span class="rev-author">${esc(r.author)}</span>&nbsp;<span style="font-size:.75rem">${starHTML(r.rating)}</span></div><span class="rev-date">${r.date}</span></div><div class="rev-text">${esc(r.text)}</div></div>`).join('') || '';
+  const wr = document.getElementById('dWriteRev');
+  wr.style.display = user ? 'block' : 'none';
+  revRating = 0;
+  document.getElementById('revStarInput').innerHTML = starHTML(0, true);
+  document.getElementById('revText').value = '';
+}
+
+async function submitReview() {
+  if (!user) { showToast('🔒','Sign in to leave a review.'); return; }
+  if (!revRating) { showToast('⚠️','Select a star rating.'); return; }
+  const text = document.getElementById('revText').value.trim();
+  if (!text) { showToast('⚠️','Write your review.'); return; }
+  DEMO_REVIEWS.push({ listing_id: currentListing.id, author: '@'+user.email.split('@')[0], rating: revRating, text, date: 'Just now' });
+  renderDetailReviews(currentListing);
+  showToast('⭐','Review submitted! Thank you.');
+}
+
+// ── MESSAGING ─────────────────────────────────────────────
+function toggleMsg() { document.getElementById('msgPanel').classList.toggle('on'); document.getElementById('unreadDot').classList.remove('show'); }
+function msgTab(t, btn) { document.querySelectorAll('.msg-tab').forEach(b=>b.classList.remove('on')); btn.classList.add('on'); }
+function openConvo(id, name, sub) {
+  document.getElementById('msgThreadList').style.display = 'none';
+  document.getElementById('msgConvo').classList.add('on');
+  document.getElementById('convName').textContent = name;
+  document.getElementById('convSub').textContent = sub;
+}
+function closeConvo() { document.getElementById('msgThreadList').style.display='block'; document.getElementById('msgConvo').classList.remove('on'); }
+function sendMsg() {
+  const ta = document.getElementById('msgIn'); const t = ta.value.trim(); if(!t) return;
+  const body = document.getElementById('convBody');
+  const b = document.createElement('div'); b.className='bubble sent'; b.innerHTML=`${esc(t)}<div class="bubble-time">Just now</div>`;
+  body.appendChild(b); body.scrollTop=body.scrollHeight; ta.value='';
+}
+function contactSeller() {
+  if (!user) { showToast('🔒','Sign in to message sellers.'); openAuth(); return; }
+  document.getElementById('detailOverlay').classList.remove('on');
+  toggleMsg(); showToast('💬','New conversation started!');
+}
+function openTrade() {
+  if (!user) { showToast('🔒','Sign in to propose trades.'); openAuth(); return; }
+  document.getElementById('detailOverlay').classList.remove('on');
+  document.getElementById('tradeOverlay').classList.add('on');
+}
+function sendTrade() {
+  const item = document.getElementById('tradeItem').value.trim();
+  if (!item) { showToast('⚠️','Describe what you\'re offering.'); return; }
+  document.getElementById('tradeOverlay').classList.remove('on');
+  showToast('⇄','Trade proposal sent! Check your messages.');
+  document.getElementById('unreadDot').classList.add('show');
+}
+
+// ── STRIPE ────────────────────────────────────────────────
+async function doCheckout() {
+  if (!user) { showToast('🔒','Sign in to pay.'); openAuth(); return; }
+  showToast('💳','Opening secure checkout…');
+  try {
+    const r = await fetch('/.netlify/functions/create-checkout', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ amount: parseFloat(currentListing.price_usd), title: currentListing.title, listingId: currentListing.id, vendorStripeId: currentListing.vendor_stripe_id||null, vendorPlanTier: 'free', buyerEmail: user.email }) });
+    if (!r.ok) throw new Error();
+    const {url} = await r.json(); window.location.href = url;
+  } catch(e) { showToast('⚠️','Stripe not configured yet — see setup guide.'); }
+}
+
+async function stripeOnboard() {
+  if (!user) { openAuth(); return; }
+  showToast('🔗','Opening Stripe Connect setup…');
+  try {
+    const r = await fetch('/.netlify/functions/create-connect-account', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ userId: user.id, email: user.email }) });
+    if (!r.ok) throw new Error();
+    const {onboardingUrl} = await r.json(); window.location.href = onboardingUrl;
+  } catch(e) { showToast('⚠️','Stripe Connect not configured yet — see setup guide.'); }
+}
+
+const up = new URLSearchParams(window.location.search);
+if (up.get('payment')==='success') showToast('✅','Payment successful! Check your messages.');
+if (up.get('payment')==='cancelled') showToast('↩','Payment cancelled.');
+if (up.get('stripe')==='success') { showToast('✅','Stripe Connect set up! You can now receive payouts.'); }
+
+
+// ── SUBMIT LISTING ─────────────────────────────────────────
+document.querySelectorAll('.pcheck').forEach(label => {
+  label.querySelector('input')?.addEventListener('change', () => {
+    const hasBarter = [...document.querySelectorAll('.pcheck input:checked')].some(i=>i.value==='barter');
+    document.getElementById('barterGroup').style.display = hasBarter ? 'block' : 'none';
+  });
+});
+
+async function submitListing() {
+  if (!user) { showToast('🔒','Sign in first.'); openAuth(); return; }
+  const title = document.getElementById('lTitle').value.trim();
+  const type  = document.getElementById('lType').value;
+  const desc  = document.getElementById('lDesc').value.trim();
+  if (!title||!type||!desc) { showToast('⚠️','Fill in Title, Type, and Description.'); return; }
+  const btn = document.getElementById('submitBtn'); btn.textContent='⏳ Publishing…'; btn.disabled=true;
+  const accepts = [...document.querySelectorAll('.pcheck input:checked')].map(i=>i.value);
+  const zip = document.getElementById('lZip').value.trim();
+  const city = zip ? (Object.entries(AREA_ZIPS).find(([c,z])=>zip.startsWith(z))?.[0]?.replace('_',' ')||'Durham') : 'Durham';
+
+  const {data:newListing, error} = await sb.from('listings').insert({
+    user_id:      user.id,
+    title,
+    description:  desc,
+    type,
+    category:     document.getElementById('lCat').value||'Other',
+    price_usd:    document.getElementById('lPrice').value?parseFloat(document.getElementById('lPrice').value):null,
+    fmv_usd:      document.getElementById('lFMV').value?parseFloat(document.getElementById('lFMV').value):null,
+    fmv_source:   document.getElementById('lFMVSource').value,
+    accepts:      accepts.length?accepts:['cash'],
+    barter_for:   document.getElementById('lBarter').value.trim()||null,
+    barter_fmv:   document.getElementById('lBarterFMV').value?parseFloat(document.getElementById('lBarterFMV').value):null,
+    zip_code:     zip||null,
+    city:         city,
+    state:        'NC',
+    ships:        ['shipping','both'].includes(document.getElementById('lFulfill').value),
+    local_only:   document.getElementById('lFulfill').value==='local',
+    seller_name:  document.getElementById('lName').value.trim()?'@'+document.getElementById('lName').value.trim().replace(/^@/,''):'@'+user.email.split('@')[0],
+    seller_contact: document.getElementById('lContact').value.trim()||user.email,
+    emoji:        {goods:'📦',digital:'💾',service:'🛠️'}[type]||'📦',
+  }).select('id').single();
+
+  if (error) { btn.textContent='🚀 Publish Listing'; btn.disabled=false; showToast('⚠️','Error: '+error.message); return; }
+
+  // Upload images if any were selected
+  const imgInput = document.getElementById('lImages');
+  if (imgInput?.files?.length && newListing?.id) {
+    btn.textContent = '📸 Uploading photos…';
+    await uploadListingImages(newListing.id, user.id, imgInput.files);
+  }
+
+  btn.textContent='🚀 Publish Listing'; btn.disabled=false;
+  showToast('🚀','Listing published!');
+  ['lTitle','lDesc','lPrice','lFMV','lName','lContact','lBarter','lBarterFMV','lZip'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('lType').value=''; document.getElementById('lCat').value='';
+  document.querySelectorAll('.pcheck input').forEach(i=>i.checked=false);
+  // Clear image previews
+  if (imgInput) imgInput.value='';
+  document.getElementById('lImgPreview').innerHTML='';
+  document.getElementById('lImgCount').textContent='';
+  imgUploadState.files = [];
+  loadListings();
+  setTimeout(()=>document.getElementById('listings').scrollIntoView({behavior:'smooth'}),500);
+}
+
+// ── VENDOR STATS ──────────────────────────────────────────
+async function loadVendorStats() {
+  if (!user) return;
+  try {
+    const {data:ls} = await sb.from('listings').select('id').eq('user_id',user.id);
+    document.getElementById('kpiListings').textContent = ls?.length||0;
+  } catch(e){}
+}
+
+async function deleteListing() {
+  if (!currentListing||!user) return;
+  if (!confirm('Delete this listing?')) return;
+  const {error} = await sb.from('listings').delete().eq('id',currentListing.id);
+  if (error) { showToast('⚠️',error.message); return; }
+  showToast('🗑','Listing deleted.');
+  document.getElementById('detailOverlay').classList.remove('on');
+  loadListings();
+}
+
+// ── EVENTS ────────────────────────────────────────────────
+async function loadEvents() {
+  document.getElementById('eventsGrid').innerHTML = '<div class="loading"><span class="spin"></span>Loading events…</div>';
+  try {
+    const {data,error} = await sb.from('events').select('*').eq('status','upcoming').order('event_date',{ascending:true});
+    if (error) throw error;
+    events = data || [];
+  } catch(e) { events = DEMO_EVENTS; }
+  document.getElementById('hStatEvents').textContent = events.length;
+  renderEvents();
+}
+
+function filtEvent(f, btn) {
+  activeEvFilt = f;
+  document.querySelectorAll('#events .filt').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderEvents();
+}
+
+function renderEvents() {
+  const grid = document.getElementById('eventsGrid');
+  const filtered = activeEvFilt==='all' ? events : events.filter(e=>e.event_type===activeEvFilt);
+  if (!filtered.length) { grid.innerHTML = '<div class="loading">No events found. Be the first to post one!</div>'; return; }
+  const typeLabel = {yard_sale:'🏡 Yard Sale',estate_sale:'🏛 Estate Sale',pop_up:'🎪 Pop-Up',swap_meet:'⇄ Swap Meet',auction:'🔨 Auction',other:'📅 Event'};
+  const typeClass = {yard_sale:'et-yard',estate_sale:'et-estate',pop_up:'et-popup',swap_meet:'et-popup',auction:'et-estate',other:'et-yard'};
+  grid.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1px;background:var(--border);border:1.5px solid var(--border);border-radius:14px;overflow:hidden;">${filtered.map(ev=>{
+    const d = new Date(ev.event_date);
+    const mon = d.toLocaleString('en-US',{month:'short'}).toUpperCase();
+    const day = d.getDate();
+    const time = d.toLocaleString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+    return `<div class="ecard" onclick="showToast('📅','${esc(ev.title)} — ${esc(ev.city||'RTP')}')"><div class="ecard-date-block"><div class="ecard-month">${mon}</div><div class="ecard-day">${day}</div></div><div class="ecard-title">${esc(ev.title)}</div><div class="ecard-loc">📍 ${esc(ev.address||ev.city||'RTP Area')} · ${time}</div><div class="ecard-desc">${esc((ev.description||'').slice(0,100))}${(ev.description||'').length>100?'…':''}</div><div class="ecard-footer"><span class="ecard-type ${typeClass[ev.event_type]||'et-yard'}">${typeLabel[ev.event_type]||'Event'}</span><span style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text3)">${ev.admission?`$${ev.admission} admission`:'Free entry'}</span></div></div>`;
+  }).join('')}</div>`;
+}
+
+function openEventForm() {
+  if (!user) { showToast('🔒','Sign in to post an event.'); openAuth(); return; }
+  document.getElementById('eventOverlay').classList.add('on');
+}
+
+async function submitEvent() {
+  if (!user) { openAuth(); return; }
+  const title = document.getElementById('evTitle').value.trim();
+  const date  = document.getElementById('evDate').value;
+  const addr  = document.getElementById('evAddress').value.trim();
+  if (!title||!date) { showToast('⚠️','Title and date are required.'); return; }
+  const {error} = await sb.from('events').insert({
+    user_id:      user.id,
+    title,
+    description:  document.getElementById('evDesc').value.trim(),
+    event_type:   document.getElementById('evType').value,
+    event_date:   date,
+    end_date:     document.getElementById('evEnd').value||null,
+    address:      addr,
+    city:         document.getElementById('evCity').value,
+    state:        'NC',
+    zip_code:     document.getElementById('evZip').value.trim(),
+    contact_name: document.getElementById('evContact').value.trim(),
+    contact_email:document.getElementById('evContactInfo').value.trim(),
+    status:       'upcoming',
+  });
+  if (error) { showToast('⚠️','Error: '+error.message); return; }
+  document.getElementById('eventOverlay').classList.remove('on');
+  showToast('📅','Event posted!');
+  loadEvents();
+}
+
+// ── HELPERS ───────────────────────────────────────────────
+function esc(s) { if(!s)return''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+let tt;
+function showToast(icon,msg) {
+  const t = document.getElementById('toast'); document.getElementById('tIcon').textContent=icon; document.getElementById('tMsg').textContent=msg;
+  t.classList.add('on'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('on'),3500);
+}
+function goList() { document.getElementById('list').scrollIntoView({behavior:'smooth'}); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ document.querySelectorAll('.overlay.on').forEach(o=>o.classList.remove('on')); document.getElementById('msgPanel').classList.remove('on'); }});
+document.getElementById('authPw').addEventListener('keydown',e=>{ if(e.key==='Enter')doAuth(); });
+
+// ── DEMO DATA ─────────────────────────────────────────────
+const DEMO_LISTINGS = [
+  {id:1,type:'goods',title:'Sony A7III Camera Body',description:'Excellent condition, low shutter count (~12k). Original box included. Perfect for photo or video production.',price_usd:750,fmv_usd:720,fmv_source:'accepts:['cash','card','barter'],barter_for:'Camera lenses, gimbals, or audio gear',seller_name:'@lensman_jay',city:'Cary',state:'NC',ships:true,emoji:'📷',avg_rating:4.8,review_count:12,certified:false},
+  {id:2,type:'service',title:'Full-Stack Web Development',description:'React, Node.js, and database work. Block of 5 hours, can be split across sessions. Portfolio available. Remote/online — available nationwide.',price_usd:300,fmv_usd:300,fmv_source:'retail_price',accepts:['cash','card','barter'],barter_for:'Design work or bookkeeping services',seller_name:'@devduke',city:'Durham',state:'NC',ships:false,local_only:false,emoji:'💻',avg_rating:4.9,review_count:31,certified:true},
+  {id:3,type:'goods',title:'Vintage Peugeot PX10 Road Bike',description:'1984 Peugeot PX10. Fully serviced with new cables and brake pads. Great commuter or weekend rider.',price_usd:null,fmv_usd:300,fmv_source:'seller_estimate',accepts:['barter'],barter_for:'DJ equipment, surfboard, or acoustic guitar',seller_name:'@pedalpete',city:'Chapel Hill',state:'NC',ships:false,local_only:true,emoji:'🚲',avg_rating:4.5,review_count:6},
+  {id:4,type:'service',title:'Brand Identity & Logo Package',description:'3 logo concepts with unlimited revisions. Delivered as SVG, PNG, and PDF. 5-day turnaround. Remote — ships nationwide.',price_usd:200,fmv_usd:200,fmv_source:'retail_price',accepts:['cash','card'],seller_name:'@designstudio_k',city:'Raleigh',state:'NC',ships:true,emoji:'🎨',avg_rating:5.0,review_count:18,certified:true},
+  {id:5,type:'goods',title:'Mid-Century Walnut Writing Desk',description:'Solid walnut, 58" wide. Minor surface wear, structurally perfect. Must arrange pickup.',price_usd:450,fmv_usd:500,fmv_source:'accepts:['cash','barter'],barter_for:'Quality office chair or shelving unit',seller_name:'@midcentury_mike',city:'Durham',state:'NC',ships:false,local_only:true,emoji:'🪵',avg_rating:4.7,review_count:4},
+  {id:6,type:'service',title:'Guitar Lessons — 4-Session Block',description:'15 years experience. Rock, blues, and fingerstyle. Beginner to advanced. In-person (Triangle area) or online.',price_usd:120,fmv_usd:120,fmv_source:'retail_price',accepts:['cash','card','barter'],barter_for:'Piano lessons or music equipment',seller_name:'@guitarwithgracie',city:'Durham',state:'NC',ships:false,emoji:'🎸',avg_rating:5.0,review_count:22,certified:true},
+  {id:7,type:'goods',title:'DeWalt 20V Power Tool Bundle',description:'Drill, circular saw, jigsaw, two batteries + charger. All tools fully functional.',price_usd:280,fmv_usd:260,fmv_source:'accepts:['cash','card'],seller_name:'@buildright',city:'Apex',state:'NC',ships:true,emoji:'🔧',avg_rating:4.6,review_count:9},
+  {id:8,type:'digital',title:'Lightroom Preset Collection (200+)',description:'Curated presets for portraits, landscapes, and street photography. Instant download.',price_usd:25,fmv_usd:25,fmv_source:'retail_price',accepts:['cash','card'],seller_name:'@presetlab',city:'Morrisville',state:'NC',ships:false,emoji:'🌄',avg_rating:4.4,review_count:37},
+];
+
+const DEMO_REVIEWS = [
+  {listing_id:1,author:'@buyer_chris',rating:5,text:'Exactly as described, packed perfectly, shipped fast. Highly recommend!',date:'Mar 12, 2026'},
+  {listing_id:1,author:'@photofan_j',rating:5,text:'Great deal. Camera is mint condition, seller was super responsive.',date:'Feb 3, 2026'},
+  {listing_id:2,author:'@startup_sara',rating:5,text:'Incredible developer. Finished everything ahead of schedule and under budget.',date:'Apr 1, 2026'},
+  {listing_id:4,author:'@newbrand_co',rating:5,text:'Absolutely stunning logo. Went above and beyond. 10/10.',date:'Mar 28, 2026'},
+  {listing_id:6,author:'@beginnermax',rating:5,text:'Amazing teacher! Learned more in 4 sessions than months of YouTube videos.',date:'Apr 10, 2026'},
+];
+
+const DEMO_EVENTS = [
+  {id:'e1',title:'Northgate Neighborhood Yard Sale',event_type:'yard_sale',event_date:'2026-05-10T08:00',end_date:'2026-05-10T14:00',address:'123 Northgate Dr',city:'Durham',state:'NC',zip_code:'27701',description:'Multi-family yard sale! Furniture, clothing, tools, kids items, books, and household goods. Cash and Venmo accepted.',admission:0,contact_name:'Sarah M.'},
+  {id:'e2',title:'Historic Estate Liquidation Sale',event_type:'estate_sale',event_date:'2026-05-17T09:00',end_date:'2026-05-18T17:00',address:'4521 Heritage Oak Ln',city:'Raleigh',state:'NC',zip_code:'27609',description:'Full estate liquidation. Antiques, fine china, Mid-Century furniture, artwork, jewelry, and more. Professional estate sale company on site.',admission:0,contact_name:'Triangle Estate Sales'},
+  {id:'e3',title:'RTP Tech & Electronics Swap Meet',event_type:'swap_meet',event_date:'2026-05-24T10:00',address:'2500 Meridian Pkwy',city:'Durham',state:'NC',zip_code:'27713',description:'Bring your old tech, components, cables, and gear to trade or sell. Laptops, phones, audio equipment, gaming gear welcome.',admission:0,contact_name:'RTP Makers Club'},
+  {id:'e4',title:'Chapel Hill Artisan Pop-Up Market',event_type:'pop_up',event_date:'2026-06-07T11:00',end_date:'2026-06-07T18:00',address:'Franklin Street Plaza',city:'Chapel Hill',state:'NC',zip_code:'27514',description:'Local artists, craftspeople, and makers selling handmade goods. Jewelry, ceramics, paintings, textiles, and more.',admission:0,contact_name:'CH Arts Collective'},
+  {id:'e5',title:'Cary Home Goods & Furniture Auction',event_type:'auction',event_date:'2026-06-14T13:00',address:'101 Cary Town Blvd',city:'Cary',state:'NC',zip_code:'27511',description:'Live auction of quality home furnishings, appliances, and collectibles. Preview Friday 5–8 PM. Online bidding also available.',admission:5,contact_name:'Cary Auction House'},
+  {id:'e6',title:'Apex Summer Neighborhood Swap',event_type:'swap_meet',event_date:'2026-06-21T09:00',end_date:'2026-06-21T13:00',address:'Apex Community Park',city:'Apex',state:'NC',zip_code:'27502',description:'Free community swap event. Bring up to 10 items to trade. What you don\'t trade you can sell or donate. Family friendly.',admission:0,contact_name:'Apex Community Events'},
+];
+
+// ── INIT ─────────────────────────────────────────────────
+loadListings();
+loadEvents();
+</script>
+
+<script>
+// PWA Service Worker Registration
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(reg => {
+        console.log('[SW] Registered');
+        reg.addEventListener('updatefound', () => {
+          const w = reg.installing;
+          w.addEventListener('statechange', () => {
+            if (w.state === 'installed' && navigator.serviceWorker.controller) {
+              const b = document.createElement('div');
+              b.setAttribute('role','alert');
+              b.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#7c3aed;color:#fff;padding:.85rem 1.5rem;display:flex;justify-content:space-between;align-items:center;z-index:9999;font-family:Inter,sans-serif;font-size:.85rem';
+              b.innerHTML = '<span>🔄 A new version is available.</span><button onclick="location.reload()" style="background:#fff;color:#7c3aed;border:none;padding:.4rem .9rem;border-radius:6px;font-weight:700;cursor:pointer">Update</button>';
+              document.body.appendChild(b);
+            }
+          });
+        });
+      }).catch(e => console.error('[SW] Error:', e));
+  });
+}
+</script>
+
+<script>
+// Cookie Consent
+(function() {
+  const CONSENT_KEY = 'tsy_cookie_consent';
+  const stored = localStorage.getItem(CONSENT_KEY);
+  if (stored) return;
+  const banner = document.createElement('div');
+  banner.id = 'cookie-banner';
+  banner.setAttribute('role','dialog');
+  banner.setAttribute('aria-modal','true');
+  banner.setAttribute('aria-label','Cookie preferences');
+  banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:10000;background:#111827;border-top:1px solid #374151;padding:1.1rem 2rem;font-family:Inter,sans-serif';
+  banner.innerHTML = `
+    <div style="max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
+      <div style="flex:1;min-width:240px">
+        <div style="font-weight:700;color:#f9fafb;font-size:.85rem;margin-bottom:.2rem">🍪 Cookie Preferences</div>
+        <div style="color:#9ca3af;font-size:.75rem">We use essential cookies to make the site work and optional analytics to improve it. <a href="/terms.html#privacy" style="color:#a855f7">Privacy Policy</a></div>
+      </div>
+      <div style="display:flex;gap:.6rem;flex-shrink:0">
+        <button onclick="window.tsyCookies('reject')" style="background:transparent;color:#9ca3af;border:1px solid #374151;padding:.45rem .9rem;border-radius:6px;cursor:pointer;font-size:.75rem;font-weight:600;font-family:inherit">Essential Only</button>
+        <button onclick="window.tsyCookies('accept')" style="background:#7c3aed;color:#fff;border:none;padding:.45rem .9rem;border-radius:6px;cursor:pointer;font-size:.75rem;font-weight:700;font-family:inherit">Accept All</button>
+      </div>
+    </div>`;
+  document.body.appendChild(banner);
+  window.tsyCookies = (choice) => {
+    localStorage.setItem(CONSENT_KEY, JSON.stringify({ v:'1.0', analytics: choice === 'accept', accepted_at: new Date().toISOString() }));
+    document.getElementById('cookie-banner')?.remove();
+  };
+})();
+</script>
+
+<script>
+// Age Gate (18+)
+(function() {
+  if (sessionStorage.getItem('tsy_age_ok') === '1') return;
+  const gate = document.createElement('div');
+  gate.id = 'age-gate';
+  gate.setAttribute('role','dialog');
+  gate.setAttribute('aria-modal','true');
+  gate.setAttribute('aria-labelledby','age-gate-title');
+  gate.style.cssText = 'position:fixed;inset:0;background:rgba(10,10,15,.97);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1.5rem;font-family:Inter,sans-serif';
+  gate.innerHTML = `
+    <div style="background:#ffffff;border:1px solid rgba(5,150,105,.2);border-radius:16px;padding:2.5rem;max-width:420px;width:100%;text-align:center">
+      <div style="font-size:2.5rem;margin-bottom:1rem">🔒</div>
+      <h1 id="age-gate-title" style="font-size:1.3rem;font-weight:900;color:#111827;margin-bottom:.5rem"><span style="color:#7c3aed">The Swap</span> Yard</h1>
+      <p style="color:#374151;font-size:.88rem;line-height:1.6;margin-bottom:1.5rem">This marketplace involves financial transactions. You must be <strong>18 years or older</strong> to use this platform.</p>
+      <div style="display:flex;flex-direction:column;gap:.75rem">
+        <button onclick="document.getElementById('age-gate').remove();sessionStorage.setItem('tsy_age_ok','1');document.body.style.overflow=''" style="background:#7c3aed;color:#fff;border:none;padding:.9rem;border-radius:8px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit">I am 18 or older — Enter</button>
+        <a href="https://www.google.com" style="display:block;background:transparent;color:#9ca3af;border:1px solid #e5e7eb;padding:.75rem;border-radius:8px;font-size:.82rem;text-decoration:none">I am under 18 — Exit</a>
+      </div>
+    </div>`;
+  document.body.appendChild(gate);
+  document.body.style.overflow = 'hidden';
+})();
+</script>
+
+<script>
+// Wishlist
+window.getWishlist = () => { try { return JSON.parse(localStorage.getItem('tsy_wishlist')||'[]'); } catch { return []; } };
+window.toggleWishlist = (id) => {
+  const wl = getWishlist();
+  const i  = wl.indexOf(id);
+  if (i === -1) { wl.push(id); showToast('❤️','Added to wishlist'); }
+  else          { wl.splice(i,1); showToast('🤍','Removed from wishlist'); }
+  localStorage.setItem('tsy_wishlist', JSON.stringify(wl));
+  document.querySelectorAll('[data-wishlist="'+id+'"]').forEach(b => {
+    b.textContent = wl.includes(id) ? '❤️' : '🤍';
+    b.setAttribute('aria-pressed', wl.includes(id).toString());
+  });
+  // Sync to Supabase if logged in
+  if (window.currentUser?.id) {
+    const action = wl.includes(id) ? 'wishlist_add' : 'wishlist_remove';
+    fetch('/.netlify/functions/search', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action, userId: currentUser.id, listingId: id }) }).catch(()=>{});
+  }
+};
+window.isWishlisted = (id) => getWishlist().includes(id);
+</script>
+<!-- ═══════════════════════════════════════════════════════════
+     The Swap Yard — AI Vendor Support Widget
+     
+     HOW TO INSTALL:
+     Paste this entire block just before the closing </body> tag
+     in vendor-dashboard.html (and optionally index.html)
+     ═══════════════════════════════════════════════════════════ -->
+
+<!-- Support Button (fixed bottom-right) -->
+<button
+  id="support-toggle"
+  onclick="toggleSupport()"
+  aria-label="Open vendor support chat"
+  style="
+    position:fixed; bottom:1.5rem; left:1.5rem; z-index:500;
+    width:52px; height:52px; border-radius:50%;
+    background:linear-gradient(135deg,#7c3aed,#a855f7);
+    border:none; cursor:pointer; box-shadow:0 4px 20px rgba(124,58,237,.4);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.4rem; transition:transform .2s;
+  "
+  onmouseover="this.style.transform='scale(1.1)'"
+  onmouseout="this.style.transform='scale(1)'">
+  🤖
+</button>
+
+<!-- Support Chat Panel -->
+<div
+  id="support-panel"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Vendor support chat"
+  style="
+    position:fixed; bottom:5rem; left:1.5rem; z-index:500;
+    width:360px; max-width:calc(100vw - 2rem);
+    background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02));
+    border:1px solid rgba(5,150,105,.2); border-radius:16px;
+    box-shadow:0 20px 60px rgba(0,0,0,.15);
+    display:none; flex-direction:column;
+    font-family:'Inter',sans-serif; overflow:hidden;
+    max-height:520px;
+  ">
+
+  <!-- Header -->
+  <div style="
+    background:linear-gradient(135deg,#111827,#2d1b69);
+    padding:1rem 1.25rem; display:flex; align-items:center;
+    justify-content:space-between;
+  ">
+    <div style="display:flex; align-items:center; gap:.6rem;">
+      <div style="
+        width:34px; height:34px; border-radius:50%;
+        background:linear-gradient(135deg,#7c3aed,#a855f7);
+        display:flex; align-items:center; justify-content:center;
+        font-size:1rem;
+      ">🤖</div>
+      <div>
+        <div style="font-weight:700; font-size:.88rem; color:#fff;">Swap Yard Support</div>
+        <div style="font-size:.68rem; color:#a855f7; font-family:'JetBrains Mono',monospace; letter-spacing:.05em;">AI ASSISTANT · ALWAYS ON</div>
+      </div>
+    </div>
+    <button
+      onclick="toggleSupport()"
+      style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;"
+      aria-label="Close support chat">✕</button>
+  </div>
+
+  <!-- Messages -->
+  <div
+    id="support-messages"
+    role="log"
+    aria-live="polite"
+    style="
+      flex:1; overflow-y:auto; padding:1rem;
+      display:flex; flex-direction:column; gap:.75rem;
+      min-height:220px; max-height:300px;
+    ">
+    <!-- Welcome message -->
+    <div class="msg-agent" style="
+      background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04));
+      border:1px solid rgba(5,150,105,.2);
+      border-radius:10px 10px 10px 2px;
+      padding:.75rem 1rem; font-size:.82rem;
+      color:#111827; line-height:1.5; max-width:90%;
+    ">
+      👋 Hi! I'm your Swap Yard support assistant. I can help with listings, shipping, payments, taxes, and more.<br><br>
+      What can I help you with today?
+    </div>
+  </div>
+
+  <!-- Quick Questions -->
+  <div id="quick-questions" style="padding:.5rem 1rem; display:flex; flex-wrap:wrap; gap:.4rem;">
+    <button onclick="askQuick('How do I set up shipping?')" style="font-size:.7rem;padding:.3rem .6rem;border-radius:20px;border:1px solid rgba(5,150,105,.3);background:rgba(5,150,105,.06);color:#059669;cursor:pointer;font-family:inherit;">📦 Shipping setup</button>
+    <button onclick="askQuick('How do I complete my tax setup?')" style="font-size:.7rem;padding:.3rem .6rem;border-radius:20px;border:1px solid rgba(124,58,237,.3);background:rgba(124,58,237,.06);color:#7c3aed;cursor:pointer;font-family:inherit;">💳 Tax setup</button>
+    <button onclick="askQuick('What are the platform fees?')" style="font-size:.7rem;padding:.3rem .6rem;border-radius:20px;border:1px solid rgba(5,150,105,.3);background:rgba(5,150,105,.06);color:#059669;cursor:pointer;font-family:inherit;">💰 Fees</button>
+    <button onclick="askQuick('How does barter reporting work?')" style="font-size:.7rem;padding:.3rem .6rem;border-radius:20px;border:1px solid rgba(124,58,237,.3);background:rgba(124,58,237,.06);color:#7c3aed;cursor:pointer;font-family:inherit;">🧾 Barter taxes</button>
+    <button onclick="askQuick('How do I boost my listing?')" style="font-size:.7rem;padding:.3rem .6rem;border-radius:20px;border:1px solid rgba(217,119,6,.3);background:rgba(217,119,6,.06);color:#d97706;cursor:pointer;font-family:inherit;">🚀 Boost listing</button>
+  </div>
+
+  <!-- Input -->
+  <div style="padding:.75rem 1rem; border-top:1px solid rgba(5,150,105,.15); display:flex; gap:.5rem;">
+    <input
+      id="support-input"
+      type="text"
+      placeholder="Ask anything about The Swap Yard…"
+      aria-label="Support message input"
+      style="
+        flex:1; padding:.6rem .85rem;
+        background:#ffffff; border:1px solid rgba(5,150,105,.25);
+        border-radius:8px; font-size:.82rem; font-family:'Inter',sans-serif;
+        color:#111827; outline:none;
+      "
+      onkeydown="if(event.key==='Enter')sendSupportMessage()"
+      onfocus="this.style.borderColor='#7c3aed'"
+      onblur="this.style.borderColor='rgba(5,150,105,.25)'"
+    >
+    <button
+      id="support-send"
+      onclick="sendSupportMessage()"
+      aria-label="Send message"
+      style="
+        background:linear-gradient(135deg,#7c3aed,#a855f7);
+        color:#fff; border:none; border-radius:8px;
+        width:36px; height:36px; cursor:pointer;
+        display:flex; align-items:center; justify-content:center;
+        font-size:1rem; flex-shrink:0; transition:opacity .15s;
+      ">➤</button>
+  </div>
+</div>
+
+<script>
+// ── SUPPORT AGENT STATE ───────────────────────────────────────
+const supportState = {
+  open:    false,
+  history: [],
+  typing:  false,
+};
+
+// ── TOGGLE PANEL ─────────────────────────────────────────────
+function toggleSupport() {
+  const panel  = document.getElementById('support-panel');
+  const btn    = document.getElementById('support-toggle');
+  supportState.open = !supportState.open;
+
+  panel.style.display = supportState.open ? 'flex' : 'none';
+  btn.textContent     = supportState.open ? '✕' : '🤖';
+  btn.style.background = supportState.open
+    ? 'linear-gradient(135deg,#374151,#6b7280)'
+    : 'linear-gradient(135deg,#7c3aed,#a855f7)';
+
+  if (supportState.open) {
+    document.getElementById('support-input').focus();
+  }
+}
+
+// ── QUICK QUESTION SHORTCUT ───────────────────────────────────
+function askQuick(question) {
+  document.getElementById('support-input').value = question;
+  // Hide quick questions after first use
+  document.getElementById('quick-questions').style.display = 'none';
+  sendSupportMessage();
+}
+
+// ── SEND MESSAGE ─────────────────────────────────────────────
+async function sendSupportMessage() {
+  if (supportState.typing) return;
+
+  const input   = document.getElementById('support-input');
+  const message = input.value.trim();
+  if (!message) return;
+
+  input.value = '';
+  document.getElementById('quick-questions').style.display = 'none';
+
+  // Add user bubble
+  appendMessage(message, 'user');
+
+  // Add typing indicator
+  const typingId = appendTyping();
+  supportState.typing = true;
+
+  // Disable send button
+  const sendBtn = document.getElementById('support-send');
+  sendBtn.style.opacity = '.4';
+  sendBtn.disabled = true;
+
+  try {
+    const res = await fetch('/.netlify/functions/support-agent', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message,
+        conversationHistory: supportState.history,
+        userId: window.currentUser?.id || null,
+      }),
+    });
+
+    const data = await res.json();
+
+    // Remove typing indicator
+    document.getElementById(typingId)?.remove();
+
+    // Add agent reply
+    appendMessage(data.reply, 'agent');
+
+    // Show escalation banner if needed
+    if (data.shouldEscalate) {
+      appendEscalation(data.escalationEmail);
+    }
+
+    // Update conversation history for context
+    supportState.history.push(
+      { role: 'user',      content: message        },
+      { role: 'assistant', content: data.reply      }
+    );
+
+    // Keep history to last 10 exchanges
+    if (supportState.history.length > 20) {
+      supportState.history = supportState.history.slice(-20);
+    }
+
+  } catch (e) {
+    document.getElementById(typingId)?.remove();
+    appendMessage("I'm having trouble connecting right now. Please email **support@theswapyard.com** and we'll get back to you shortly.", 'agent');
+  }
+
+  supportState.typing = false;
+  sendBtn.style.opacity = '1';
+  sendBtn.disabled = false;
+  input.focus();
+}
+
+// ── APPEND USER MESSAGE ───────────────────────────────────────
+function appendMessage(text, role) {
+  const container = document.getElementById('support-messages');
+  const div = document.createElement('div');
+
+  // Convert **bold** and newlines
+  const formatted = text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+
+  if (role === 'user') {
+    div.style.cssText = `
+      align-self:flex-end;
+      background:linear-gradient(135deg,#7c3aed,#a855f7);
+      color:#fff; border-radius:10px 10px 2px 10px;
+      padding:.65rem .9rem; font-size:.82rem;
+      line-height:1.5; max-width:85%;
+    `;
+    div.innerHTML = formatted;
+  } else {
+    div.style.cssText = `
+      background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04));
+      border:1px solid rgba(5,150,105,.2);
+      border-radius:10px 10px 10px 2px;
+      padding:.75rem 1rem; font-size:.82rem;
+      color:#111827; line-height:1.5; max-width:92%;
+    `;
+    div.innerHTML = formatted;
+  }
+
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+// ── TYPING INDICATOR ─────────────────────────────────────────
+function appendTyping() {
+  const container = document.getElementById('support-messages');
+  const id = 'typing-' + Date.now();
+  const div = document.createElement('div');
+  div.id = id;
+  div.style.cssText = `
+    background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04));
+    border:1px solid rgba(5,150,105,.2);
+    border-radius:10px 10px 10px 2px;
+    padding:.75rem 1rem; font-size:.82rem;
+    color:#9ca3af; max-width:80%;
+  `;
+  div.innerHTML = `
+    <span style="display:inline-flex;gap:3px;align-items:center;">
+      <span style="animation:bounce .8s infinite .0s">●</span>
+      <span style="animation:bounce .8s infinite .15s">●</span>
+      <span style="animation:bounce .8s infinite .3s">●</span>
+    </span>
+    <style>
+      @keyframes bounce {
+        0%,80%,100%{transform:translateY(0);opacity:.4}
+        40%{transform:translateY(-4px);opacity:1}
+      }
+    </style>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return id;
+}
+
+// ── ESCALATION BANNER ─────────────────────────────────────────
+function appendEscalation(email) {
+  const container = document.getElementById('support-messages');
+  const div = document.createElement('div');
+  div.style.cssText = `
+    background:rgba(217,119,6,.07); border:1px solid rgba(217,119,6,.25);
+    border-radius:8px; padding:.75rem 1rem; font-size:.78rem; color:#374151;
+  `;
+  div.innerHTML = `
+    <strong style="color:#d97706;display:block;margin-bottom:.25rem">👤 Want to talk to a person?</strong>
+    Email us at <a href="mailto:${email || 'support@theswapyard.com'}"
+      style="color:#7c3aed;font-weight:600;">${email || 'support@theswapyard.com'}</a>
+    and we'll get back to you within 24 hours.
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+// Close panel on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && supportState.open) toggleSupport();
+});
+</script>
+
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// The Swap Yard — Product Image Upload
+// Handles: file selection, drag-and-drop, live previews,
+//          cover badge, removal, and upload to Supabase Storage
+// ══════════════════════════════════════════════════════════════
+
+const imgUploadState = { files: [] };
+
+function renderImgPreviews() {
+  const preview  = document.getElementById('lImgPreview');
+  const countEl  = document.getElementById('lImgCount');
+  if (!preview) return;
+  preview.innerHTML = '';
+
+  imgUploadState.files.forEach((file, i) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = [
+        'position:relative',
+        'width:90px',
+        'height:90px',
+        'border-radius:10px',
+        'overflow:hidden',
+        'flex-shrink:0',
+        'background:#f3f4f6',
+        i === 0
+          ? 'border:2px solid rgba(5,150,105,.6);box-shadow:0 0 0 2px rgba(5,150,105,.15)'
+          : 'border:1px solid rgba(5,150,105,.2)',
+      ].join(';');
+
+      wrap.innerHTML = `
+        <img src="${e.target.result}"
+             alt="Product photo ${i + 1}"
+             style="width:100%;height:100%;object-fit:cover;display:block;">
+        ${i === 0 ? `
+          <div style="
+            position:absolute;bottom:0;left:0;right:0;
+            background:rgba(5,150,105,.85);color:#fff;
+            font-size:.52rem;text-align:center;padding:.18rem;
+            font-family:'JetBrains Mono',monospace;letter-spacing:.08em;
+            text-transform:uppercase;font-weight:600;
+          ">Cover</div>` : ''}
+        <button
+          onclick="removeImg(${i})"
+          aria-label="Remove photo ${i + 1}"
+          title="Remove"
+          style="
+            position:absolute;top:3px;right:3px;
+            background:rgba(0,0,0,.65);color:#fff;
+            border:none;border-radius:50%;
+            width:20px;height:20px;cursor:pointer;
+            font-size:.7rem;line-height:1;
+            display:flex;align-items:center;justify-content:center;
+          ">✕</button>`;
+      preview.appendChild(wrap);
+    };
+    reader.readAsDataURL(file);
+  });
+
+  if (countEl) {
+    const n = imgUploadState.files.length;
+    countEl.textContent = n === 0 ? '' : `${n} photo${n !== 1 ? 's' : ''} selected · First photo is the cover`;
+    countEl.style.color = n >= 5 ? 'var(--amber)' : 'var(--text3)';
+  }
+}
+
+function removeImg(index) {
+  imgUploadState.files.splice(index, 1);
+  renderImgPreviews();
+  announce(`Photo removed. ${imgUploadState.files.length} photo${imgUploadState.files.length !== 1 ? 's' : ''} remaining.`);
+}
+
+function handleImgDrop(event) {
+  event.preventDefault();
+  const dropZone = document.getElementById('imgDropZone');
+  if (dropZone) {
+    dropZone.style.borderColor  = 'rgba(5,150,105,.3)';
+    dropZone.style.background   = 'linear-gradient(135deg,rgba(5,150,105,.04),rgba(5,150,105,.01))';
+  }
+  const newFiles = Array.from(event.dataTransfer.files)
+    .filter(f => ['image/jpeg','image/png','image/webp'].includes(f.type))
+    .filter(f => f.size <= 5 * 1024 * 1024);
+
+  const available = 5 - imgUploadState.files.length;
+  if (newFiles.length > available) {
+    showToast('⚠️', `You can add ${available} more photo${available !== 1 ? 's' : ''} (max 5 total)`);
+  }
+  imgUploadState.files = [...imgUploadState.files, ...newFiles].slice(0, 5);
+  renderImgPreviews();
+  if (newFiles.length) announce(`${Math.min(newFiles.length, available)} photo${newFiles.length !== 1 ? 's' : ''} added.`);
+}
+
+// Wire up the hidden file input
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('lImages');
+  if (!input) return;
+
+  input.addEventListener('change', () => {
+    const newFiles = Array.from(input.files)
+      .filter(f => ['image/jpeg','image/png','image/webp'].includes(f.type))
+      .filter(f => f.size <= 5 * 1024 * 1024);
+
+    const oversized = Array.from(input.files).filter(f => f.size > 5 * 1024 * 1024);
+    if (oversized.length) {
+      showToast('⚠️', `${oversized.length} photo${oversized.length > 1 ? 's' : ''} skipped — over 5MB limit`);
+    }
+
+    const available = 5 - imgUploadState.files.length;
+    if (newFiles.length > available && available > 0) {
+      showToast('⚠️', `Added first ${available} — max 5 photos total`);
+    }
+    if (available <= 0) {
+      showToast('⚠️', 'Max 5 photos. Remove one first.');
+      input.value = '';
+      return;
+    }
+
+    imgUploadState.files = [...imgUploadState.files, ...newFiles].slice(0, 5);
+    renderImgPreviews();
+    input.value = ''; // reset so same file can be re-selected
+    if (newFiles.length) announce(`${Math.min(newFiles.length, available)} photo${newFiles.length !== 1 ? 's' : ''} added.`);
+  });
+});
+
+// Called by submitListing after the listing record is created
+async function uploadListingImages(listingId, userId, _ignored) {
+  const files = imgUploadState.files;
+  if (!files.length) return [];
+  const urls = [];
+
+  for (let i = 0; i < Math.min(files.length, 5); i++) {
+    const file = files[i];
+    try {
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = () => reject(new Error('Read failed'));
+        reader.readAsDataURL(file);
+      });
+
+      const res  = await fetch('/.netlify/functions/upload-image', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          userId,
+          listingId,
+          imageBase64: base64,
+          mimeType:    file.type,
+          fileName:    file.name,
+        }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        urls.push(data.url);
+        showToast('📸', `Photo ${i + 1} of ${files.length} uploaded`);
+      }
+    } catch (e) {
+      console.error(`Image ${i + 1} upload failed:`, e);
+      showToast('⚠️', `Photo ${i + 1} failed to upload — listing saved without it`);
+    }
+  }
+
+  // Clean up state
+  imgUploadState.files = [];
+  const preview = document.getElementById('lImgPreview');
+  const countEl = document.getElementById('lImgCount');
+  if (preview) preview.innerHTML = '';
+  if (countEl) countEl.textContent = '';
+  return urls;
+}
+</script>
+
+</body>
+</html>

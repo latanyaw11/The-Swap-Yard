@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offline — The Swap Yard</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#0a0a0f;color:#f1f0ff;font-family:Inter,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:2rem;}
+  .icon{font-size:4rem;margin-bottom:1.5rem;}
+  h1{font-size:1.8rem;font-weight:800;margin-bottom:.75rem;letter-spacing:-.03em;}
+  h1 span{color:#7c3aed;}
+  p{color:#9090b0;font-size:.95rem;line-height:1.7;margin-bottom:2rem;max-width:380px;}
+  .btn{background:#7c3aed;color:#fff;border:none;padding:.85rem 2rem;border-radius:8px;font-size:.9rem;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;}
+  .btn:hover{background:#a855f7;}
+  .cached{margin-top:2rem;font-size:.8rem;color:#5a5a7a;}
+</style>
+</head>
+<body>
+<div>
+  <div class="icon">📡</div>
+  <h1><span>The Swap</span> Yard</h1>
+  <p>You're offline right now. Check your internet connection and try again — your saved listings and messages are still available.</p>
+  <a class="btn" onclick="location.reload()">Try Again</a>
+  <div class="cached">Previously visited pages may still be available below.</div>
+</div>
+</body>
+</html>

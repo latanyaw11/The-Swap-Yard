@@ -1,0 +1,2171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Swap Yard — Vendor Dashboard | Buy, Sell, Trade &amp; Barter</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg:       #ffffff;
+  --bg-tint:  linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02));
+  --panel:    #ffffff;
+  --card:     #f3f4f6;
+  --surface:  #ffffff;
+  --surface2: #f3f4f6;
+  --border:   #e5e7eb;
+  --border2:  #d1d5db;
+  --accent:   #7c3aed;
+  --accent2:  #a855f7;
+  --green:    #059669;
+  --amber:    #d97706;
+  --red:      #dc2626;
+  --blue:     #2563eb;
+  --stripe:   #635bff;
+  --text:     #111827;
+  --text2:    #374151;
+  --text3:    #9ca3af;
+  --mono:     'JetBrains Mono', monospace;
+  --sans:     'Inter', sans-serif;
+}
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body { background: linear-gradient(160deg,rgba(5,150,105,.04) 0%,rgba(5,150,105,.01) 100%) fixed, #ffffff; color: var(--text); font-family: var(--sans); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+
+/* GLOW EFFECTS */
+.glow-accent { box-shadow: 0 0 40px rgba(124,58,237,.1); }
+.glow-green  { box-shadow: 0 0 30px rgba(16,185,129,.1); }
+
+/* LAYOUT */
+.app { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+/* SIDEBAR */
+.sidebar {
+  background: #f9fafb;
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+}
+.sidebar-logo {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: #ffffff;
+  font-size: 1.1rem; font-weight: 900;
+  letter-spacing: -.03em;
+}
+.sidebar-logo span { color: var(--accent); }
+.sidebar-nav { padding: .5rem; flex: 1; }
+.nav-section-label {
+  font-family: var(--mono); font-size: .6rem; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--text3); padding: .75rem .75rem .3rem;
+}
+.nav-item {
+  display: flex; align-items: center; gap: .65rem;
+  padding: .6rem .75rem; border-radius: 8px;
+  font-size: .82rem; font-weight: 500; color: var(--text2);
+  cursor: pointer; text-decoration: none;
+  transition: all .15s; margin-bottom: 2px;
+}
+.nav-item:hover { background: linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04)); color: var(--text); }
+.nav-item.active { background: rgba(124,58,237,.1); color: var(--accent); font-weight: 700; }
+.nav-item .nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+.nav-item .nav-badge {
+  margin-left: auto; background: var(--accent); color: #fff;
+  font-size: .6rem; font-weight: 700; padding: .1rem .35rem; border-radius: 10px;
+}
+.sidebar-user {
+  padding: 1rem; border-top: 1px solid var(--border);
+  display: flex; align-items: center; gap: .75rem; background: linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04));
+}
+.user-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: .85rem; flex-shrink: 0;
+}
+.user-name { font-size: .8rem; font-weight: 600; }
+.user-plan { font-family: var(--mono); font-size: .6rem; color: var(--text3); }
+.verify-badges { display: flex; gap: .2rem; margin-top: .2rem; }
+.v-badge { font-size: .6rem; padding: .1rem .3rem; border-radius: 3px; font-weight: 600; }
+.v-email { background: rgba(59,130,246,.15); color: var(--blue); }
+.v-phone { background: rgba(5,150,105,.1); color: var(--green); }
+.v-id    { background: rgba(124,58,237,.1); color: var(--accent2); }
+
+/* MAIN */
+.main { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* TOP BAR */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 2rem; border-bottom: 1px solid var(--border);
+  background: var(--panel); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50;
+}
+.topbar-title { font-size: 1.1rem; font-weight: 700; }
+.topbar-actions { display: flex; gap: .5rem; align-items: center; }
+.topbar-search {
+  display: flex; align-items: center; gap: .5rem;
+  background: linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04)); border: 1px solid var(--border); border-radius: 8px;
+  padding: .4rem .85rem;
+}
+.topbar-search input {
+  background: none; border: none; outline: none;
+  color: var(--text); font-family: var(--sans); font-size: .82rem; width: 180px;
+}
+.topbar-search input::placeholder { color: var(--text3); }
+
+/* CONTENT AREA */
+.content { padding: 2rem; flex: 1; }
+
+/* BUTTONS */
+.btn {
+  font-family: var(--sans); font-weight: 600; font-size: .78rem;
+  letter-spacing: .02em; border: none; cursor: pointer; border-radius: 8px;
+  padding: .55rem 1.1rem; transition: all .15s;
+  display: inline-flex; align-items: center; gap: .4rem; text-decoration: none;
+}
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent2); transform: translateY(-1px); }
+.btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border2); }
+.btn-ghost:hover { border-color: var(--accent); color: var(--accent2); }
+.btn-green { background: rgba(5,150,105,.1); color: var(--green); border: 1px solid rgba(16,185,129,.25); }
+.btn-green:hover { background: rgba(16,185,129,.25); }
+.btn-amber { background: rgba(245,158,11,.12); color: var(--amber); border: 1px solid rgba(245,158,11,.2); }
+.btn-sm { padding: .35rem .75rem; font-size: .72rem; border-radius: 6px; }
+.btn-full { width: 100%; justify-content: center; }
+
+/* STAT CARDS */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+.stat-card {
+  background: linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04)); border: 1px solid var(--border);
+  border-radius: 12px; padding: 1.25rem; position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+}
+.stat-card.s-revenue::before { background: linear-gradient(90deg, var(--green), var(--blue)); }
+.stat-card.s-orders::before  { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+.stat-card.s-barter::before  { background: linear-gradient(90deg, var(--amber), #f97316); }
+.stat-card.s-rating::before  { background: linear-gradient(90deg, #f59e0b, var(--red)); }
+.stat-icon { font-size: 1.4rem; margin-bottom: .75rem; }
+.stat-val { font-size: 1.8rem; font-weight: 800; letter-spacing: -.04em; margin-bottom: .2rem; }
+.stat-label { font-family: var(--mono); font-size: .62rem; color: var(--text3); text-transform: uppercase; letter-spacing: .1em; }
+.stat-change { font-size: .72rem; margin-top: .3rem; }
+.stat-change.up { color: var(--green); }
+.stat-change.dn { color: var(--red); }
+
+/* SECTION HEADER */
+.sec-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.sec-title { font-size: .95rem; font-weight: 700; }
+.sec-mono { font-family: var(--mono); font-size: .62rem; color: var(--text3); text-transform: uppercase; letter-spacing: .1em; margin-bottom: .25rem; }
+
+/* TABLE */
+.table-wrap { background: linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04)); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 2rem; }
+.data-table { width: 100%; border-collapse: collapse; font-size: .8rem; }
+.data-table th { font-family: var(--mono); font-size: .6rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text3); padding: .75rem 1rem; border-bottom: 1px solid var(--border); text-align: left; font-weight: 500; }
+.data-table td { padding: .75rem 1rem; border-bottom: 1px solid var(--border); color: var(--text2); }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: rgba(124,58,237,.04); }
+.cell-primary { color: var(--text) !important; font-weight: 600; }
+.cell-mono { font-family: var(--mono); font-size: .72rem; }
+
+/* STATUS CHIPS */
+.chip { font-family: var(--mono); font-size: .6rem; font-weight: 600; padding: .2rem .55rem; border-radius: 20px; text-transform: uppercase; letter-spacing: .06em; display: inline-flex; align-items: center; gap: .25rem; }
+.chip::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.chip-paid      { background: rgba(5,150,105,.1); color: var(--green); }
+.chip-pending   { background: rgba(245,158,11,.12); color: var(--amber); }
+.chip-shipped   { background: rgba(59,130,246,.12); color: var(--blue); }
+.chip-delivered { background: rgba(124,58,237,.12); color: var(--accent2); }
+.chip-failed    { background: rgba(239,68,68,.12); color: var(--red); }
+
+/* TABS */
+.tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+.tab { font-size: .82rem; font-weight: 600; padding: .65rem 1.25rem; cursor: pointer; color: var(--text2); border: none; background: none; border-bottom: 2px solid transparent; transition: all .15s; margin-bottom: -1px; font-family: var(--sans); }
+.tab:hover { color: var(--text2); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 700; }
+
+/* FORM ELEMENTS */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.form-group { margin-bottom: 1rem; }
+.form-label { display: block; font-family: var(--mono); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); margin-bottom: .4rem; }
+.form-input {
+  width: 100%; padding: .65rem .9rem; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: .65rem .9rem; color: var(--text);
+  font-family: var(--sans); font-size: .85rem; outline: none; transition: border-color .15s;
+}
+.form-input:focus { border-color: var(--accent); }
+.form-input::placeholder { color: var(--text3); }
+select.form-input option { background: var(--card); }
+textarea.form-input { resize: vertical; min-height: 80px; }
+
+/* CARD PANELS */
+.panel { background: linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04)); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+.panel-title { font-size: .92rem; font-weight: 700; margin-bottom: 1.25rem; display: flex; align-items: center; gap: .5rem; }
+
+/* SHIPPING RATES */
+.rate-option {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: .75rem 1rem; border: 1px solid var(--border); border-radius: 8px;
+  cursor: pointer; transition: all .15s; margin-bottom: .5rem;
+}
+.rate-option:hover, .rate-option.selected {
+  border-color: var(--accent); background: rgba(124,58,237,.05);
+}
+.rate-option input[type=radio] { accent-color: var(--accent); }
+.rate-carrier { font-weight: 600; font-size: .84rem; }
+.rate-service { font-size: .72rem; color: var(--text3); margin-top: .1rem; }
+.rate-eta { font-family: var(--mono); font-size: .7rem; color: var(--text3); }
+.rate-price { font-family: var(--mono); font-size: 1rem; font-weight: 600; color: var(--green); }
+
+/* BARTER REPORT */
+.barter-row {
+  display: grid; grid-template-columns: 1fr 1fr 80px 80px 80px;
+  gap: .75rem; padding: .65rem .5rem; border-bottom: 1px solid var(--border);
+  font-size: .78rem; align-items: center;
+}
+.barter-hdr { font-family: var(--mono); font-size: .6rem; color: var(--text3); text-transform: uppercase; }
+.fmv-gain { color: var(--green); font-family: var(--mono); font-size: .78rem; }
+.fmv-loss { color: var(--red); font-family: var(--mono); font-size: .78rem; }
+
+/* VERIFY STEPS */
+.verify-step {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1rem; border: 1px solid rgba(5,150,105,.2); border-radius: 10px; margin-bottom: .75rem; background: linear-gradient(135deg, rgba(5,150,105,.06), rgba(5,150,105,.02));
+  transition: all .15s;
+}
+.verify-step:hover { border-color: rgba(124,58,237,.3); }
+.verify-step.done { border-color: rgba(16,185,129,.3); }
+.verify-step.pending { border-color: var(--border2); }
+.verify-num {
+  width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: .8rem; flex-shrink: 0;
+}
+.verify-step.done .verify-num { border-color: var(--green); color: var(--green); }
+.verify-info h4 { font-size: .85rem; font-weight: 700; margin-bottom: .2rem; }
+.verify-info p { font-size: .75rem; color: var(--text3); }
+.verify-status { margin-left: auto; }
+
+/* LOCAL SEARCH MAP */
+.map-placeholder {
+  width: 100%; height: 280px; background: linear-gradient(135deg, rgba(5,150,105,.06), rgba(5,150,105,.02)); border: 1px solid var(--border2);
+  border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: .75rem; color: var(--text3); font-size: .82rem;
+  margin-bottom: 1rem;
+}
+.map-placeholder-icon { font-size: 2.5rem; }
+.local-seller-card {
+  display: flex; align-items: center; gap: .9rem; padding: .85rem;
+  background: linear-gradient(135deg, rgba(5,150,105,.06), rgba(5,150,105,.02)); transition: all .15s; border: 1px solid var(--border); border-radius: 10px; margin-bottom: .5rem;
+  cursor: pointer; transition: border-color .15s;
+}
+.local-seller-card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(124,58,237,.1); }
+.local-avatar {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: .95rem; flex-shrink: 0;
+}
+.local-name { font-weight: 700; font-size: .85rem; }
+.local-meta { font-size: .72rem; color: var(--text3); margin-top: .15rem; }
+.local-dist { margin-left: auto; font-family: var(--mono); font-size: .72rem; color: var(--accent2); }
+
+/* EVENTS */
+.event-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 1rem; margin-bottom: .75rem; cursor: pointer;
+  transition: border-color .15s; position: relative;
+}
+.event-card:hover { border-color: var(--accent); }
+.event-type-badge {
+  font-family: var(--mono); font-size: .6rem; letter-spacing: .08em;
+  text-transform: uppercase; padding: .18rem .45rem; border-radius: 4px; display: inline-block; margin-bottom: .5rem;
+}
+.et-yard  { background: rgba(245,158,11,.12); color: var(--amber); }
+.et-estate{ background: rgba(139,92,246,.12); color: #a78bfa; }
+.et-popup { background: rgba(5,150,105,.1); color: var(--green); }
+.et-swap  { background: rgba(59,130,246,.12); color: var(--blue); }
+.event-title { font-weight: 700; font-size: .92rem; margin-bottom: .35rem; }
+.event-meta { font-size: .75rem; color: var(--text3); display: flex; gap: 1rem; flex-wrap: wrap; }
+.event-meta span { display: flex; align-items: center; gap: .3rem; }
+
+/* FMV INPUT */
+.fmv-widget {
+  background: linear-gradient(135deg, rgba(5,150,105,.06), rgba(5,150,105,.02)); border: 1px solid rgba(5,150,105,.2);
+  border-radius: 10px; padding: 1.25rem; margin-top: .75rem;
+}
+.fmv-title { font-family: var(--mono); font-size: .62rem; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); margin-bottom: .75rem; }
+.fmv-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .75rem; }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 1.5rem; right: 1.5rem;
+  background: linear-gradient(135deg, rgba(5,150,105,.06), rgba(5,150,105,.02)); border: 1px solid var(--accent);
+  border-radius: 10px; padding: .9rem 1.25rem; font-size: .82rem;
+  z-index: 1000; transform: translateY(100px); opacity: 0; transition: all .3s;
+  display: flex; align-items: center; gap: .65rem; max-width: 320px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.4);
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.7);
+  z-index: 200; display: flex; align-items: center; justify-content: center;
+  padding: 1rem; opacity: 0; pointer-events: none; transition: opacity .2s; backdrop-filter: blur(8px);
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  background: linear-gradient(135deg, rgba(5,150,105,.06), rgba(5,150,105,.02)); border: 1px solid rgba(5,150,105,.2); border-radius: 16px;
+  padding: 2rem; max-width: 520px; width: 100%;
+  transform: translateY(16px); transition: transform .2s; max-height: 90vh; overflow-y: auto;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-title { font-size: 1.1rem; font-weight: 800; margin-bottom: 1.5rem; }
+.modal-close { float: right; background: none; border: none; color: var(--text3); cursor: pointer; font-size: 1.3rem; }
+
+/* PAGE SECTIONS (hidden/shown by JS) */
+.page { display: none; }
+.page.active { display: block; }
+
+@media (max-width: 900px) { .app { grid-template-columns: 1fr; } .sidebar { display: none; } .stats-row { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) { .stats-row { grid-template-columns: 1fr; } .form-grid { grid-template-columns: 1fr; } .fmv-row { grid-template-columns: 1fr; } }
+::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── QR Upload Cards ─────────────────────────────────── */
+.qr-upload-card {
+  background: linear-gradient(135deg, rgba(5,150,105,.06), rgba(5,150,105,.02));
+  border: 1px solid rgba(5,150,105,.2);
+  border-radius: 12px;
+  padding: 1rem;
+}
+.qr-header {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-bottom: .75rem;
+}
+.qr-preview-wrap {
+  min-height: 110px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qr-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100px;
+  border: 2px dashed rgba(5,150,105,.3);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .2s;
+  background: rgba(5,150,105,.03);
+}
+.qr-placeholder:hover {
+  border-color: var(--accent);
+  background: rgba(124,58,237,.05);
+}
+.qr-img {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  border-radius: 8px;
+  border: 2px solid rgba(5,150,105,.3);
+  background: #fff;
+  padding: 4px;
+}
+
+</style>
+</head>
+<body>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo" title="The Swap Yard — Eco-Conscious Marketplace"><span>The Swap</span> Yard <span style="font-size:.65rem;color:var(--text3);font-weight:400">vendor</span></div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <a class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">📊</span>Dashboard</a>
+      <a class="nav-item" onclick="showPage('orders')"><span class="nav-icon">📦</span>Orders<span class="nav-badge" id="pendingBadge">0</span></a>
+      <a class="nav-item" onclick="showPage('revenue')"><span class="nav-icon">💰</span>Revenue</a>
+
+      <div class="nav-section-label">Listings</div>
+      <a class="nav-item" onclick="showPage('listings')"><span class="nav-icon">🏷️</span>My Listings</a>
+      <a class="nav-item" onclick="showPage('new-listing')"><span class="nav-icon">✚</span>New Listing</a>
+      <a class="nav-item" onclick="showPage('events')"><span class="nav-icon">📅</span>Events</a>
+
+      <div class="nav-section-label">Trading</div>
+      <a class="nav-item" onclick="showPage('barter')"><span class="nav-icon">⇄</span>Barter Trades</a>
+      <a class="nav-item" onclick="showPage('barter-report')"><span class="nav-icon">📋</span>Barter Report</a>
+      <a class="nav-item" onclick="showPage('local')"><span class="nav-icon">📍</span>Local Search</a>
+
+      <div class="nav-section-label">Account</div>
+            <a class="nav-item" onclick="showPage('verification')"><span class="nav-icon">✅</span>Verification</a>
+      <a class="nav-item" onclick="showPage('settings')"><span class="nav-icon">⚙️</span>Settings</a>
+      <a class="nav-item" href="index.html"><span class="nav-icon">←</span>Marketplace</a>
+    </nav>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sidebarAvatar">?</div>
+      <div>
+        <div class="user-name" id="sidebarName">Loading…</div>
+        <div class="user-plan" id="sidebarPlan">Free Plan · 5% fee</div>
+        <div class="verify-badges">
+          <span class="v-badge v-email" id="vEmail" style="display:none">✉ Email</span>
+          <span class="v-badge v-phone" id="vPhone" style="display:none">📱 Phone</span>
+          <span class="v-badge v-id"    id="vId"    style="display:none">🪪 ID</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="pageTitle">Dashboard</div>
+      <div class="topbar-actions">
+        <div class="topbar-search">
+          <span>🔍</span>
+          <input type="text" placeholder="Search listings, orders…" id="globalSearch" oninput="handleSearch(this.value)">
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="showPage('new-listing')">+ New Listing</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── DASHBOARD PAGE ── -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-row">
+          <div class="stat-card s-revenue">
+            <div class="stat-icon">💰</div>
+            <div class="stat-val" id="statRevenue">$0</div>
+            <div class="stat-label">Total Revenue</div>
+            <div class="stat-change up" id="statRevenueChange">↑ This month</div>
+          </div>
+          <div class="stat-card s-orders">
+            <div class="stat-icon">📦</div>
+            <div class="stat-val" id="statOrders">0</div>
+            <div class="stat-label">Total Orders</div>
+            <div class="stat-change" id="statOrdersPending" style="color:var(--amber)">0 pending</div>
+          </div>
+          <div class="stat-card s-barter">
+            <div class="stat-icon">⇄</div>
+            <div class="stat-val" id="statBarters">0</div>
+            <div class="stat-label">Barter Trades</div>
+            <div class="stat-change" style="color:var(--text3)" id="statBarterFmv">$0 FMV</div>
+          </div>
+          <div class="stat-card s-rating">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-val" id="statRating">—</div>
+            <div class="stat-label">Avg Rating</div>
+            <div class="stat-change" style="color:var(--text3)" id="statReviews">0 reviews</div>
+          </div>
+        </div>
+
+        <!-- Recent Orders -->
+        <div class="sec-hdr">
+          <div><div class="sec-mono">Activity</div><div class="sec-title">Recent Orders</div></div>
+          <button class="btn btn-ghost btn-sm" onclick="showPage('orders')">View All →</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Item</th><th>Buyer</th><th>Amount</th><th>Fee</th><th>Earned</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="recentOrdersBody">
+              <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text3)">No orders yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Stripe Connect CTA -->
+        <div class="panel" id="stripeConnectCta" style="background:linear-gradient(135deg,rgba(124,58,237,.12),rgba(168,85,247,.06));border-color:rgba(124,58,237,.3)">
+          <div class="panel-title">💳 Connect Your Bank to Receive Payments</div>
+          <p style="font-size:.84rem;color:var(--text2);margin-bottom:1rem;line-height:1.6">Set up Stripe Connect to receive payouts directly to your bank account. Takes about 5 minutes. Stripe handles all identity verification securely.</p>
+          <button class="btn btn-primary" onclick="startStripeConnect()">Connect Bank Account via Stripe →</button>
+        </div>
+      </div>
+
+      
+        <!-- Eco Impact Card -->
+        <div class="card" style="border-color:rgba(5,150,105,.3);background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.03));margin-bottom:1.5rem;">
+          <div style="display:flex;align-items:center;gap:.75rem;">
+            <span style="font-size:1.75rem;">🌱</span>
+            <div>
+              <div style="font-weight:700;font-size:.9rem;color:#059669;margin-bottom:.2rem;">Your Eco Impact</div>
+              <div style="font-size:.8rem;color:var(--text2);line-height:1.5;">Every item you've listed and sold is one fewer item in a landfill. Thank you for trading sustainably on The Swap Yard.</div>
+            </div>
+            <div style="margin-left:auto;text-align:right;flex-shrink:0;">
+              <div style="font-size:1.4rem;font-weight:900;color:#059669;" id="eco-items-count">—</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;color:#9ca3af;">items rehomed</div>
+            </div>
+          </div>
+        </div>
+
+      <!-- ── ORDERS PAGE ── -->
+      <div class="page" id="page-orders">
+        <div class="tabs">
+          <button class="tab active" onclick="filterOrders('all',this)">All Orders</button>
+          <button class="tab" onclick="filterOrders('pending',this)">Pending</button>
+          <button class="tab" onclick="filterOrders('shipped',this)">Shipped</button>
+          <button class="tab" onclick="filterOrders('delivered',this)">Delivered</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Order</th><th>Item</th><th>Buyer</th><th>Total</th><th>Earned</th><th>Shipping</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="ordersBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── REVENUE PAGE ── -->
+      <div class="page" id="page-revenue">
+        <div class="stats-row">
+          <div class="stat-card s-revenue"><div class="stat-icon">💵</div><div class="stat-val" id="revTotal">$0</div><div class="stat-label">Total Earned</div></div>
+          <div class="stat-card s-orders"><div class="stat-icon">📊</div><div class="stat-val" id="revFees">$0</div><div class="stat-label">Platform Fees Paid</div></div>
+          <div class="stat-card s-barter"><div class="stat-icon">📅</div><div class="stat-val" id="revMonth">$0</div><div class="stat-label">This Month</div></div>
+          <div class="stat-card s-rating"><div class="stat-icon">💹</div><div class="stat-val" id="revAvgOrder">$0</div><div class="stat-label">Avg Order Value</div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">📥 Revenue Breakdown by Order</div>
+          <div class="table-wrap" style="margin:0">
+            <table class="data-table">
+              <thead><tr><th>Date</th><th>Item</th><th>Sale Price</th><th>The Swap Yard Fee</th><th>Net Earned</th><th>Plan</th></tr></thead>
+              <tbody id="revenueTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:1rem">
+          <button class="btn btn-ghost" onclick="exportRevCSV()">⬇ Export CSV for Taxes</button>
+        </div>
+      </div>
+
+      <!-- ── MY LISTINGS PAGE ── -->
+      <div class="page" id="page-listings">
+        <div class="sec-hdr">
+          <div><div class="sec-mono">Inventory</div><div class="sec-title">My Listings</div></div>
+          <button class="btn btn-primary btn-sm" onclick="showPage('new-listing')">+ New Listing</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Item</th><th>Type</th><th>Price</th><th>FMV</th><th>Status</th><th>Reviews</th><th>Actions</th></tr></thead>
+            <tbody id="myListingsBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── NEW LISTING PAGE ── -->
+      <div class="page" id="page-new-listing">
+        <div class="sec-mono">Create</div>
+        <div class="sec-title" style="margin-bottom:1.5rem">New Listing</div>
+        <div class="panel">
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Listing Type</label>
+              <select class="form-input" id="nl-type">
+                <option value="goods">Physical Goods</option>
+                <option value="digital">Digital Product</option>
+                <option value="service">Service</option>
+                <option value="event">Event (Yard/Estate Sale)</option>
+              </select>
+            </div>
+            <div class="form-group"><label class="form-label">Category</label>
+              <select class="form-input" id="nl-category">
+                <option>Electronics</option><option>Vehicles</option><option>Furniture</option>
+                <option>Clothing</option><option>Tools</option><option>Art & Collectibles</option>
+                <option>Music & Audio</option><option>Web & Tech Services</option>
+                <option>Creative Services</option><option>Automotive Services</option>
+                <option>Home Services</option><option>Tutoring & Coaching</option><option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group"><label class="form-label">Title</label><input type="text" class="form-input" id="nl-title" placeholder="e.g. Vintage Fender Stratocaster 1972"></div>
+          <div class="form-group"><label class="form-label">Description</label><textarea class="form-input" id="nl-desc" placeholder="Describe condition, history, dimensions, trade preferences…"></textarea></div>
+
+          <!-- IMAGE UPLOAD -->
+          <div class="form-group">
+            <label class="form-label">📸 Product Photos <span style="font-weight:400;color:var(--text3);">(up to 5 · optional)</span></label>
+            <div id="dash-imgDropZone"
+              style="border:2px dashed rgba(5,150,105,.3);border-radius:10px;padding:1.25rem;text-align:center;cursor:pointer;transition:all .2s;background:linear-gradient(135deg,rgba(5,150,105,.04),rgba(5,150,105,.01));"
+              onclick="document.getElementById('nl-images').click()"
+              ondragover="event.preventDefault();this.style.borderColor='#7c3aed'"
+              ondragleave="this.style.borderColor='rgba(5,150,105,.3)'"
+              ondrop="dashHandleImgDrop(event)"
+              role="button" tabindex="0" aria-label="Upload product photos"
+              onkeydown="if(event.key==='Enter'||event.key===' ')document.getElementById('nl-images').click()">
+              <div style="font-size:1.6rem;margin-bottom:.35rem;">📷</div>
+              <div style="font-size:.82rem;font-weight:600;color:var(--text2);margin-bottom:.2rem;">Click to upload or drag &amp; drop</div>
+              <div style="font-family:var(--mono);font-size:.62rem;color:var(--text3);letter-spacing:.06em;">JPG · PNG · WebP · Max 5MB each</div>
+            </div>
+            <input type="file" id="nl-images" multiple accept="image/jpeg,image/png,image/webp" style="display:none;" aria-hidden="true">
+            <div id="dash-imgPreview" style="display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.75rem;" aria-live="polite"></div>
+            <div id="dash-imgCount" style="font-family:var(--mono);font-size:.62rem;color:var(--text3);margin-top:.35rem;"></div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Asking Price (USD)</label><input type="number" class="form-input" id="nl-price" placeholder="0.00" min="0"></div>
+            <div class="form-group"><label class="form-label">Fulfillment</label>
+              <select class="form-input" id="nl-fulfillment">
+                <option value="local">Local Pickup</option>
+                <option value="shipping">I'll ship it myself</option>
+                <option value="both">Both Options</option>
+                <option value="digital">Digital Delivery</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">City</label><input type="text" class="form-input" id="nl-city" placeholder="Any city, e.g. Durham"></div>
+            <div class="form-group"><label class="form-label">ZIP Code</label><input type="text" class="form-input" id="nl-zip" placeholder="Any ZIP code"></div>
+          </div>
+          <div class="form-group"><label class="form-label">Open to Trade For (optional)</label><input type="text" class="form-input" id="nl-barter" placeholder="e.g. Camera lenses, guitar amp, vintage jewelry…"></div>
+          <div class="form-group">
+            <label class="form-label">Accepted Payments</label>
+            <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.4rem">
+              <label style="display:flex;align-items:center;gap:.35rem;cursor:pointer;font-size:.78rem;color:var(--text2)"><input type="checkbox" value="cash" style="accent-color:var(--accent)"> 💵 Cash</label>
+              <label style="display:flex;align-items:center;gap:.35rem;cursor:pointer;font-size:.78rem;color:var(--text2)"><input type="checkbox" value="card" checked style="accent-color:var(--accent)"> 💳 Card (Stripe)</label>
+              <label style="display:flex;align-items:center;gap:.35rem;cursor:pointer;font-size:.78rem;color:var(--text2)"><input type="checkbox" value= style="accent-color:var(--accent)"
+              <label style="display:flex;align-items:center;gap:.35rem;cursor:pointer;font-size:.78rem;color:var(--text2)"><input type="checkbox" value="barter" style="accent-color:var(--accent)"> ⇄ Barter / Trade</label>
+            </div>
+          </div>
+
+          <!-- FMV WIDGET -->
+          <div class="fmv-widget">
+            <div class="fmv-title">⚖️ Fair Market Value (FMV) — Required for Barter & IRS Reporting</div>
+            <div class="fmv-row">
+              <div class="form-group" style="margin:0"><label class="form-label">Your FMV Estimate ($)</label><input type="number" class="form-input" id="nl-fmv" placeholder="0.00" min="0"></div>
+              <div class="form-group" style="margin:0"><label class="form-label">FMV Source</label>
+                <select class="form-input" id="nl-fmv-source">
+                  <option value="seller_estimate">My Estimate</option>
+                  
+                  <option value="appraisal">Professional Appraisal</option>
+                  <option value="market_data">Market Research</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin:0"><label class="form-label">Appraisal Date (if any)</label><input type="date" class="form-input" id="nl-appraisal-date"></div>
+            </div>
+            <p style="font-size:.7rem;color:var(--amber);margin-top:.6rem">⚠️ FMV is used to calculate taxable barter income. Consult a tax professional. <a href="terms.html#barter" style="color:var(--accent2)">Read barter policy →</a></p>
+          </div>
+
+          <!-- EVENT FIELDS (shown when type=event) -->
+          <div id="eventFields" style="display:none;margin-top:1rem">
+            <div class="form-grid">
+              <div class="form-group"><label class="form-label">Event Type</label>
+                <select class="form-input" id="nl-event-type">
+                  <option value="yard_sale">Yard Sale</option>
+                  <option value="estate_sale">Estate Sale</option>
+                  <option value="popup">Pop-Up Market</option>
+                  <option value="swap_meet">Swap Meet</option>
+                  <option value="other">Other Event</option>
+                </select>
+              </div>
+              <div class="form-group"><label class="form-label">Event Date</label><input type="date" class="form-input" id="nl-event-date"></div>
+            </div>
+            <div class="form-grid">
+              <div class="form-group"><label class="form-label">Start Time</label><input type="time" class="form-input" id="nl-event-start"></div>
+              <div class="form-group"><label class="form-label">End Time</label><input type="time" class="form-input" id="nl-event-end"></div>
+            </div>
+            <div class="form-group"><label class="form-label">Event Address</label><input type="text" class="form-input" id="nl-event-address" placeholder="123 Main St, Durham, NC 27701"></div>
+          </div>
+
+          <button class="btn btn-primary btn-full" style="margin-top:.5rem" onclick="submitNewListing()">🚀 Publish Listing</button>
+        </div>
+      </div>
+
+      <!-- ── EVENTS PAGE ── -->
+      <div class="page" id="page-events">
+        <div class="sec-hdr">
+          <div><div class="sec-mono">Community</div><div class="sec-title">Events — RTP &amp; Nationwide</div></div>
+          <button class="btn btn-primary btn-sm" onclick="showPage('new-listing');document.getElementById('nl-type').value='event';document.getElementById('eventFields').style.display='block'">+ Post Event</button>
+        </div>
+        <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;flex-wrap:wrap">
+          <button class="btn btn-ghost btn-sm" onclick="filterEvents('all')">All Events</button>
+          <button class="btn btn-amber btn-sm" onclick="filterEvents('yard_sale')">🏡 Yard Sales</button>
+          <button class="btn btn-ghost btn-sm" onclick="filterEvents('estate_sale')">🏛 Estate Sales</button>
+          <button class="btn btn-ghost btn-sm" onclick="filterEvents('popup')">🛍 Pop-Up Markets</button>
+          <button class="btn btn-ghost btn-sm" onclick="filterEvents('swap_meet')">⇄ Swap Meets</button>
+        </div>
+        <div id="eventsGrid"></div>
+      </div>
+
+      <!-- ── BARTER TRADES PAGE ── -->
+      <div class="page" id="page-barter">
+        <div class="sec-hdr">
+          <div><div class="sec-mono">Trading</div><div class="sec-title">Barter Trades</div></div>
+        </div>
+        <div class="tabs">
+          <button class="tab active" onclick="switchBarterTab('active',this)">Active</button>
+          <button class="tab" onclick="switchBarterTab('pending',this)">Pending</button>
+          <button class="tab" onclick="switchBarterTab('completed',this)">Completed</button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>I Offered</th><th>FMV</th><th>They Offered</th><th>FMV</th><th>Gain/Loss</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="barterTableBody">
+              <tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text3)">No barter trades yet</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="panel" style="background:rgba(245,158,11,.04);border-color:rgba(245,158,11,.2)">
+          <div class="panel-title">⚠️ IRS Barter Reminder</div>
+          <p style="font-size:.8rem;color:var(--text2);line-height:1.6">The fair market value of goods or services you receive in a barter is taxable income. The Swap Yard tracks FMV for all recorded barters and may issue a 1099-B. <a href="#" onclick="showPage('barter-report')" style="color:var(--accent2)">View your barter report →</a></p>
+        </div>
+      </div>
+
+      <!-- ── BARTER REPORT PAGE ── -->
+      <div class="page" id="page-barter-report">
+        <div class="sec-hdr">
+          <div><div class="sec-mono">Tax Reporting</div><div class="sec-title">Barter Income Report</div></div>
+          <div style="display:flex;gap:.5rem">
+            <select class="form-input" id="reportYear" style="width:100px" onchange="loadBarterReport()">
+              <option>2026</option><option>2025</option><option>2024</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="downloadBarterCSV()">⬇ Download 1099-B CSV</button>
+          </div>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-card s-barter"><div class="stat-icon">⇄</div><div class="stat-val" id="brTrades">0</div><div class="stat-label">Total Trades</div></div>
+          <div class="stat-card s-revenue"><div class="stat-icon">📥</div><div class="stat-val" id="brFmvReceived">$0</div><div class="stat-label">Total FMV Received</div></div>
+          <div class="stat-card s-orders"><div class="stat-icon">📤</div><div class="stat-val" id="brFmvGiven">$0</div><div class="stat-label">Total FMV Given</div></div>
+          <div class="stat-card s-rating"><div class="stat-icon">🧾</div><div class="stat-val" id="brTaxable">$0</div><div class="stat-label">Est. Taxable Income</div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">📋 Transaction Detail (IRS Format)</div>
+          <div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:8px;padding:.9rem;margin-bottom:1rem;font-size:.78rem;color:var(--text2);line-height:1.6">
+            <strong style="color:var(--amber)">Barter Reporting Strategy:</strong> Under IRC §1041 the FMV of goods/services received is ordinary income. Report on Schedule C (if business) or Form 1040 Line 8 (if personal). The Swap Yard may file Form 1099-B if you complete 100+ transactions or $1+ in barter income. Keep records of all FMV estimates. We recommend consulting a CPA.
+          </div>
+          <div class="barter-row barter-hdr">
+            <span>Item Received</span><span>Item Given</span><span>FMV Rcvd</span><span>FMV Given</span><span>Gain/Loss</span>
+          </div>
+          <div id="barterReportRows">
+            <div style="text-align:center;padding:1.5rem;color:var(--text3);font-size:.8rem">No completed barters for this year</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── LOCAL SEARCH PAGE ── -->
+      <div class="page" id="page-local">
+        <div class="sec-mono">Local &amp; Nationwide Search</div>
+        <div class="sec-title" style="margin-bottom:1.25rem">Find Sellers Near You or Anywhere</div>
+        <div class="panel">
+          <div class="form-grid" style="margin-bottom:1rem">
+            <div class="form-group" style="margin:0"><label class="form-label">Search ZIP or City</label><input type="text" class="form-input" id="localSearchZip" placeholder="Any ZIP or city — e.g. 27701, Austin TX, Chicago…"></div>
+            <div class="form-group" style="margin:0"><label class="form-label">Radius</label>
+              <select class="form-input" id="localRadius">
+                <option value="5">Within 5 miles</option>
+                <option value="10" selected>Within 10 miles</option>
+                <option value="25">Within 25 miles</option>
+                <option value="50">Within 50 miles</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="searchLocal()">🔍 Search Nationwide</button>
+        </div>
+
+        <div class="map-placeholder">
+          <div class="map-placeholder-icon">🗺️</div>
+          <strong>Seller Map — Local &amp; Nationwide</strong>
+          <span style="font-size:.75rem;max-width:300px;text-align:center">To enable interactive map: add a Google Maps API key to your Netlify environment variables as GOOGLE_MAPS_API_KEY and replace this placeholder</span>
+        </div>
+
+        <div class="sec-title" style="margin-bottom:.75rem">Nearby Sellers</div>
+        <div id="localSellersGrid"></div>
+      </div>
+
+      <!-- ── SHIPPING PAGE ── -->
+      
+
+      <!-- ── VERIFICATION PAGE ── -->
+      <div class="page" id="page-verification">
+        <div class="sec-mono">Trust & Safety</div>
+        <div class="sec-title" style="margin-bottom:1.5rem">Account Verification</div>
+        <div class="panel">
+          <p style="font-size:.84rem;color:var(--text2);margin-bottom:1.5rem;line-height:1.6">Verified sellers get a badge on their listings, higher search placement, and access to Specialist Certifications. Complete all 3 tiers for full verification.</p>
+
+          <div class="verify-step done" id="vstep1">
+            <div class="verify-num">1</div>
+            <div class="verify-info">
+              <h4>✉ Email Verified</h4>
+              <p>Your email address has been confirmed.</p>
+            </div>
+            <div class="verify-status"><span class="chip chip-paid">Verified</span></div>
+          </div>
+
+          <div class="verify-step pending" id="vstep2">
+            <div class="verify-num">2</div>
+            <div class="verify-info">
+              <h4>📱 Phone Verification</h4>
+              <p>Verify your mobile number via SMS. Takes 30 seconds.</p>
+              <div id="phoneVerifyForm" style="margin-top:.75rem;display:flex;gap:.5rem;flex-wrap:wrap">
+                <input type="tel" class="form-input" id="verifyPhone" placeholder="+1 (919) 555-0000" style="max-width:200px">
+                <button class="btn btn-primary btn-sm" onclick="sendSmsCode()">Send Code</button>
+              </div>
+              <div id="phoneCodeForm" style="margin-top:.75rem;display:none;display:flex;gap:.5rem;flex-wrap:wrap">
+                <input type="text" class="form-input" id="verifySmsCode" placeholder="6-digit code" maxlength="6" style="max-width:140px">
+                <button class="btn btn-green btn-sm" onclick="confirmSmsCode()">Confirm</button>
+              </div>
+            </div>
+            <div class="verify-status" id="phoneStatus"><span class="chip chip-pending">Pending</span></div>
+          </div>
+
+          <div class="verify-step pending" id="vstep3">
+            <div class="verify-num">3</div>
+            <div class="verify-info">
+              <h4>🪪 Government ID Verification</h4>
+              <p>Powered by Stripe Identity. Takes 2 minutes. Costs The Swap Yard $1.50 per check — included in Trader Pro and above.</p>
+            </div>
+            <div class="verify-status">
+              <button class="btn btn-primary btn-sm" onclick="startIdVerification()">Verify ID →</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-title">🏅 Specialist Certifications</div>
+          <p style="font-size:.8rem;color:var(--text2);margin-bottom:1rem">Available on Trader Pro and above. Submit credentials for a verified badge on your service listings.</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.75rem">
+            ${[['🎵','Music & Audio'],['🎨','Visual Arts'],['🔧','Mechanical'],['💻','Tech & Web'],['🏠','Home Services'],['📚','Education'],['⚖️','Legal & Finance'],['🏥','Health & Wellness']].map(([icon,name])=>`
+            <div style="border:1px solid var(--border2);border-radius:8px;padding:.85rem;display:flex;align-items:center;gap:.6rem;font-size:.8rem;font-weight:600;cursor:pointer;transition:border-color .15s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border2)'" onclick="showToast('📋','Certification application coming soon!')">
+              <span style="font-size:1.3rem">${icon}</span>${name}
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SETTINGS PAGE ── -->
+      <div class="page" id="page-settings">
+        <div class="sec-mono">Account</div>
+        <div class="sec-title" style="margin-bottom:1.5rem">⚙️ Settings</div>
+
+        <!-- ── PROFILE ──────────────────────────────── -->
+        <div class="panel">
+          <div class="panel-title">👤 Profile</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Display Name</label>
+              <input type="text" class="form-input" id="set-name" placeholder="@username">
+            </div>
+            <div class="form-group">
+              <label class="form-label">City</label>
+              <input type="text" class="form-input" id="set-city" value="Durham">
+            </div>
+            <div class="form-group">
+              <label class="form-label">State</label>
+              <input type="text" class="form-input" id="set-state" value="NC">
+            </div>
+            <div class="form-group">
+              <label class="form-label">ZIP</label>
+              <input type="text" class="form-input" id="set-zip" value="27709">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Bio</label>
+            <textarea class="form-input" id="set-bio" rows="3" placeholder="Tell buyers about yourself…"></textarea>
+          </div>
+          <button class="btn btn-primary" onclick="saveProfile()">💾 Save Profile</button>
+        </div>
+
+        <!-- ── PAYMENT METHODS & QR CODES ───────────── -->
+        <div class="panel" style="border-color:rgba(5,150,105,.3);background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02));">
+          <div class="panel-title" style="color:var(--green);">💳 Payment Methods &amp; QR Codes</div>
+          <p style="font-size:.83rem;color:var(--text2);line-height:1.7;margin-bottom:1.5rem;">
+            Select every method you accept for <strong>physical goods</strong>. For Venmo, Zelle, and Cash App — upload your QR code so buyers can scan and pay you directly from your listing.
+            <br><span style="font-size:.75rem;color:var(--text3);margin-top:.3rem;display:block;">
+              ℹ️ Payment options are shown on goods listings only — not on barter, trade, or service listings.
+            </span>
+          </p>
+
+          <!-- ACCEPTED METHODS -->
+          <label class="form-label" style="margin-bottom:.6rem;">Accepted Methods</label>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.45rem;margin-bottom:1.75rem;">
+            <label class="pcheck" style="cursor:pointer;">
+              <input type="checkbox" id="pay-card" value="card" checked>
+              <span>💳</span> Card (Stripe)
+            </label>
+            <label class="pcheck" style="cursor:pointer;">
+              <input type="checkbox" id="pay-cash" value="cash" checked>
+              <span>💵</span> Cash
+            </label>
+            <label class="pcheck" style="cursor:pointer;">
+              <input type="checkbox" id="pay-venmo" value="venmo">
+              <span>📲</span> Venmo
+            </label>
+            <label class="pcheck" style="cursor:pointer;">
+              <input type="checkbox" id="pay-zelle" value="zelle">
+              <span>💜</span> Zelle
+            </label>
+            <label class="pcheck" style="cursor:pointer;">
+              <input type="checkbox" id="pay-paypal" value="paypal">
+              <span>🅿️</span> PayPal
+            </label>
+            <label class="pcheck" style="cursor:pointer;">
+              <input type="checkbox" id="pay-cashapp" value="cashapp">
+              <span>💚</span> Cash App
+            </label>
+          </div>
+
+          <!-- QR CODE UPLOADS -->
+          <label class="form-label" style="margin-bottom:.75rem;">QR Codes — buyers scan these on your listing to pay you</label>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1rem;margin-bottom:1.25rem;">
+
+            <!-- VENMO QR -->
+            <div style="background:rgba(61,149,206,.06);border:1px solid rgba(61,149,206,.25);border-radius:12px;padding:1rem;">
+              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;">
+                <span style="font-size:1.3rem;">📲</span>
+                <span style="font-weight:700;font-size:.92rem;color:#3d95ce;">Venmo</span>
+              </div>
+              <div id="qr-preview-venmo" style="min-height:108px;display:flex;align-items:center;justify-content:center;">
+                <div onclick="document.getElementById('qr-file-venmo').click()"
+                     style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100px;border:2px dashed rgba(61,149,206,.35);border-radius:8px;cursor:pointer;transition:all .2s;background:rgba(61,149,206,.03);"
+                     onmouseover="this.style.borderColor='#3d95ce'" onmouseout="this.style.borderColor='rgba(61,149,206,.35)'">
+                  <span style="font-size:1.6rem;margin-bottom:.25rem;">📷</span>
+                  <span style="font-size:.75rem;color:var(--text3);">Upload QR Code</span>
+                </div>
+              </div>
+              <input type="file" id="qr-file-venmo" accept="image/*" style="display:none;" onchange="handleQRUpload('venmo',this)">
+              <div style="display:flex;gap:.4rem;margin-top:.6rem;">
+                <button class="btn btn-sm" style="flex:1;background:rgba(61,149,206,.1);color:#3d95ce;border:1px solid rgba(61,149,206,.3);font-size:.73rem;"
+                  onclick="document.getElementById('qr-file-venmo').click()">📤 Upload</button>
+                <button class="btn btn-sm" id="qr-clear-venmo" style="display:none;background:rgba(220,38,38,.08);color:var(--red);border:1px solid rgba(220,38,38,.2);font-size:.73rem;"
+                  onclick="clearQR('venmo')">✕ Remove</button>
+              </div>
+            </div>
+
+            <!-- ZELLE QR -->
+            <div style="background:rgba(109,30,212,.06);border:1px solid rgba(109,30,212,.25);border-radius:12px;padding:1rem;">
+              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;">
+                <span style="font-size:1.3rem;">💜</span>
+                <span style="font-weight:700;font-size:.92rem;color:#6d1ed4;">Zelle</span>
+              </div>
+              <div id="qr-preview-zelle" style="min-height:108px;display:flex;align-items:center;justify-content:center;">
+                <div onclick="document.getElementById('qr-file-zelle').click()"
+                     style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100px;border:2px dashed rgba(109,30,212,.35);border-radius:8px;cursor:pointer;transition:all .2s;background:rgba(109,30,212,.03);"
+                     onmouseover="this.style.borderColor='#6d1ed4'" onmouseout="this.style.borderColor='rgba(109,30,212,.35)'">
+                  <span style="font-size:1.6rem;margin-bottom:.25rem;">📷</span>
+                  <span style="font-size:.75rem;color:var(--text3);">Upload QR Code</span>
+                </div>
+              </div>
+              <input type="file" id="qr-file-zelle" accept="image/*" style="display:none;" onchange="handleQRUpload('zelle',this)">
+              <div style="display:flex;gap:.4rem;margin-top:.6rem;">
+                <button class="btn btn-sm" style="flex:1;background:rgba(109,30,212,.1);color:#6d1ed4;border:1px solid rgba(109,30,212,.3);font-size:.73rem;"
+                  onclick="document.getElementById('qr-file-zelle').click()">📤 Upload</button>
+                <button class="btn btn-sm" id="qr-clear-zelle" style="display:none;background:rgba(220,38,38,.08);color:var(--red);border:1px solid rgba(220,38,38,.2);font-size:.73rem;"
+                  onclick="clearQR('zelle')">✕ Remove</button>
+              </div>
+            </div>
+
+            <!-- CASH APP QR -->
+            <div style="background:rgba(0,163,60,.06);border:1px solid rgba(0,163,60,.25);border-radius:12px;padding:1rem;">
+              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;">
+                <span style="font-size:1.3rem;">💚</span>
+                <span style="font-weight:700;font-size:.92rem;color:#00a33c;">Cash App</span>
+              </div>
+              <div id="qr-preview-cashapp" style="min-height:108px;display:flex;align-items:center;justify-content:center;">
+                <div onclick="document.getElementById('qr-file-cashapp').click()"
+                     style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100px;border:2px dashed rgba(0,163,60,.35);border-radius:8px;cursor:pointer;transition:all .2s;background:rgba(0,163,60,.03);"
+                     onmouseover="this.style.borderColor='#00a33c'" onmouseout="this.style.borderColor='rgba(0,163,60,.35)'">
+                  <span style="font-size:1.6rem;margin-bottom:.25rem;">📷</span>
+                  <span style="font-size:.75rem;color:var(--text3);">Upload QR Code</span>
+                </div>
+              </div>
+              <input type="file" id="qr-file-cashapp" accept="image/*" style="display:none;" onchange="handleQRUpload('cashapp',this)">
+              <div style="display:flex;gap:.4rem;margin-top:.6rem;">
+                <button class="btn btn-sm" style="flex:1;background:rgba(0,163,60,.1);color:#00a33c;border:1px solid rgba(0,163,60,.3);font-size:.73rem;"
+                  onclick="document.getElementById('qr-file-cashapp').click()">📤 Upload</button>
+                <button class="btn btn-sm" id="qr-clear-cashapp" style="display:none;background:rgba(220,38,38,.08);color:var(--red);border:1px solid rgba(220,38,38,.2);font-size:.73rem;"
+                  onclick="clearQR('cashapp')">✕ Remove</button>
+              </div>
+            </div>
+
+          </div>
+
+          <div style="background:rgba(5,150,105,.07);border:1px solid rgba(5,150,105,.18);border-radius:8px;padding:.85rem 1rem;font-size:.79rem;color:var(--text2);line-height:1.6;margin-bottom:1.25rem;">
+            <strong>💡 How to get your QR code:</strong> Open Venmo/Zelle/Cash App → go to your profile → tap "Receive Money" or your QR icon → screenshot it → upload here. Buyers on your listings can then scan it to pay you instantly without needing your phone number or email.
+          </div>
+
+          <button class="btn btn-primary" onclick="savePaymentSettings()">💾 Save Payment Settings</button>
+        </div>
+
+        <!-- ── SOCIAL LINKS ───────────────────────────── -->
+        <div class="panel">
+          <div class="panel-title">🔗 Your Links</div>
+          <p style="font-size:.82rem;color:var(--text2);margin-bottom:1rem;line-height:1.6;">
+            Add links to your social profiles and website. These appear on your listings so buyers can follow and verify you.
+          </p>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Website / Portfolio</label>
+              <input type="url" class="form-input" id="set-website" placeholder="https://yoursite.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Instagram</label>
+              <input type="text" class="form-input" id="set-instagram" placeholder="@yourusername">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Facebook</label>
+              <input type="text" class="form-input" id="set-facebook" placeholder="facebook.com/yourpage">
+            </div>
+            <div class="form-group">
+              <label class="form-label">TikTok</label>
+              <input type="text" class="form-input" id="set-tiktok" placeholder="@yourusername">
+            </div>
+            <div class="form-group">
+              <label class="form-label">X / Twitter</label>
+              <input type="text" class="form-input" id="set-twitter" placeholder="@yourusername">
+            </div>
+            <div class="form-group">
+              <label class="form-label">YouTube</label>
+              <input type="text" class="form-input" id="set-youtube" placeholder="youtube.com/yourchannel">
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveSocialLinks()">💾 Save Links</button>
+        </div>
+
+        <!-- ── STRIPE TAX SETUP ──────────────────────── -->
+        <div class="panel" style="background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(168,85,247,.04));border-color:rgba(124,58,237,.3);">
+          <div class="panel-title">🔐 Stripe Setup — Required to Accept Card Payments</div>
+          <div id="taxSetupStatus" style="margin-bottom:1rem;"></div>
+          <p style="font-size:.82rem;color:var(--text2);line-height:1.7;margin-bottom:1.25rem;">
+            To accept card payments through The Swap Yard, connect your Stripe account. Stripe securely collects your bank details and W-9 tax info — we never see your SSN or EIN. Only required if you want to accept card payments.
+          </p>
+          <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
+            <button class="btn btn-primary" id="stripeOnboardBtn" onclick="startStripeConnect()">
+              🔐 Connect Stripe →
+            </button>
+            <span style="font-size:.7rem;color:var(--text3);">Takes ~5 min · Bank-level security · Skip if using cash/Venmo/Zelle only</span>
+          </div>
+        </div>
+
+        <!-- ── DANGER ZONE ────────────────────────────── -->
+        <div class="panel" style="border-color:rgba(239,68,68,.2);">
+          <div class="panel-title" style="color:var(--red);">⚠️ Danger Zone</div>
+          <button class="btn btn-danger" onclick="confirmSignOut()">Sign Out</button>
+        </div>
+
+      </div><!-- /content -->
+  </main>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><span id="toastIcon"></span><span id="toastMsg"></span></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// PASTE YOUR KEYS — replace both values below
+// Supabase → Project Settings → API
+// ═══════════════════════════════════════════════
+const SUPABASE_URL      = 'REPLACE_WITH_YOUR_SUPABASE_URL';
+const SUPABASE_ANON_KEY = 'REPLACE_WITH_YOUR_SUPABASE_ANON_KEY';
+
+const { createClient } = supabase;
+const sb = (SUPABASE_URL.startsWith('https://') && SUPABASE_ANON_KEY.length > 20)
+           ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+           : { from:()=>({select:()=>({data:[],error:null}),insert:()=>({data:null,error:null}),upsert:()=>({data:null,error:null}),update:()=>({data:null,error:null}),delete:()=>({data:null,error:null})}), auth:{onAuthStateChange:()=>{},signOut:()=>({})}, storage:{from:()=>({upload:()=>({}),getPublicUrl:()=>({data:{publicUrl:''}})}) } };
+
+let currentUser = null;
+let currentPage = 'dashboard';
+let selectedRateId = null;
+let currentShipmentId = null;
+let allOrders = [];
+let allListings = [];
+
+// ── INIT ──
+sb.auth.onAuthStateChange((event, session) => {
+  currentUser = session?.user || null;
+  if (currentUser) { updateSidebar(); loadDashboardData(); }
+  else { window.location.href = 'index.html'; }
+});
+
+function updateSidebar() {
+  if (!currentUser) return;
+  const email = currentUser.email;
+  document.getElementById('sidebarAvatar').textContent = email.charAt(0).toUpperCase();
+  document.getElementById('sidebarName').textContent = '@' + email.split('@')[0];
+  document.getElementById('vEmail').style.display = 'inline';
+}
+
+// ── PAGE NAVIGATION ──
+const pageTitles = {
+  dashboard:'Dashboard', orders:'Orders', revenue:'Revenue',
+  listings:'My Listings', 'new-listing':'New Listing', events:'Events',
+  barter:'Barter Trades', 'barter-report':'Barter Report',
+  local:'Local Search', verification:'Verification', settings:'Settings'
+};
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id)?.classList.add('active');
+  document.querySelector(`.nav-item[onclick*="${id}"]`)?.classList.add('active');
+  document.getElementById('pageTitle').textContent = pageTitles[id] || id;
+  currentPage = id;
+  if (id === 'events') loadEvents();
+  if (id === 'local') loadLocalSellers();
+  if (id === 'revenue') loadRevenue();
+  if (id === 'orders') renderOrders('all');
+  if (id === 'listings') loadMyListings();
+  if (id === 'settings') loadTaxSetupStatus();
+}
+
+// ── LOAD DASHBOARD ──
+async function loadDashboardData() {
+  try {
+    const { data: orders } = await sb.from('orders').select('*').eq('vendor_user_id', currentUser.id).order('created_at', { ascending: false });
+    allOrders = orders || [];
+    const totalRevenue = allOrders.reduce((s, o) => s + (o.vendor_earnings || 0), 0);
+    const pending = allOrders.filter(o => o.status === 'paid' && o.shipping_status === 'unshipped').length;
+    document.getElementById('statRevenue').textContent = '$' + totalRevenue.toFixed(2);
+    document.getElementById('statOrders').textContent = allOrders.length;
+    document.getElementById('statOrdersPending').textContent = pending + ' pending';
+    document.getElementById('pendingBadge').textContent = pending;
+    document.getElementById('pendingBadge').style.display = pending > 0 ? 'inline' : 'none';
+    renderRecentOrders(allOrders.slice(0, 5));
+    document.getElementById('revTotal').textContent = '$' + totalRevenue.toFixed(2);
+    document.getElementById('revFees').textContent = '$' + allOrders.reduce((s, o) => s + (o.platform_fee || 0), 0).toFixed(2);
+  } catch (e) {
+    // Not yet connected — show sample data
+    renderSampleData();
+  }
+}
+
+function renderSampleData() {
+  const sample = [
+    { id:'ORD-001', listing_title:'Sony A7III Camera', buyer_email:'buyer@email.com', amount_total:750, platform_fee:37.5, vendor_earnings:712.5, status:'paid', shipping_status:'shipped', carrier:'USPS', tracking_code:'9400111899223418123456' },
+    { id:'ORD-002', listing_title:'Guitar Lessons x4', buyer_email:'student@gmail.com', amount_total:120, platform_fee:6, vendor_earnings:114, status:'paid', shipping_status:'delivered', carrier:'—', tracking_code:'' },
+    { id:'ORD-003', listing_title:'DeWalt Bundle', buyer_email:'contractor@work.com', amount_total:280, platform_fee:14, vendor_earnings:266, status:'pending', shipping_status:'unshipped', carrier:'', tracking_code:'' },
+  ];
+  allOrders = sample;
+  document.getElementById('statRevenue').textContent = '$1,092.50';
+  document.getElementById('statOrders').textContent = '3';
+  document.getElementById('statOrdersPending').textContent = '1 pending';
+  document.getElementById('statRating').textContent = '4.9';
+  document.getElementById('statReviews').textContent = '14 reviews';
+  document.getElementById('statBarters').textContent = '2';
+  document.getElementById('statBarterFmv').textContent = '$340 FMV';
+  renderRecentOrders(sample);
+}
+
+function renderRecentOrders(orders) {
+  const tbody = document.getElementById('recentOrdersBody');
+  if (!orders.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text3)">No orders yet</td></tr>'; return; }
+  tbody.innerHTML = orders.map(o => `
+    <tr>
+      <td class="cell-primary">${esc(o.listing_title || o.listing_id || '—')}</td>
+      <td class="cell-mono">${esc(o.buyer_email || '—')}</td>
+      <td class="cell-mono" style="color:var(--text)">$${(o.amount_total||0).toFixed(2)}</td>
+      <td class="cell-mono" style="color:var(--red)">-$${(o.platform_fee||0).toFixed(2)}</td>
+      <td class="cell-mono" style="color:var(--green)">$${(o.vendor_earnings||0).toFixed(2)}</td>
+      <td>${statusChip(o.status, o.shipping_status)}</td>
+      <td>${o.tracking_code ? `<a href="https://tools.usps.com/go/TrackConfirmAction?tLabels=${o.tracking_code}" target="_blank" class="btn btn-ghost btn-sm">Track</a>` : (o.status==='paid'?`<span class="chip chip-pending">Arrange shipping directly</span>`:'—')}</td>
+    </tr>`).join('');
+}
+
+function statusChip(status, shipStatus) {
+  if (shipStatus === 'delivered') return '<span class="chip chip-delivered">Delivered</span>';
+  if (shipStatus === 'shipped')   return '<span class="chip chip-shipped">Shipped</span>';
+  if (status === 'paid')          return '<span class="chip chip-paid">Paid</span>';
+  if (status === 'pending')       return '<span class="chip chip-pending">Pending</span>';
+  if (status === 'failed')        return '<span class="chip chip-failed">Failed</span>';
+  return '<span class="chip chip-pending">' + (status||'—') + '</span>';
+}
+
+function filterOrders(filter, btn) {
+  document.querySelectorAll('#page-orders .tab').forEach(t => t.classList.remove('active'));
+  btn?.classList.add('active');
+  renderOrders(filter);
+}
+
+function renderOrders(filter) {
+  const filtered = filter === 'all' ? allOrders : allOrders.filter(o => {
+    if (filter === 'pending') return o.shipping_status === 'unshipped' && o.status === 'paid';
+    if (filter === 'shipped') return o.shipping_status === 'shipped';
+    if (filter === 'delivered') return o.shipping_status === 'delivered';
+    return true;
+  });
+  document.getElementById('ordersBody').innerHTML = filtered.length
+    ? filtered.map(o => `<tr>
+        <td class="cell-mono" style="font-size:.65rem">${String(o.id).slice(0,8)}</td>
+        <td class="cell-primary">${esc(o.listing_title || o.listing_id || '—')}</td>
+        <td>${esc(o.buyer_email||'—')}</td>
+        <td class="cell-mono">$${(o.amount_total||0).toFixed(2)}</td>
+        <td class="cell-mono" style="color:var(--green)">$${(o.vendor_earnings||0).toFixed(2)}</td>
+        <td>${o.tracking_code ? `<span class="cell-mono" style="font-size:.68rem">${o.tracking_code.slice(0,14)}…</span>` : '—'}</td>
+        <td>${statusChip(o.status, o.shipping_status)}</td>
+        <td><button class="btn btn-ghost btn-sm" onclick="showToast('📦','Order detail coming soon!')">View</button></td>
+      </tr>`).join('')
+    : '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text3)">No orders in this category</td></tr>';
+}
+
+function loadRevenue() {
+  const total = allOrders.reduce((s,o) => s+(o.vendor_earnings||0), 0);
+  const fees  = allOrders.reduce((s,o) => s+(o.platform_fee||0), 0);
+  const avg   = allOrders.length ? (allOrders.reduce((s,o) => s+(o.amount_total||0), 0) / allOrders.length) : 0;
+  document.getElementById('revTotal').textContent = '$' + total.toFixed(2);
+  document.getElementById('revFees').textContent = '$' + fees.toFixed(2);
+  document.getElementById('revAvgOrder').textContent = '$' + avg.toFixed(2);
+  document.getElementById('revenueTableBody').innerHTML = allOrders.length
+    ? allOrders.map(o => `<tr>
+        <td class="cell-mono">${o.created_at ? o.created_at.split('T')[0] : 'N/A'}</td>
+        <td class="cell-primary">${esc(o.listing_title||'—')}</td>
+        <td class="cell-mono">$${(o.amount_total||0).toFixed(2)}</td>
+        <td class="cell-mono" style="color:var(--red)">-$${(o.platform_fee||0).toFixed(2)}</td>
+        <td class="cell-mono" style="color:var(--green)">$${(o.vendor_earnings||0).toFixed(2)}</td>
+        <td><span class="chip chip-paid">${o.vendor_plan||'free'}</span></td>
+      </tr>`).join('')
+    : '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--text3)">No revenue data yet</td></tr>';
+}
+
+function exportRevCSV() {
+  const rows = [['Date','Item','Sale Price','Platform Fee','Net Earned','Plan']];
+  allOrders.forEach(o => rows.push([
+    o.created_at?.split('T')[0]||'', o.listing_title||'', o.amount_total||0, o.platform_fee||0, o.vendor_earnings||0, o.vendor_plan||'free'
+  ]));
+  const csv = rows.map(r => r.join(',')).join('\n');
+  const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = `theswapyard-revenue-${new Date().getFullYear()}.csv`; a.click();
+  showToast('⬇', 'Revenue CSV downloaded!');
+}
+
+async function loadMyListings() {
+  try {
+    const { data } = await sb.from('listings').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
+    allListings = data || [];
+  } catch(e) { allListings = []; }
+  const tbody = document.getElementById('myListingsBody');
+  tbody.innerHTML = allListings.length
+    ? allListings.map(l => `<tr>
+        <td class="cell-primary">${l.emoji||'📦'} ${esc(l.title)}</td>
+        <td><span class="chip chip-paid">${l.type}</span></td>
+        <td class="cell-mono">${l.price_usd ? '$'+l.price_usd : 'Trade'}</td>
+        <td class="cell-mono" style="color:var(--amber)">${l.fmv ? '$'+l.fmv : '—'}</td>
+        <td>${l.is_active ? '<span class="chip chip-paid">Active</span>' : '<span class="chip chip-failed">Inactive</span>'}</td>
+        <td class="cell-mono">${l.avg_rating ? l.avg_rating.toFixed(1)+'★ ('+l.review_count+')' : '—'}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="deleteListing('${l.id}')">Delete</button></td>
+      </tr>`).join('')
+    : '<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--text3)">No listings yet</td></tr>';
+}
+
+async function deleteListing(id) {
+  if (!confirm('Delete this listing?')) return;
+  await sb.from('listings').delete().eq('id', id);
+  showToast('🗑', 'Listing deleted'); loadMyListings();
+}
+
+// ── EVENTS ──
+const SAMPLE_EVENTS = [
+  { id:'e1', type:'event', event_type:'yard_sale', title:'Multi-Family Yard Sale — Durham', event_date:'2026-05-10', event_start:'07:00', event_end:'13:00', event_address:'4521 Hope Valley Rd, Durham NC 27707', description:'Furniture, tools, clothes, electronics and more.' },
+  { id:'e2', type:'event', event_type:'estate_sale', title:'Estate Sale — Rare Antiques & Collectibles', event_date:'2026-05-17', event_start:'09:00', event_end:'15:00', event_address:'2208 N Duke St, Durham NC 27704', description:'Full household, mid-century furniture, artwork, jewelry.' },
+  { id:'e3', type:'event', event_type:'popup', title:'RTP Makers Pop-Up Market', event_date:'2026-05-24', event_start:'10:00', event_end:'16:00', event_address:'South Square Mall Parking Lot, Durham NC', description:'Local makers, crafts, vintage finds, food trucks.' },
+  { id:'e4', type:'event', event_type:'swap_meet', title:'The Swap Yard Community Swap Meet', event_date:'2026-06-07', event_start:'08:00', event_end:'14:00', event_address:'Weaver Street Market, Carrboro NC 27510', description:'Bring items to trade! No cash required. All skill levels welcome.' },
+];
+
+let currentEventFilter = 'all';
+function loadEvents() {
+  const filtered = currentEventFilter === 'all' ? SAMPLE_EVENTS : SAMPLE_EVENTS.filter(e => e.event_type === currentEventFilter);
+  const typeMap = { yard_sale:['et-yard','🏡 Yard Sale'], estate_sale:['et-estate','🏛 Estate Sale'], popup:['et-popup','🛍 Pop-Up'], swap_meet:['et-swap','⇄ Swap Meet'] };
+  document.getElementById('eventsGrid').innerHTML = filtered.map(e => {
+    const [cls, label] = typeMap[e.event_type] || ['et-popup', e.event_type];
+    return `<div class="event-card">
+      <span class="event-type-badge ${cls}">${label}</span>
+      <div class="event-title">${esc(e.title)}</div>
+      <div class="event-meta">
+        <span>📅 ${e.event_date}</span>
+        <span>🕐 ${e.event_start} – ${e.event_end}</span>
+        <span>📍 ${esc(e.event_address)}</span>
+      </div>
+      <div style="font-size:.76rem;color:var(--text3);margin-top:.4rem">${esc(e.description||'')}</div>
+    </div>`;
+  }).join('') || '<div style="text-align:center;padding:2rem;color:var(--text3)">No events found</div>';
+}
+function filterEvents(type) { currentEventFilter = type; loadEvents(); }
+
+// ── LOCAL SEARCH ──
+const LOCAL_SELLERS = [
+  { name:'@durhamdesigns', city:'Durham', zip:'27701', dist:'1.2 mi', category:'Creative Services', listings:8, rating:4.9 },
+  { name:'@austintechseller', city:'Austin', zip:'78701', dist:'1,312 mi', category:'Electronics', listings:14, rating:4.8 },
+  { name:'@chicagocollects', city:'Chicago', zip:'60601', dist:'878 mi', category:'Art & Collectibles', listings:41, rating:4.7 },
+  { name:'@raleighretro', city:'Raleigh', zip:'27601', dist:'4.7 mi', category:'Art & Collectibles', listings:23, rating:4.7 },
+  { name:'@chapelhillcraft', city:'Chapel Hill', zip:'27514', dist:'8.3 mi', category:'Handmade Goods', listings:15, rating:5.0 },
+  { name:'@rtpmechanics', city:'RTP', zip:'27709', dist:'0.8 mi', category:'Automotive Services', listings:6, rating:4.8 },
+  { name:'@carycollectibles', city:'Cary', zip:'27511', dist:'11.2 mi', category:'Vintage & Antiques', listings:31, rating:4.6 },
+];
+function loadLocalSellers() { renderLocalSellers(LOCAL_SELLERS); }
+function searchLocal() {
+  const zip = document.getElementById('localSearchZip').value;
+  showToast('📍', `Searching near ${zip}…`);
+  setTimeout(() => renderLocalSellers(LOCAL_SELLERS), 600);
+}
+function renderLocalSellers(sellers) {
+  document.getElementById('localSellersGrid').innerHTML = sellers.map(s => `
+    <div class="local-seller-card">
+      <div class="local-avatar">${s.name.charAt(1).toUpperCase()}</div>
+      <div>
+        <div class="local-name">${s.name}</div>
+        <div class="local-meta">${s.city} · ${s.category} · ${s.listings} listings · ${s.rating}★</div>
+      </div>
+      <div class="local-dist">${s.dist}</div>
+    </div>`).join('');
+}
+
+// ── BARTER REPORT ──
+function loadBarterReport() {
+  const sampleBarters = [
+    { date:'2026-03-15', received:'Fender Amp', fmvRcvd:180, gave:'Guitar Pedals', fmvGiven:120 },
+    { date:'2026-04-02', received:'Camera Lens', fmvRcvd:220, gave:'DJ Controller', fmvGiven:200 },
+  ];
+  const totalRcvd = sampleBarters.reduce((s,b) => s+b.fmvRcvd, 0);
+  const totalGiven = sampleBarters.reduce((s,b) => s+b.fmvGiven, 0);
+  document.getElementById('brTrades').textContent = sampleBarters.length;
+  document.getElementById('brFmvReceived').textContent = '$' + totalRcvd;
+  document.getElementById('brFmvGiven').textContent = '$' + totalGiven;
+  document.getElementById('brTaxable').textContent = '$' + totalRcvd;
+  document.getElementById('barterReportRows').innerHTML = sampleBarters.map(b => {
+    const gl = b.fmvRcvd - b.fmvGiven;
+    return `<div class="barter-row">
+      <span>${b.received}</span><span>${b.gave}</span>
+      <span class="cell-mono">$${b.fmvRcvd}</span>
+      <span class="cell-mono">$${b.fmvGiven}</span>
+      <span class="${gl>=0?'fmv-gain':'fmv-loss'}">${gl>=0?'+':''} $${gl}</span>
+    </div>`;
+  }).join('');
+}
+
+function switchBarterTab(tab, btn) {
+  document.querySelectorAll('#page-barter .tab').forEach(t => t.classList.remove('active'));
+  btn?.classList.add('active');
+}
+
+function downloadBarterCSV() {
+  const csv = 'Date,Item Received,FMV Received,Item Given,FMV Given,Gain/Loss\n2026-03-15,Fender Amp,180,Guitar Pedals,120,60\n2026-04-02,Camera Lens,220,DJ Controller,200,20';
+  const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'theswapyard-barter-1099b-2026.csv'; a.click();
+  showToast('⬇', '1099-B CSV downloaded!');
+}
+
+// ── NEW LISTING ──
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('nl-type')?.addEventListener('change', function() {
+    document.getElementById('eventFields').style.display = this.value === 'event' ? 'block' : 'none';
+  });
+});
+
+async function submitNewListing() {
+  if (!currentUser) { showToast('🔒','Sign in first'); return; }
+  const title = document.getElementById('nl-title').value.trim();
+  const type  = document.getElementById('nl-type').value;
+  if (!title) { showToast('⚠️','Title is required'); return; }
+
+  const btn = document.querySelector('#page-new-listing .btn-primary');
+  if (btn) { btn.textContent = '⏳ Publishing…'; btn.disabled = true; }
+
+  const accepts = [...document.querySelectorAll('#page-new-listing input[type=checkbox]:checked')].map(i => i.value);
+  const { data: newListing, error } = await sb.from('listings').insert({
+    user_id: currentUser.id, title, type,
+    description: document.getElementById('nl-desc').value,
+    category: document.getElementById('nl-category').value,
+    price_usd: document.getElementById('nl-price').value ? parseFloat(document.getElementById('nl-price').value) : null,
+    fmv: document.getElementById('nl-fmv').value ? parseFloat(document.getElementById('nl-fmv').value) : null,
+    fmv_source: document.getElementById('nl-fmv-source').value,
+    fulfillment: document.getElementById('nl-fulfillment').value,
+    city: document.getElementById('nl-city').value,
+    zip: document.getElementById('nl-zip').value,
+    barter_for: document.getElementById('nl-barter').value || null,
+    accepts: accepts.length ? accepts : ['cash'],
+    emoji: {goods:'📦',digital:'💾',service:'🛠️',event:'📅'}[type]||'📦',
+    event_type: document.getElementById('nl-event-type')?.value || null,
+    event_date: document.getElementById('nl-event-date')?.value || null,
+    event_start: document.getElementById('nl-event-start')?.value || null,
+    event_end: document.getElementById('nl-event-end')?.value || null,
+    event_address: document.getElementById('nl-event-address')?.value || null,
+    seller_name: '@' + currentUser.email.split('@')[0],
+    seller_contact: currentUser.email,
+  }).select('id').single();
+
+  if (error) {
+    if (btn) { btn.textContent = '🚀 Publish Listing'; btn.disabled = false; }
+    showToast('⚠️', error.message); return;
+  }
+
+  // Upload images if any selected
+  if (dashImgState.files.length && newListing?.id) {
+    if (btn) btn.textContent = '📸 Uploading photos…';
+    await dashUploadImages(newListing.id, currentUser.id);
+  }
+
+  if (btn) { btn.textContent = '🚀 Publish Listing'; btn.disabled = false; }
+  showToast('🚀', `"${title}" published!`);
+  showPage('listings');
+}
+
+// ── STRIPE CONNECT ──
+async function startStripeConnect() {
+  if (!currentUser) return;
+  showToast('💳', 'Connecting to Stripe…');
+  try {
+    const res = await fetch('/.netlify/functions/connect-onboard', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email: currentUser.email, userId: currentUser.id })
+    });
+    const { onboardingUrl, stripeAccountId } = await res.json();
+    if (stripeAccountId) await sb.from('profiles').upsert({ id: currentUser.id, stripe_account_id: stripeAccountId });
+    if (onboardingUrl) window.location.href = onboardingUrl;
+  } catch(e) { showToast('⚠️', 'Stripe not configured yet — set up your Netlify function first'); }
+}
+
+// ── VERIFICATION ──
+async function sendSmsCode() {
+  const phone = document.getElementById('verifyPhone').value;
+  if (!phone) { showToast('⚠️', 'Enter your phone number'); return; }
+  try {
+    await fetch('/.netlify/functions/verify-user', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action:'send_sms', userId:currentUser.id, phone }) });
+    document.getElementById('phoneVerifyForm').style.display = 'none';
+    document.getElementById('phoneCodeForm').style.display = 'flex';
+    showToast('📱', 'Code sent! Check your phone.');
+  } catch(e) { showToast('⚠️','Twilio not configured yet'); }
+}
+async function confirmSmsCode() {
+  const code = document.getElementById('verifySmsCode').value;
+  try {
+    const res = await fetch('/.netlify/functions/verify-user', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action:'confirm_sms', userId:currentUser.id, code }) });
+    const data = await res.json();
+    if (data.phoneVerified) { document.getElementById('vstep2').classList.remove('pending'); document.getElementById('vstep2').classList.add('done'); document.getElementById('phoneStatus').innerHTML = '<span class="chip chip-paid">Verified</span>'; document.getElementById('vPhone').style.display='inline'; showToast('✅','Phone verified!'); }
+    else showToast('⚠️', data.error || 'Invalid code');
+  } catch(e) { showToast('⚠️','Verification service not configured yet'); }
+}
+async function startIdVerification() {
+  try {
+    const res = await fetch('/.netlify/functions/verify-user', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ action:'start_id_verify', userId:currentUser.id }) });
+    const { verifyUrl } = await res.json();
+    if (verifyUrl) window.location.href = verifyUrl;
+  } catch(e) { showToast('⚠️','Stripe Identity not configured yet'); }
+}
+
+// ── TAX SETUP VIA STRIPE ──
+async function loadTaxSetupStatus() {
+  if (!currentUser) return;
+  const statusEl = document.getElementById('taxSetupStatus');
+  const btnEl    = document.getElementById('stripeOnboardBtn');
+  if (!statusEl) return;
+
+  try {
+    const { data: profile } = await sb.from('profiles')
+      .select('stripe_account_id')
+      .eq('id', currentUser.id).single();
+
+    if (profile?.stripe_account_id) {
+      statusEl.innerHTML = `
+        <div style="display:flex;align-items:center;gap:.5rem;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:8px;padding:.65rem .9rem;font-size:.8rem;color:var(--green);font-weight:600">
+          ✅ Tax setup complete · Stripe account connected
+        </div>`;
+      if (btnEl) {
+        btnEl.textContent = '🔄 Update Tax Info via Stripe';
+        btnEl.style.background = 'rgba(16,185,129,.15)';
+        btnEl.style.color = 'var(--green)';
+        btnEl.style.border = '1px solid rgba(16,185,129,.3)';
+      }
+    } else {
+      statusEl.innerHTML = `
+        <div style="display:flex;align-items:center;gap:.5rem;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:.65rem .9rem;font-size:.8rem;color:var(--amber);font-weight:600">
+          ⚠️ Tax setup incomplete — required for trades over $600 and to receive payouts
+        </div>`;
+    }
+  } catch(e) {
+    statusEl.innerHTML = '';
+  }
+}
+
+async function saveProfile() {
+  const { error } = await sb.from('profiles').upsert({ id:currentUser.id, display_name:document.getElementById('set-name').value, city:document.getElementById('set-city').value, state:document.getElementById('set-state').value, zip:document.getElementById('set-zip').value, bio:document.getElementById('set-bio').value });
+  showToast(error ? '⚠️' : '✅', error ? error.message : 'Profile saved!');
+}
+function confirmSignOut() { if(confirm('Sign out?')) sb.auth.signOut(); }
+
+// ── HELPERS ──
+function handleSearch(q) { if (q.length > 2) showToast('🔍', `Searching for "${q}"…`); }
+function esc(s) { if(!s)return''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+let toastTimeout;
+function showToast(icon, msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastIcon').textContent = icon;
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show'); clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// Check for Stripe Connect return
+const urlP = new URLSearchParams(window.location.search);
+if (urlP.get('stripe') === 'success') {
+  showToast('💳','Tax setup complete! Your Stripe account is connected.');
+  document.getElementById('stripeConnectCta')?.style && (document.getElementById('stripeConnectCta').style.display='none');
+  // Reload settings panel status if on settings page
+  loadTaxSetupStatus();
+}
+if (urlP.get('id_verify') === 'complete') showToast('✅','ID verification submitted! We\'ll confirm within 24hrs.');
+</script>
+<!-- ═══════════════════════════════════════════════════════════
+     The Swap Yard — AI Vendor Support Widget
+     
+     HOW TO INSTALL:
+     Paste this entire block just before the closing </body> tag
+     in vendor-dashboard.html (and optionally index.html)
+     ═══════════════════════════════════════════════════════════ -->
+
+<!-- Support Button (fixed bottom-right) -->
+<button
+  id="support-toggle"
+  onclick="toggleSupport()"
+  aria-label="Open vendor support chat"
+  style="
+    position:fixed; bottom:1.5rem; left:1.5rem; z-index:500;
+    width:52px; height:52px; border-radius:50%;
+    background:linear-gradient(135deg,#7c3aed,#a855f7);
+    border:none; cursor:pointer; box-shadow:0 4px 20px rgba(124,58,237,.4);
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.4rem; transition:transform .2s;
+  "
+  onmouseover="this.style.transform='scale(1.1)'"
+  onmouseout="this.style.transform='scale(1)'">
+  🤖
+</button>
+
+<!-- Support Chat Panel -->
+<div
+  id="support-panel"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Vendor support chat"
+  style="
+    position:fixed; bottom:5rem; left:1.5rem; z-index:500;
+    width:360px; max-width:calc(100vw - 2rem);
+    background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02));
+    border:1px solid rgba(5,150,105,.2); border-radius:16px;
+    box-shadow:0 20px 60px rgba(0,0,0,.15);
+    display:none; flex-direction:column;
+    font-family:'Inter',sans-serif; overflow:hidden;
+    max-height:520px;
+  ">
+
+  <!-- Header -->
+  <div style="
+    background:linear-gradient(135deg,#111827,#2d1b69);
+    padding:1rem 1.25rem; display:flex; align-items:center;
+    justify-content:space-between;
+  ">
+    <div style="display:flex; align-items:center; gap:.6rem;">
+      <div style="
+        width:34px; height:34px; border-radius:50%;
+        background:linear-gradient(135deg,#7c3aed,#a855f7);
+        display:flex; align-items:center; justify-content:center;
+        font-size:1rem;
+      ">🤖</div>
+      <div>
+        <div style="font-weight:700; font-size:.88rem; color:#fff;">Swap Yard Support</div>
+        <div style="font-size:.68rem; color:#a855f7; font-family:'JetBrains Mono',monospace; letter-spacing:.05em;">AI ASSISTANT · ALWAYS ON</div>
+      </div>
+    </div>
+    <button
+      onclick="toggleSupport()"
+      style="background:none;border:none;color:rgba(255,255,255,.6);cursor:pointer;font-size:1.2rem;line-height:1;"
+      aria-label="Close support chat">✕</button>
+  </div>
+
+  <!-- Messages -->
+  <div
+    id="support-messages"
+    role="log"
+    aria-live="polite"
+    style="
+      flex:1; overflow-y:auto; padding:1rem;
+      display:flex; flex-direction:column; gap:.75rem;
+      min-height:220px; max-height:300px;
+    ">
+    <!-- Welcome message -->
+    <div class="msg-agent" style="
+      background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04));
+      border:1px solid rgba(5,150,105,.2);
+      border-radius:10px 10px 10px 2px;
+      padding:.75rem 1rem; font-size:.82rem;
+      color:#111827; line-height:1.5; max-width:90%;
+    ">
+      👋 Hi! I'm your Swap Yard support assistant. I can help with listings, shipping, payments, taxes, and more.<br><br>
+      What can I help you with today?
+    </div>
+  </div>
+
+  <!-- Quick Questions -->
+  <div id="quick-questions" style="padding:.5rem 1rem; display:flex; flex-wrap:wrap; gap:.4rem;">
+    <button onclick="askQuick('How do I set up shipping?')" style="font-size:.7rem;padding:.3rem .6rem;border-radius:20px;border:1px solid rgba(5,150,105,.3);background:rgba(5,150,105,.06);color:#059669;cursor:pointer;font-family:inherit;">📦 Shipping setup</button>
+    <button onclick="askQuick('How do I complete my tax setup?')" style="font-size:.7rem;padding:.3rem .6rem;border-radius:20px;border:1px solid rgba(124,58,237,.3);background:rgba(124,58,237,.06);color:#7c3aed;cursor:pointer;font-family:inherit;">💳 Tax setup</button>
+    <button onclick="askQuick('What are the platform fees?')" style="font-size:.7rem;padding:.3rem .6rem;border-radius:20px;border:1px solid rgba(5,150,105,.3);background:rgba(5,150,105,.06);color:#059669;cursor:pointer;font-family:inherit;">💰 Fees</button>
+    <button onclick="askQuick('How does barter reporting work?')" style="font-size:.7rem;padding:.3rem .6rem;border-radius:20px;border:1px solid rgba(124,58,237,.3);background:rgba(124,58,237,.06);color:#7c3aed;cursor:pointer;font-family:inherit;">🧾 Barter taxes</button>
+    <button onclick="askQuick('How do I boost my listing?')" style="font-size:.7rem;padding:.3rem .6rem;border-radius:20px;border:1px solid rgba(217,119,6,.3);background:rgba(217,119,6,.06);color:#d97706;cursor:pointer;font-family:inherit;">🚀 Boost listing</button>
+  </div>
+
+  <!-- Input -->
+  <div style="padding:.75rem 1rem; border-top:1px solid rgba(5,150,105,.15); display:flex; gap:.5rem;">
+    <input
+      id="support-input"
+      type="text"
+      placeholder="Ask anything about The Swap Yard…"
+      aria-label="Support message input"
+      style="
+        flex:1; padding:.6rem .85rem;
+        background:#ffffff; border:1px solid rgba(5,150,105,.25);
+        border-radius:8px; font-size:.82rem; font-family:'Inter',sans-serif;
+        color:#111827; outline:none;
+      "
+      onkeydown="if(event.key==='Enter')sendSupportMessage()"
+      onfocus="this.style.borderColor='#7c3aed'"
+      onblur="this.style.borderColor='rgba(5,150,105,.25)'"
+    >
+    <button
+      id="support-send"
+      onclick="sendSupportMessage()"
+      aria-label="Send message"
+      style="
+        background:linear-gradient(135deg,#7c3aed,#a855f7);
+        color:#fff; border:none; border-radius:8px;
+        width:36px; height:36px; cursor:pointer;
+        display:flex; align-items:center; justify-content:center;
+        font-size:1rem; flex-shrink:0; transition:opacity .15s;
+      ">➤</button>
+  </div>
+</div>
+
+<script>
+// ── SUPPORT AGENT STATE ───────────────────────────────────────
+const supportState = {
+  open:    false,
+  history: [],
+  typing:  false,
+};
+
+// ── TOGGLE PANEL ─────────────────────────────────────────────
+function toggleSupport() {
+  const panel  = document.getElementById('support-panel');
+  const btn    = document.getElementById('support-toggle');
+  supportState.open = !supportState.open;
+
+  panel.style.display = supportState.open ? 'flex' : 'none';
+  btn.textContent     = supportState.open ? '✕' : '🤖';
+  btn.style.background = supportState.open
+    ? 'linear-gradient(135deg,#374151,#6b7280)'
+    : 'linear-gradient(135deg,#7c3aed,#a855f7)';
+
+  if (supportState.open) {
+    document.getElementById('support-input').focus();
+  }
+}
+
+// ── QUICK QUESTION SHORTCUT ───────────────────────────────────
+function askQuick(question) {
+  document.getElementById('support-input').value = question;
+  // Hide quick questions after first use
+  document.getElementById('quick-questions').style.display = 'none';
+  sendSupportMessage();
+}
+
+// ── SEND MESSAGE ─────────────────────────────────────────────
+async function sendSupportMessage() {
+  if (supportState.typing) return;
+
+  const input   = document.getElementById('support-input');
+  const message = input.value.trim();
+  if (!message) return;
+
+  input.value = '';
+  document.getElementById('quick-questions').style.display = 'none';
+
+  // Add user bubble
+  appendMessage(message, 'user');
+
+  // Add typing indicator
+  const typingId = appendTyping();
+  supportState.typing = true;
+
+  // Disable send button
+  const sendBtn = document.getElementById('support-send');
+  sendBtn.style.opacity = '.4';
+  sendBtn.disabled = true;
+
+  try {
+    const res = await fetch('/.netlify/functions/support-agent', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message,
+        conversationHistory: supportState.history,
+        userId: window.currentUser?.id || null,
+      }),
+    });
+
+    const data = await res.json();
+
+    // Remove typing indicator
+    document.getElementById(typingId)?.remove();
+
+    // Add agent reply
+    appendMessage(data.reply, 'agent');
+
+    // Show escalation banner if needed
+    if (data.shouldEscalate) {
+      appendEscalation(data.escalationEmail);
+    }
+
+    // Update conversation history for context
+    supportState.history.push(
+      { role: 'user',      content: message        },
+      { role: 'assistant', content: data.reply      }
+    );
+
+    // Keep history to last 10 exchanges
+    if (supportState.history.length > 20) {
+      supportState.history = supportState.history.slice(-20);
+    }
+
+  } catch (e) {
+    document.getElementById(typingId)?.remove();
+    appendMessage("I'm having trouble connecting right now. Please email **support@theswapyard.com** and we'll get back to you shortly.", 'agent');
+  }
+
+  supportState.typing = false;
+  sendBtn.style.opacity = '1';
+  sendBtn.disabled = false;
+  input.focus();
+}
+
+// ── APPEND USER MESSAGE ───────────────────────────────────────
+function appendMessage(text, role) {
+  const container = document.getElementById('support-messages');
+  const div = document.createElement('div');
+
+  // Convert **bold** and newlines
+  const formatted = text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+
+  if (role === 'user') {
+    div.style.cssText = `
+      align-self:flex-end;
+      background:linear-gradient(135deg,#7c3aed,#a855f7);
+      color:#fff; border-radius:10px 10px 2px 10px;
+      padding:.65rem .9rem; font-size:.82rem;
+      line-height:1.5; max-width:85%;
+    `;
+    div.innerHTML = formatted;
+  } else {
+    div.style.cssText = `
+      background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04));
+      border:1px solid rgba(5,150,105,.2);
+      border-radius:10px 10px 10px 2px;
+      padding:.75rem 1rem; font-size:.82rem;
+      color:#111827; line-height:1.5; max-width:92%;
+    `;
+    div.innerHTML = formatted;
+  }
+
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+}
+
+// ── TYPING INDICATOR ─────────────────────────────────────────
+function appendTyping() {
+  const container = document.getElementById('support-messages');
+  const id = 'typing-' + Date.now();
+  const div = document.createElement('div');
+  div.id = id;
+  div.style.cssText = `
+    background:linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04));
+    border:1px solid rgba(5,150,105,.2);
+    border-radius:10px 10px 10px 2px;
+    padding:.75rem 1rem; font-size:.82rem;
+    color:#9ca3af; max-width:80%;
+  `;
+  div.innerHTML = `
+    <span style="display:inline-flex;gap:3px;align-items:center;">
+      <span style="animation:bounce .8s infinite .0s">●</span>
+      <span style="animation:bounce .8s infinite .15s">●</span>
+      <span style="animation:bounce .8s infinite .3s">●</span>
+    </span>
+    <style>
+      @keyframes bounce {
+        0%,80%,100%{transform:translateY(0);opacity:.4}
+        40%{transform:translateY(-4px);opacity:1}
+      }
+    </style>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return id;
+}
+
+// ── ESCALATION BANNER ─────────────────────────────────────────
+function appendEscalation(email) {
+  const container = document.getElementById('support-messages');
+  const div = document.createElement('div');
+  div.style.cssText = `
+    background:rgba(217,119,6,.07); border:1px solid rgba(217,119,6,.25);
+    border-radius:8px; padding:.75rem 1rem; font-size:.78rem; color:#374151;
+  `;
+  div.innerHTML = `
+    <strong style="color:#d97706;display:block;margin-bottom:.25rem">👤 Want to talk to a person?</strong>
+    Email us at <a href="mailto:${email || 'support@theswapyard.com'}"
+      style="color:#7c3aed;font-weight:600;">${email || 'support@theswapyard.com'}</a>
+    and we'll get back to you within 24 hours.
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+// Close panel on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && supportState.open) toggleSupport();
+});
+</script>
+
+
+<!-- Affiliate tracking -->
+<script>
+document.getElementById('');
+  const container = document.getElementById('affiliate-links-container');
+  if (!section || !container) return;
+
+  // Reset
+  section.style.display   = 'none';
+  container.innerHTML     = '';
+
+  // Don't show for services, digital, or events
+  const skipTypes = ['service', 'digital', 'event'];
+  if (skipTypes.some(t => (window.currentModalListing?.type || '').toLowerCase().includes(t))) return;
+
+  try {
+    const params = new URLSearchParams({ category, title: title.slice(0, 60), listingId });
+    const res    = await fetch(`'a');
+      a.href   = link.url;
+      a.target = '_blank';
+      a.rel    = 'noopener noreferrer sponsored';
+      a.setAttribute('aria-label', link.label);
+      a.style.cssText = `
+        display:flex; align-items:center; justify-content:space-between;
+        padding:.6rem .9rem;
+        background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02));
+        border:1px solid rgba(5,150,105,.2); border-radius:8px;
+        text-decoration:none; transition:all .15s;
+        font-size:.8rem; font-family:'Inter',sans-serif; color:#111827;
+      `;
+      a.onmouseover = () => { a.style.borderColor = '#7c3aed'; a.style.background = 'linear-gradient(135deg,rgba(124,58,237,.07),rgba(124,58,237,.03))'; };
+      a.onmouseout  = () => { a.style.borderColor = 'rgba(5,150,105,.2)'; a.style.background = 'linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02))'; };
+      a.innerHTML = `
+        <span style="display:flex;align-items:center;gap:.5rem;">
+          <span style="font-size:1.1rem;">${link.logo}</span>
+          <span style="font-weight:600;">${link.label}</span>
+        </span>
+        <span style="font-size:.7rem;color:#9ca3af;font-family:'JetBrains Mono',monospace;">NEW →</span>
+      `;
+
+      // Track click
+      a.addEventListener('click', () => {
+        fetch('', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            listingId,
+            userId:   window.currentUser?.id || null,
+            program:  link.key,
+            url:      link.url,
+            category,
+          }),
+        }).catch(() => {});
+      });
+
+      container.appendChild(a);
+    });
+
+    section.style.display = 'block';
+  } catch (e) {
+    // Fail silently — affiliate links are non-critical
+  }
+}
+
+// Call this when a listing modal opens.
+// Find your existing modal open function in index.html and add:
+// </script>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// The Swap Yard Vendor Dashboard — Product Image Upload
+// ══════════════════════════════════════════════════════════════
+
+const dashImgState = { files: [] };
+
+function dashRenderPreviews() {
+  const preview = document.getElementById('dash-imgPreview');
+  const countEl = document.getElementById('dash-imgCount');
+  if (!preview) return;
+  preview.innerHTML = '';
+
+  dashImgState.files.forEach((file, i) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = [
+        'position:relative',
+        'width:90px',
+        'height:90px',
+        'border-radius:10px',
+        'overflow:hidden',
+        'flex-shrink:0',
+        i === 0
+          ? 'border:2px solid rgba(5,150,105,.6);box-shadow:0 0 0 2px rgba(5,150,105,.15)'
+          : 'border:1px solid rgba(5,150,105,.2)',
+      ].join(';');
+      wrap.innerHTML = `
+        <img src="${e.target.result}" alt="Photo ${i+1}" style="width:100%;height:100%;object-fit:cover;display:block;">
+        ${i === 0 ? `<div style="position:absolute;bottom:0;left:0;right:0;background:rgba(5,150,105,.85);color:#fff;font-size:.52rem;text-align:center;padding:.18rem;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;font-weight:600;">Cover</div>` : ''}
+        <button onclick="dashRemoveImg(${i})" aria-label="Remove photo ${i+1}" style="position:absolute;top:3px;right:3px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:.7rem;display:flex;align-items:center;justify-content:center;">✕</button>`;
+      preview.appendChild(wrap);
+    };
+    reader.readAsDataURL(file);
+  });
+
+  if (countEl) {
+    const n = dashImgState.files.length;
+    countEl.textContent = n === 0 ? '' : `${n} photo${n !== 1 ? 's' : ''} · First photo is the cover`;
+  }
+}
+
+function dashRemoveImg(index) {
+  dashImgState.files.splice(index, 1);
+  dashRenderPreviews();
+  showToast('🗑️', `Photo removed. ${dashImgState.files.length} remaining.`);
+}
+
+function dashHandleImgDrop(event) {
+  event.preventDefault();
+  const dz = document.getElementById('dash-imgDropZone');
+  if (dz) dz.style.borderColor = 'rgba(5,150,105,.3)';
+  const newFiles = Array.from(event.dataTransfer.files)
+    .filter(f => ['image/jpeg','image/png','image/webp'].includes(f.type))
+    .filter(f => f.size <= 5 * 1024 * 1024);
+  const available = 5 - dashImgState.files.length;
+  dashImgState.files = [...dashImgState.files, ...newFiles].slice(0, 5);
+  dashRenderPreviews();
+  if (newFiles.length > available) showToast('⚠️', `Max 5 photos — first ${available} added`);
+}
+
+async function dashUploadImages(listingId, userId) {
+  const files = dashImgState.files;
+  if (!files.length) return [];
+  const urls = [];
+
+  for (let i = 0; i < Math.min(files.length, 5); i++) {
+    const file = files[i];
+    try {
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload  = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = () => reject(new Error('Read failed'));
+        reader.readAsDataURL(file);
+      });
+      const res  = await fetch('/.netlify/functions/upload-image', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, listingId, imageBase64: base64, mimeType: file.type, fileName: file.name }),
+      });
+      const data = await res.json();
+      if (data.url) { urls.push(data.url); showToast('📸', `Photo ${i + 1}/${files.length} uploaded`); }
+    } catch (e) {
+      showToast('⚠️', `Photo ${i + 1} failed — listing saved without it`);
+    }
+  }
+
+  // Clear state
+  dashImgState.files = [];
+  const preview = document.getElementById('dash-imgPreview');
+  const countEl = document.getElementById('dash-imgCount');
+  const input   = document.getElementById('nl-images');
+  if (preview) preview.innerHTML = '';
+  if (countEl) countEl.textContent = '';
+  if (input)   input.value = '';
+  return urls;
+}
+
+// Wire file input
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('nl-images');
+  if (!input) return;
+  input.addEventListener('change', () => {
+    const valid = Array.from(input.files)
+      .filter(f => ['image/jpeg','image/png','image/webp'].includes(f.type))
+      .filter(f => f.size <= 5 * 1024 * 1024);
+    const oversized = Array.from(input.files).filter(f => f.size > 5 * 1024 * 1024);
+    if (oversized.length) showToast('⚠️', `${oversized.length} photo${oversized.length > 1 ? 's' : ''} skipped — over 5MB`);
+    const available = 5 - dashImgState.files.length;
+    if (available <= 0) { showToast('⚠️','Max 5 photos. Remove one first.'); input.value=''; return; }
+    dashImgState.files = [...dashImgState.files, ...valid].slice(0, 5);
+    if (valid.length > available) showToast('⚠️', `Added first ${available} — max 5 total`);
+    dashRenderPreviews();
+    input.value = '';
+  });
+});
+
+// ══════════════════════════════════════════════════════
+
+
+// ════════════════════════════════════════════════════════════
+// PAYMENT SETTINGS — Methods, QR codes, Social Links
+// ════════════════════════════════════════════════════════════
+
+const qrState = { venmo: null, zelle: null, cashapp: null };
+
+// Load saved settings when settings page opens
+async function loadPaymentSettings() {
+  if (!currentUser) return;
+  try {
+    const { data: p } = await sb.from('profiles')
+      .select('accepted_payments, payment_qr_codes, social_links')
+      .eq('id', currentUser.id)
+      .single();
+    if (!p) return;
+
+    // Restore method checkboxes
+    const methods = p.accepted_payments || ['card', 'cash'];
+    ['card','cash','venmo','zelle','paypal','cashapp'].forEach(m => {
+      const el = document.getElementById('pay-' + m);
+      if (el) el.checked = methods.includes(m);
+    });
+
+    // Restore QR previews
+    const qrs = p.payment_qr_codes || {};
+    ['venmo','zelle','cashapp'].forEach(m => {
+      if (qrs[m]) { qrState[m] = qrs[m]; _showQRPreview(m, qrs[m]); }
+    });
+
+    // Restore social links
+    const links = p.social_links || {};
+    ['website','instagram','facebook','tiktok','twitter','youtube'].forEach(k => {
+      const el = document.getElementById('set-' + k);
+      if (el && links[k]) el.value = links[k];
+    });
+  } catch(e) { console.error('loadPaymentSettings:', e.message); }
+}
+
+// Handle QR file selection (called by onchange on file inputs)
+async function handleQRUpload(method, input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) {
+    showToast('⚠️', 'Please upload an image file — JPG, PNG, or screenshot'); return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('⚠️', 'Image must be under 5MB'); return;
+  }
+
+  showToast('⏳', 'Uploading ' + method + ' QR code…');
+  try {
+    const base64 = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload  = () => res(r.result.split(',')[1]);
+      r.onerror = () => rej(new Error('Read failed'));
+      r.readAsDataURL(file);
+    });
+
+    const resp = await fetch('/.netlify/functions/upload-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId:      currentUser.id,
+        listingId:   'payment-qr',
+        imageBase64: base64,
+        mimeType:    file.type,
+        fileName:    method + '-qr.' + (file.type.split('/')[1] || 'png'),
+      }),
+    });
+    const data = await resp.json();
+    if (!data.url) throw new Error(data.error || 'Upload failed');
+
+    qrState[method] = data.url;
+    _showQRPreview(method, data.url);
+    showToast('✅', method.charAt(0).toUpperCase() + method.slice(1) + ' QR code uploaded!');
+  } catch(e) {
+    showToast('⚠️', 'Upload failed: ' + e.message);
+  }
+  input.value = '';
+}
+
+// Render a QR preview image in the preview container
+function _showQRPreview(method, url) {
+  const wrap = document.getElementById('qr-preview-' + method);
+  const clear = document.getElementById('qr-clear-' + method);
+  if (!wrap) return;
+
+  const colors = { venmo:'#3d95ce', zelle:'#6d1ed4', cashapp:'#00a33c' };
+  const c = colors[method] || 'var(--accent)';
+
+  wrap.innerHTML = `
+    <img src="${url}" alt="${method} QR code"
+      style="width:104px;height:104px;border-radius:8px;border:2px solid ${c};
+             object-fit:contain;background:#fff;padding:4px;display:block;"
+      onerror="this.parentElement.innerHTML='<p style=font-size:.72rem;color:var(--red);>Failed to load — re-upload</p>'">`;
+  if (clear) clear.style.display = 'inline-flex';
+}
+
+// Clear a QR code
+function clearQR(method) {
+  qrState[method] = null;
+  const wrap  = document.getElementById('qr-preview-' + method);
+  const clear = document.getElementById('qr-clear-' + method);
+  const colors = { venmo:'61,149,206', zelle:'109,30,212', cashapp:'0,163,60' };
+  const c = colors[method] || '124,58,237';
+  if (wrap) wrap.innerHTML = `
+    <div onclick="document.getElementById('qr-file-${method}').click()"
+      style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+             width:100%;height:100px;border:2px dashed rgba(${c},.35);border-radius:8px;
+             cursor:pointer;background:rgba(${c},.03);">
+      <span style="font-size:1.6rem;margin-bottom:.25rem;">📷</span>
+      <span style="font-size:.75rem;color:var(--text3);">Upload QR Code</span>
+    </div>`;
+  if (clear) clear.style.display = 'none';
+  showToast('🗑️', method + ' QR code removed — save to apply');
+}
+
+// Save all payment settings to Supabase
+async function savePaymentSettings() {
+  if (!currentUser) { showToast('🔒','Sign in first'); return; }
+  try {
+    const methods = ['card','cash','venmo','zelle','paypal','cashapp']
+      .filter(m => document.getElementById('pay-' + m)?.checked);
+
+    const qrCodes = {};
+    ['venmo','zelle','cashapp'].forEach(m => { if (qrState[m]) qrCodes[m] = qrState[m]; });
+
+    const { error } = await sb.from('profiles').upsert({
+      id:                currentUser.id,
+      accepted_payments: methods,
+      payment_qr_codes:  qrCodes,
+    });
+    if (error) throw error;
+    showToast('✅', 'Payment settings saved!');
+  } catch(e) { showToast('⚠️', 'Error: ' + e.message); }
+}
+
+// Save social links
+async function saveSocialLinks() {
+  if (!currentUser) return;
+  const links = {};
+  ['website','instagram','facebook','tiktok','twitter','youtube'].forEach(k => {
+    const v = document.getElementById('set-' + k)?.value?.trim();
+    if (v) links[k] = v;
+  });
+  const { error } = await sb.from('profiles').upsert({ id: currentUser.id, social_links: links });
+  showToast(error ? '⚠️' : '✅', error ? error.message : 'Links saved!');
+}
+
+</script>
+
+</body>
+</html>
+
