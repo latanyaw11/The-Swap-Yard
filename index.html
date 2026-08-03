@@ -1119,14 +1119,7 @@ footer{background:#111827;color:rgba(255,255,255,.5);padding:2.5rem 1.5rem;margi
     </div>
     <div class="stripe-note" id="dStripeNote" style="display:none;">
       💳 Powered by Stripe · Secure Checkout · <a href="terms.html#disputes" style="color:var(--teal)">Buyer protection →</a>
-    </div><!-- Other payment channels panel -->
-    <div id="dOtherPay" style="display:none;margin-top:.75rem;background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02));border:1px solid rgba(5,150,105,.2);border-radius:10px;padding:1rem;">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:.6rem;">Vendor also accepts</div>
-      <div id="dOtherPayMethods" style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.6rem;"></div>
-      <p style="font-size:.75rem;color:var(--text2);line-height:1.5;margin-bottom:.5rem;">Message the seller to arrange payment via their preferred channel. Stripe card checkout above is also available for secure protected payments.</p>
-      <button class="btn btn-ink btn-sm" onclick="contactSeller()" style="font-size:.75rem;">💬 Message to Arrange →</button>
     </div>
-    <div class="stripe-note" id="dStripeNote" style="display:none">💳 Powered by Stripe · Secure checkout · <a href="terms.html#disputes" style="color:var(--teal)">Buyer protection →</a></div>
 
     <!-- REVIEWS -->
     <div class="reviews-wrap">
@@ -1277,7 +1270,7 @@ footer{background:#111827;color:rgba(255,255,255,.5);padding:2.5rem 1.5rem;margi
 // ══════════════════════════════════════════════════════════
 const SB_URL  = 'https://qkmvznvetsfijwhikiar.supabase.co';
 const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbXZ6bnZldHNmaWp3aGlraWFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNzE0ODksImV4cCI6MjA5Njg0NzQ4OX0.uaDC_xktlWLEpbavCdA9vAL56Pd2PN3xhU_SmHBzlZw';
-const STR_KEY = 'mk_1TZd7WPyU1gEZjMMCQVjfavh';
+const STR_KEY = pk_live_51TZd7TPyU1gEZjMM5DzhUuMqR2ciY8Ok3un5Q5g6VItXeJIv7xaU6ux3AKHivawRGrx0HVgSI21SP43AjVeOQuqA00QuICD1C2
 
 const { createClient } = supabase;
 const sb     = (SB_URL.startsWith('https://') && SB_KEY.length > 20)
