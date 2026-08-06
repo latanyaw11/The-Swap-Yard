@@ -647,7 +647,8 @@ async function doAuth() {
       document.getElementById('authEmail').value = '';
       document.getElementById('authPw').value = '';
     } else {
-      // Signed in — go to home
+      // Signed in — set flag so home page auth guard doesn't redirect back
+      sessionStorage.setItem('tsy_just_signed_in', '1');
       window.location.replace('home-v2.html');
       return;
     }
