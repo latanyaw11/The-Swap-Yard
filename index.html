@@ -566,19 +566,18 @@ const sb = (SUPABASE_URL.startsWith('https://') && SUPABASE_KEY.length > 20)
 let authMode = 'in';
 
 // ── ON LOAD — check if already authenticated ──────────────────
-window.addEventListener('DOMContentLoaded', async () => {
-  if (!sb) return; // keys not set yet
-
+window.addEventListener('DOMContentLoaded', () => {
+  // Fast check — if user already has a Supabase session, skip to home
   try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session) {
-      // Already signed in — skip everything, go straight to home
+    const key = 'sb-qkmvznvetsfijwhikiar-auth-token';
+    const raw = localStorage.getItem(key);
+    if (raw && raw !== 'null') {
       window.location.replace('home-v2.html');
       return;
     }
   } catch(e) {}
 
-  // Check session storage for age gate
+  // No session — check if age gate was already passed this session
   if (sessionStorage.getItem('tsy_age_ok') === '1') {
     showAuthPage();
   }
