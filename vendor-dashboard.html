@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
 <title>The Swap Yard — Vendor Dashboard | Buy, Sell, Trade &amp; Barter</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
-  color-scheme: light;
+  color-scheme: light only;
   --bg:       #ffffff;
   --bg-tint:  linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02));
   --panel:    #ffffff;
@@ -30,6 +31,58 @@
   --mono:     'JetBrains Mono', monospace;
   --sans:     'Inter', sans-serif;
 }
+
+/* ── FORCE LIGHT MODE — override system dark mode ── */
+html {
+  background: #ffffff !important;
+  color-scheme: light only !important;
+}
+body {
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+.app, .sidebar, .main, .content, .topbar,
+.page, .panel, .card, .stat-card,
+.table-wrap, .data-table, .data-table td,
+.data-table th, .data-table tr,
+.tabs, .tab, .sec-hdr, .form-group,
+.form-input, .form-select, .form-ta,
+.modal, .overlay {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+}
+.sidebar {
+  background: #f9fafb !important;
+}
+.stat-card {
+  background: linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04)) !important;
+}
+.panel {
+  background: linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02)) !important;
+  border: 1px solid rgba(5,150,105,.2) !important;
+}
+.data-table thead th {
+  background: #f9fafb !important;
+  color: #6b7280 !important;
+}
+.data-table tbody tr:hover {
+  background: #f9fafb !important;
+}
+.topbar {
+  background: #ffffff !important;
+  border-bottom: 1px solid #e5e7eb !important;
+}
+.nav-item {
+  color: #374151 !important;
+}
+.nav-item:hover, .nav-item.active {
+  background: rgba(124,58,237,.08) !important;
+  color: #7c3aed !important;
+}
+.sec-title { color: #111827 !important; }
+.sec-mono  { color: #9ca3af !important; }
+.stat-val  { color: #111827 !important; }
+.stat-label { color: #6b7280 !important; }
 *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
 body { background: linear-gradient(160deg,rgba(5,150,105,.04) 0%,rgba(5,150,105,.01) 100%) fixed, #ffffff; color: #111827; font-family: var(--sans); min-height: 100vh; -webkit-font-smoothing: antialiased; color-scheme: light; }
@@ -379,6 +432,45 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   padding: 4px;
 }
 
+</style>
+
+<style>
+/* FORCE LIGHT MODE — prevents Mac/Windows dark mode from inverting colors */
+html, body, .app, .sidebar, .main, .content, .topbar,
+.page, .page.active, .panel, .card, .stat-card,
+.table-wrap, .data-table, .data-table td, .data-table th,
+.tabs, .tab, .sec-hdr, .modal, .overlay, .form-group,
+.form-input, .form-select, .form-ta, input, select, textarea {
+  color-scheme: light !important;
+}
+html { background: #ffffff !important; }
+body { background: #ffffff !important; color: #111827 !important; }
+.app { background: #ffffff !important; }
+.sidebar { background: #f9fafb !important; color: #111827 !important; }
+.main, .content { background: #ffffff !important; color: #111827 !important; }
+.topbar { background: #ffffff !important; border-bottom: 1px solid #e5e7eb !important; }
+.page, .page.active { background: #ffffff !important; color: #111827 !important; }
+.stat-card { background: linear-gradient(135deg,rgba(5,150,105,.08),rgba(5,150,105,.04)) !important; }
+.panel { background: linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02)) !important; }
+.data-table { background: #ffffff !important; }
+.data-table th { background: #f9fafb !important; color: #6b7280 !important; }
+.data-table td { color: #111827 !important; background: #ffffff !important; }
+.data-table tr:nth-child(even) td { background: #f9fafb !important; }
+.table-wrap { background: #ffffff !important; }
+input, select, textarea { background: #ffffff !important; color: #111827 !important; }
+.nav-item { color: #374151 !important; }
+.nav-item:hover { background: rgba(124,58,237,.08) !important; color: #7c3aed !important; }
+.nav-item.active { background: rgba(124,58,237,.1) !important; color: #7c3aed !important; }
+.sec-title, .panel-title { color: #111827 !important; }
+.sec-mono { color: #9ca3af !important; }
+.stat-val { color: #111827 !important; }
+.stat-label { color: #6b7280 !important; }
+.cell-primary { color: #111827 !important; }
+.cell-mono { color: #374151 !important; font-family: 'JetBrains Mono', monospace !important; }
+.form-label { color: #374151 !important; }
+.tabs { background: #f9fafb !important; }
+.tab { color: #6b7280 !important; background: transparent !important; }
+.tab.active { color: #111827 !important; background: #ffffff !important; }
 </style>
 </head>
 <body>
@@ -1058,8 +1150,8 @@ textarea.form-input { resize: vertical; min-height: 80px; }
 // PASTE YOUR KEYS — replace both values below
 // Supabase → Project Settings → API
 // ═══════════════════════════════════════════════
-const SUPABASE_URL      = 'https://qkmvznvetsfijwhikiar.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbXZ6bnZldHNmaWp3aGlraWFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNzE0ODksImV4cCI6MjA5Njg0NzQ4OX0.uaDC_xktlWLEpbavCdA9vAL56Pd2PN3xhU_SmHBzlZw';
+const SUPABASE_URL      = 'PASTE_SUPABASE_URL_HERE';
+const SUPABASE_ANON_KEY = 'PASTE_SUPABASE_ANON_KEY_HERE';
 
 const { createClient } = supabase;
 const sb = (SUPABASE_URL.startsWith('https://') && SUPABASE_ANON_KEY.length > 20)
