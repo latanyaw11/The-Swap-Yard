@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light only">
+<title>The Swap Yard — Buy, Sell, Trade & Barter</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  font-family: 'Inter', sans-serif;
+  background: #0a0a0f;
+  color: #ffffff;
+  overflow: hidden;
+}
+
+/* ── LANDING / AGE GATE ── */
+.landing {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 50%, #0a1a0f 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 10;
+}
+.landing::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 30%, rgba(124,58,237,.15), transparent),
+    radial-gradient(ellipse 50% 40% at 80% 70%, rgba(5,150,105,.1), transparent);
+}
+.landing-card {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 24px;
+  padding: 3rem 2.5rem;
+  max-width: 460px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 40px 80px rgba(0,0,0,.4);
+}
+.landing-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  margin-bottom: 2rem;
+}
+.landing-logo-mark {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #7c3aed, #059669);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.landing-brand {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  color: #ffffff;
+}
+.landing-tagline {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: .62rem;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: #b8f241;
+  margin-bottom: .75rem;
+}
+.landing-headline {
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: -.03em;
+  color: #ffffff;
+  line-height: 1.2;
+  margin-bottom: .75rem;
+}
+.landing-sub {
+  font-size: .85rem;
+  color: rgba(255,255,255,.5);
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+.landing-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+.landing-pill {
+  font-size: .7rem;
+  font-weight: 600;
+  padding: .3rem .7rem;
+  border-radius: 100px;
+  border: 1px solid rgba(255,255,255,.12);
+  color: rgba(255,255,255,.7);
+  background: rgba(255,255,255,.04);
+}
+.age-notice {
+  background: rgba(124,58,237,.1);
+  border: 1px solid rgba(124,58,237,.25);
+  border-radius: 10px;
+  padding: .75rem 1rem;
+  margin-bottom: 1.5rem;
+  font-size: .78rem;
+  color: rgba(255,255,255,.7);
+  line-height: 1.5;
+}
+.age-notice strong { color: #a78bfa; }
+.btn-enter {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .2s;
+  margin-bottom: .75rem;
+  box-shadow: 0 4px 20px rgba(124,58,237,.4);
+}
+.btn-enter:hover {
+  background: linear-gradient(135deg, #6d28d9, #5b21b6);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(124,58,237,.5);
+}
+.btn-exit {
+  display: block;
+  width: 100%;
+  padding: .75rem;
+  background: transparent;
+  color: rgba(255,255,255,.35);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px;
+  font-size: .82rem;
+  text-decoration: none;
+  transition: all .2s;
+  font-family: inherit;
+  cursor: pointer;
+}
+.btn-exit:hover { color: rgba(255,255,255,.6); border-color: rgba(255,255,255,.2); }
+
+/* ── SIGN IN / SIGN UP PAGE ── */
+.auth-page {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #0a0a0f 0%, #1a0a2e 50%, #0a1a0f 100%);
+  display: none;
+  z-index: 9;
+  overflow-y: auto;
+}
+.auth-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 20% 30%, rgba(124,58,237,.12), transparent),
+    radial-gradient(ellipse 50% 40% at 80% 70%, rgba(5,150,105,.08), transparent);
+  pointer-events: none;
+}
+.auth-inner {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem;
+  gap: 3rem;
+  align-items: center;
+  position: relative;
+}
+@media (max-width: 640px) {
+  .auth-inner { grid-template-columns: 1fr; }
+  .auth-value-prop { display: none; }
+}
+
+/* Left — value prop */
+.auth-value-prop {
+  padding: 2rem 0;
+}
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-bottom: 2.5rem;
+}
+.auth-logo-mark {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #7c3aed, #059669);
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.auth-logo-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+.auth-headline {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -.04em;
+  color: #ffffff;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+.auth-headline em { color: #b8f241; font-style: normal; }
+.auth-sub {
+  font-size: .88rem;
+  color: rgba(255,255,255,.5);
+  line-height: 1.7;
+  margin-bottom: 2rem;
+}
+.auth-features {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+.auth-feat {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  font-size: .84rem;
+  color: rgba(255,255,255,.7);
+  line-height: 1.5;
+}
+.auth-feat-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .9rem;
+  flex-shrink: 0;
+}
+
+/* Right — form */
+.auth-form-card {
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 20px;
+  padding: 2.5rem;
+  backdrop-filter: blur(20px);
+}
+.auth-tabs {
+  display: flex;
+  gap: .35rem;
+  background: rgba(255,255,255,.06);
+  border-radius: 10px;
+  padding: .25rem;
+  margin-bottom: 1.75rem;
+}
+.auth-tab {
+  flex: 1;
+  padding: .55rem;
+  border: none;
+  border-radius: 8px;
+  font-size: .82rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .2s;
+  background: transparent;
+  color: rgba(255,255,255,.4);
+}
+.auth-tab.on {
+  background: #7c3aed;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(124,58,237,.4);
+}
+.auth-field-label {
+  display: block;
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.4);
+  margin-bottom: .4rem;
+}
+.auth-field-input {
+  width: 100%;
+  padding: .75rem 1rem;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: .88rem;
+  font-family: inherit;
+  margin-bottom: 1rem;
+  transition: border-color .2s;
+  outline: none;
+}
+.auth-field-input:focus { border-color: rgba(124,58,237,.6); background: rgba(124,58,237,.06); }
+.auth-field-input::placeholder { color: rgba(255,255,255,.2); }
+.auth-submit {
+  width: 100%;
+  padding: .9rem;
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: .92rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .2s;
+  box-shadow: 0 4px 16px rgba(124,58,237,.35);
+  margin-bottom: 1rem;
+}
+.auth-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #6d28d9, #5b21b6);
+  transform: translateY(-1px);
+}
+.auth-submit:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+.auth-msg-err {
+  background: rgba(220,38,38,.1);
+  border: 1px solid rgba(220,38,38,.25);
+  border-radius: 8px;
+  padding: .65rem .9rem;
+  font-size: .78rem;
+  color: #fca5a5;
+  margin-bottom: .75rem;
+  display: none;
+}
+.auth-msg-ok {
+  background: rgba(5,150,105,.1);
+  border: 1px solid rgba(5,150,105,.25);
+  border-radius: 8px;
+  padding: .65rem .9rem;
+  font-size: .78rem;
+  color: #6ee7b7;
+  margin-bottom: .75rem;
+  display: none;
+}
+.auth-msg-err.on, .auth-msg-ok.on { display: block; }
+.auth-divider {
+  text-align: center;
+  font-size: .72rem;
+  color: rgba(255,255,255,.25);
+  margin: .5rem 0 1rem;
+  position: relative;
+}
+.auth-divider::before, .auth-divider::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 40%;
+  height: 1px;
+  background: rgba(255,255,255,.08);
+}
+.auth-divider::before { left: 0; }
+.auth-divider::after  { right: 0; }
+.btn-google {
+  width: 100%;
+  padding: .75rem;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 10px;
+  color: rgba(255,255,255,.7);
+  font-size: .84rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .2s;
+  margin-bottom: 1rem;
+}
+.btn-google:hover { background: rgba(255,255,255,.1); color: #ffffff; }
+.forgot-link {
+  text-align: center;
+  font-size: .75rem;
+  color: rgba(255,255,255,.3);
+  margin-top: .25rem;
+}
+.forgot-link button {
+  background: none;
+  border: none;
+  color: rgba(124,58,237,.8);
+  cursor: pointer;
+  font-size: .75rem;
+  font-family: inherit;
+  text-decoration: underline;
+}
+.forgot-link button:hover { color: #a78bfa; }
+.forgot-panel {
+  display: none;
+  margin-top: .75rem;
+  padding: .85rem;
+  background: rgba(124,58,237,.08);
+  border: 1px solid rgba(124,58,237,.2);
+  border-radius: 10px;
+}
+.forgot-panel p {
+  font-size: .75rem;
+  color: rgba(255,255,255,.5);
+  margin-bottom: .5rem;
+}
+.forgot-panel .auth-field-input { margin-bottom: .5rem; }
+.btn-reset {
+  width: 100%;
+  padding: .6rem;
+  background: rgba(124,58,237,.3);
+  border: 1px solid rgba(124,58,237,.4);
+  border-radius: 8px;
+  color: #c4b5fd;
+  font-size: .8rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn-reset:hover { background: rgba(124,58,237,.45); }
+.reset-msg { font-size: .72rem; margin-top: .4rem; min-height: 1rem; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     PAGE 1 — AGE GATE
+     Shown to ALL visitors on first load.
+     Returning authenticated users skip straight to home-v2.html.
+══════════════════════════════════════════════════════════ -->
+<div class="landing" id="agePage">
+  <div class="landing-card">
+
+    <div class="landing-logo">
+      <div class="landing-logo-mark">
+        <svg viewBox="0 0 16 16" fill="none" width="20" height="20">
+          <path d="M3 8h10M8 3l5 5-5 5" stroke="#b8f241" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="landing-brand">The Swap Yard</span>
+    </div>
+
+    <div class="landing-tagline">Buy · Sell · Trade · Barter</div>
+    <h1 class="landing-headline">The smarter way<br>to trade.</h1>
+    <p class="landing-sub">A nationwide peer-to-peer marketplace rooted in Research Triangle Park, NC. Pay by card, cash, Venmo, Zelle — or skip money entirely and barter.</p>
+
+    <div class="landing-pills">
+      <span class="landing-pill">🌱 Eco-conscious</span>
+      <span class="landing-pill">🔒 Verified vendors</span>
+      <span class="landing-pill">💳 Stripe + P2P</span>
+      <span class="landing-pill">⇄ Trade & Barter</span>
+      <span class="landing-pill">🤖 AI Support</span>
+    </div>
+
+    <div class="age-notice">
+      This marketplace involves financial transactions. You must be <strong>18 years or older</strong> to enter.
+    </div>
+
+    <button class="btn-enter" onclick="enterSite()">I am 18 or older — Enter</button>
+    <a href="https://www.google.com" class="btn-exit">I am under 18 — Exit</a>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PAGE 2 — SIGN IN / SIGN UP
+     Shown after age gate is passed.
+     Has forgot password built in.
+══════════════════════════════════════════════════════════ -->
+<div class="auth-page" id="authPage">
+  <div class="auth-inner">
+
+    <!-- Left — Value Prop -->
+    <div class="auth-value-prop">
+      <div class="auth-logo">
+        <div class="auth-logo-mark">
+          <svg viewBox="0 0 16 16" fill="none" width="18" height="18">
+            <path d="M3 8h10M8 3l5 5-5 5" stroke="#b8f241" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="auth-logo-name">The Swap Yard</span>
+      </div>
+
+      <h2 class="auth-headline">Trade better.<br><em>Live greener.</em></h2>
+      <p class="auth-sub">Join thousands of buyers, sellers, and traders across the nation. Every deal you make keeps one more item out of the landfill.</p>
+
+      <div class="auth-features">
+        <div class="auth-feat">
+          <div class="auth-feat-icon">💳</div>
+          <div><strong style="color:#fff;">Pay your way</strong><br>Card, cash, Venmo, Zelle, Cash App, PayPal — or pure barter.</div>
+        </div>
+        <div class="auth-feat">
+          <div class="auth-feat-icon">✅</div>
+          <div><strong style="color:#fff;">Verified vendors</strong><br>3-tier trust system with email, phone, and government ID verification.</div>
+        </div>
+        <div class="auth-feat">
+          <div class="auth-feat-icon">🌱</div>
+          <div><strong style="color:#fff;">Every trade counts</strong><br>Rooted in RTP — built for an eco-conscious community.</div>
+        </div>
+        <div class="auth-feat">
+          <div class="auth-feat-icon">🤖</div>
+          <div><strong style="color:#fff;">AI support 24/7</strong><br>Get instant help from our AI agent any time, day or night.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right — Auth Form -->
+    <div class="auth-form-card">
+
+      <div class="auth-tabs">
+        <button class="auth-tab on" id="tabIn"  onclick="setMode('in')">Sign In</button>
+        <button class="auth-tab"    id="tabUp"  onclick="setMode('up')">Create Account</button>
+      </div>
+
+      <div class="auth-msg-err" id="authErr"></div>
+      <div class="auth-msg-ok"  id="authOk"></div>
+
+      <label class="auth-field-label">Email</label>
+      <input class="auth-field-input" type="email" id="authEmail" placeholder="you@email.com"
+             onkeydown="if(event.key==='Enter')doAuth()">
+
+      <label class="auth-field-label">Password</label>
+      <input class="auth-field-input" type="password" id="authPw" placeholder="••••••••" minlength="6"
+             onkeydown="if(event.key==='Enter')doAuth()">
+
+      <button class="auth-submit" id="authSubmit" onclick="doAuth()">Sign In</button>
+
+      <!-- Forgot password -->
+      <div class="forgot-link" id="forgotWrap">
+        <button onclick="toggleForgot()">Forgot your password?</button>
+      </div>
+      <div class="forgot-panel" id="forgotPanel">
+        <p>Enter your email and we'll send a reset link.</p>
+        <input class="auth-field-input" type="email" id="resetEmail" placeholder="you@email.com">
+        <button class="btn-reset" onclick="sendReset()">Send Reset Link</button>
+        <div class="reset-msg" id="resetMsg"></div>
+      </div>
+
+      <div class="auth-divider">or</div>
+      <button class="btn-google" onclick="doGoogle()">🔑 Continue with Google</button>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     SCRIPTS
+══════════════════════════════════════════════════════════ -->
+<script>
+const SUPABASE_URL = 'PASTE_SUPABASE_URL_HERE';
+const SUPABASE_KEY = 'PASTE_SUPABASE_ANON_KEY_HERE';
+const { createClient } = supabase;
+const sb = (SUPABASE_URL.startsWith('https://') && SUPABASE_KEY.length > 20)
+  ? createClient(SUPABASE_URL, SUPABASE_KEY)
+  : null;
+
+let authMode = 'in';
+
+// ── ON LOAD — check if already authenticated ──────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  if (!sb) return; // keys not set yet
+
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      // Already signed in — skip everything, go straight to home
+      window.location.replace('home-v2.html');
+      return;
+    }
+  } catch(e) {}
+
+  // Check session storage for age gate
+  if (sessionStorage.getItem('tsy_age_ok') === '1') {
+    showAuthPage();
+  }
+  // else: age gate is shown by default (landing div is visible)
+});
+
+// ── AGE GATE ──────────────────────────────────────────────────
+function enterSite() {
+  sessionStorage.setItem('tsy_age_ok', '1');
+  showAuthPage();
+}
+
+function showAuthPage() {
+  document.getElementById('agePage').style.display = 'none';
+  document.getElementById('authPage').style.display = 'block';
+  setTimeout(() => document.getElementById('authEmail').focus(), 100);
+}
+
+// ── AUTH MODE ─────────────────────────────────────────────────
+function setMode(mode) {
+  authMode = mode;
+  document.getElementById('tabIn').classList.toggle('on', mode === 'in');
+  document.getElementById('tabUp').classList.toggle('on', mode === 'up');
+  document.getElementById('authSubmit').textContent = mode === 'in' ? 'Sign In' : 'Create Account';
+  document.getElementById('forgotWrap').style.display = mode === 'in' ? 'block' : 'none';
+  document.getElementById('forgotPanel').style.display = 'none';
+  clearMsgs();
+}
+
+function clearMsgs() {
+  document.getElementById('authErr').classList.remove('on');
+  document.getElementById('authOk').classList.remove('on');
+}
+
+// ── SIGN IN / SIGN UP ─────────────────────────────────────────
+async function doAuth() {
+  if (!sb) { showErr('Supabase keys not configured yet.'); return; }
+
+  const email = document.getElementById('authEmail').value.trim();
+  const pw    = document.getElementById('authPw').value;
+  const btn   = document.getElementById('authSubmit');
+
+  clearMsgs();
+  if (!email)       { showErr('Please enter your email.'); return; }
+  if (pw.length < 6){ showErr('Password must be at least 6 characters.'); return; }
+
+  btn.textContent = '⏳ Please wait…';
+  btn.disabled = true;
+
+  try {
+    let r;
+    if (authMode === 'in') {
+      r = await sb.auth.signInWithPassword({ email, password: pw });
+    } else {
+      r = await sb.auth.signUp({ email, password: pw });
+    }
+
+    if (r.error) {
+      let msg = r.error.message;
+      if (msg.includes('Invalid login'))       msg = 'Wrong email or password. Please try again.';
+      if (msg.includes('already registered'))  msg = 'This email is already registered. Sign in instead.';
+      if (msg.includes('rate limit'))          msg = 'Too many attempts — please wait a moment.';
+      if (msg.includes('Database error'))      msg = 'Sign up failed. Please try again.';
+      showErr(msg);
+    } else if (authMode === 'up') {
+      showOk('✅ Account created! Check your email for a confirmation link, then sign in.');
+      document.getElementById('authEmail').value = '';
+      document.getElementById('authPw').value = '';
+    } else {
+      // Signed in — go to home
+      window.location.replace('home-v2.html');
+      return;
+    }
+  } catch(e) {
+    showErr('Something went wrong. Please try again.');
+  }
+
+  btn.textContent = authMode === 'in' ? 'Sign In' : 'Create Account';
+  btn.disabled = false;
+}
+
+async function doGoogle() {
+  if (!sb) return;
+  await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + '/home-v2.html' }
+  });
+}
+
+// ── FORGOT PASSWORD ───────────────────────────────────────────
+function toggleForgot() {
+  const panel = document.getElementById('forgotPanel');
+  const showing = panel.style.display === 'block';
+  panel.style.display = showing ? 'none' : 'block';
+  if (!showing) {
+    const email = document.getElementById('authEmail').value;
+    if (email) document.getElementById('resetEmail').value = email;
+    document.getElementById('resetEmail').focus();
+  }
+}
+
+async function sendReset() {
+  if (!sb) return;
+  const email = document.getElementById('resetEmail').value.trim();
+  const msg   = document.getElementById('resetMsg');
+  if (!email) { msg.textContent = 'Please enter your email.'; msg.style.color = '#fca5a5'; return; }
+  msg.textContent = 'Sending…'; msg.style.color = 'rgba(255,255,255,.4)';
+  try {
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/home-v2.html?reset=true',
+    });
+    if (error) { msg.textContent = error.message; msg.style.color = '#fca5a5'; }
+    else       { msg.textContent = '✅ Reset link sent! Check your inbox.'; msg.style.color = '#6ee7b7'; }
+  } catch(e) {
+    msg.textContent = 'Something went wrong.'; msg.style.color = '#fca5a5';
+  }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function showErr(msg) {
+  const el = document.getElementById('authErr');
+  el.textContent = msg;
+  el.classList.add('on');
+}
+function showOk(msg) {
+  const el = document.getElementById('authOk');
+  el.textContent = msg;
+  el.classList.add('on');
+}
+</script>
+
+</body>
+</html>
