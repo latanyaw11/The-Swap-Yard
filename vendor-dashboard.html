@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
+  color-scheme: light;
   --bg:       #ffffff;
   --bg-tint:  linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02));
   --panel:    #ffffff;
@@ -31,7 +32,7 @@
 }
 *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
-body { background: linear-gradient(160deg,rgba(5,150,105,.04) 0%,rgba(5,150,105,.01) 100%) fixed, #ffffff; color: var(--text); font-family: var(--sans); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+body { background: linear-gradient(160deg,rgba(5,150,105,.04) 0%,rgba(5,150,105,.01) 100%) fixed, #ffffff; color: #111827; font-family: var(--sans); min-height: 100vh; -webkit-font-smoothing: antialiased; color-scheme: light; }
 
 /* GLOW EFFECTS */
 .glow-accent { box-shadow: 0 0 40px rgba(124,58,237,.1); }
@@ -1829,71 +1830,7 @@ document.addEventListener('keydown', e => {
 
 
 <!-- Affiliate tracking -->
-<script>
-document.getElementById('');
-  const container = document.getElementById('affiliate-links-container');
-  if (!section || !container) return;
 
-  // Reset
-  section.style.display   = 'none';
-  container.innerHTML     = '';
-
-  // Don't show for services, digital, or events
-  const skipTypes = ['service', 'digital', 'event'];
-  if (skipTypes.some(t => (window.currentModalListing?.type || '').toLowerCase().includes(t))) return;
-
-  try {
-    const params = new URLSearchParams({ category, title: title.slice(0, 60), listingId });
-    const res    = await fetch(`'a');
-      a.href   = link.url;
-      a.target = '_blank';
-      a.rel    = 'noopener noreferrer sponsored';
-      a.setAttribute('aria-label', link.label);
-      a.style.cssText = `
-        display:flex; align-items:center; justify-content:space-between;
-        padding:.6rem .9rem;
-        background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02));
-        border:1px solid rgba(5,150,105,.2); border-radius:8px;
-        text-decoration:none; transition:all .15s;
-        font-size:.8rem; font-family:'Inter',sans-serif; color:#111827;
-      `;
-      a.onmouseover = () => { a.style.borderColor = '#7c3aed'; a.style.background = 'linear-gradient(135deg,rgba(124,58,237,.07),rgba(124,58,237,.03))'; };
-      a.onmouseout  = () => { a.style.borderColor = 'rgba(5,150,105,.2)'; a.style.background = 'linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02))'; };
-      a.innerHTML = `
-        <span style="display:flex;align-items:center;gap:.5rem;">
-          <span style="font-size:1.1rem;">${link.logo}</span>
-          <span style="font-weight:600;">${link.label}</span>
-        </span>
-        <span style="font-size:.7rem;color:#9ca3af;font-family:'JetBrains Mono',monospace;">NEW →</span>
-      `;
-
-      // Track click
-      a.addEventListener('click', () => {
-        fetch('', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            listingId,
-            userId:   window.currentUser?.id || null,
-            program:  link.key,
-            url:      link.url,
-            category,
-          }),
-        }).catch(() => {});
-      });
-
-      container.appendChild(a);
-    });
-
-    section.style.display = 'block';
-  } catch (e) {
-    // Fail silently — affiliate links are non-critical
-  }
-}
-
-// Call this when a listing modal opens.
-// Find your existing modal open function in index.html and add:
-// </script>
 
 <script>
 // ══════════════════════════════════════════════════════════════
@@ -2168,4 +2105,3 @@ async function saveSocialLinks() {
 
 </body>
 </html>
-
