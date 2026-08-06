@@ -443,15 +443,24 @@ footer{background:#111827;color:rgba(255,255,255,.5);padding:2.5rem 1.5rem;margi
 <body>
 
 <script>
-// Redirect unauthenticated users to landing page
+// Auth guard — async check with Supabase
+// Waits briefly for session to be written after sign-in
 (function() {
+  // Skip guard if we just signed in (flag set by landing page)
+  if (sessionStorage.getItem('tsy_just_signed_in') === '1') {
+    sessionStorage.removeItem('tsy_just_signed_in');
+    return; // let page load
+  }
+  // Check localStorage for Supabase session
   try {
-    const key = Object.keys(localStorage).find(k => k.includes('auth-token') && k.includes('supabase'));
-    if (!key || !localStorage.getItem(key)) {
-      window.location.replace('landing-v2.html');
+    const PROJECT = 'qkmvznvetsfijwhikiar';
+    const key = 'sb-' + PROJECT + '-auth-token';
+    const raw = localStorage.getItem(key);
+    if (!raw || raw === 'null') {
+      window.location.replace('index.html');
     }
   } catch(e) {
-    window.location.replace('landing-v2.html');
+    // localStorage blocked — let page load
   }
 })();
 </script>
