@@ -1175,6 +1175,7 @@ img { max-width: 100%; display: block; }
   <span>·</span>
   <span>🌎 Nationwide · Rooted in RTP, NC</span>
 </div>
+<div id="authNote" style="display:none"></div>
 <nav class="nav">
   <a href="home-v2.html" class="nav-logo"><div class="nav-logo-dot"></div>The Swap Yard</a>
   <div class="nav-links">
@@ -1335,7 +1336,8 @@ function refreshNav() {
 }
 
 function refreshAuthNote() {
-  document.getElementById('authNote').classList.toggle('on', !user);
+  const el = document.getElementById('authNote');
+  if (el) el.classList.toggle('on', !user);
 }
 
 function openAuth(mode) {

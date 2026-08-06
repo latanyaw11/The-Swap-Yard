@@ -1175,6 +1175,7 @@ img { max-width: 100%; display: block; }
   <span>·</span>
   <span>🌎 Nationwide · Rooted in RTP, NC</span>
 </div>
+<div id="authNote" style="display:none"></div>
 <nav class="nav">
   <a href="home-v2.html" class="nav-logo"><div class="nav-logo-dot"></div>The Swap Yard</a>
   <div class="nav-links">
@@ -1203,10 +1204,10 @@ img { max-width: 100%; display: block; }
   </div>
   <button class="btn btn-primary-g" onclick="goList()">+ List Item</button>
 </div>
-<div class="page active" id="listings">
+<div class="page active" id="listings" style="overflow-x:hidden;">
   
 
-  <div class="search-wrap">
+  <div class="search-wrap" style="padding-left:0;">
     <div class="search-wrap-inner">
       <span class="search-icon">🔍</span>
       <input class="search-input" id="searchInput" placeholder="Search listings, services, barter…" oninput="doSearch()">
@@ -1337,7 +1338,7 @@ img { max-width: 100%; display: block; }
 // ══════════════════════════════════════════════════════════
 const SB_URL  = 'https://qkmvznvetsfijwhikiar.supabase.co';
 const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbXZ6bnZldHNmaWp3aGlraWFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNzE0ODksImV4cCI6MjA5Njg0NzQ4OX0.uaDC_xktlWLEpbavCdA9vAL56Pd2PN3xhU_SmHBzlZw';
-const STR_KEY = 'pk_test_51TZd7TPyU1gEZjMMp97f70mBAvNZL5Doaaakb5IbgqG0GyMS9ju6He4rgwYv8KcXCywcW93qMq82ykCia2ZQ0ZBp00hfkKXYq6';
+const STR_KEY = 'pk_test_51TZd7TPyU1gEZjMMp97f70mBAvNZL5Doaaakb5IbgqG0GyMS9ju6He4rgwYv8KcXCywcW93qMq82ykCia2ZQ0ZBp00hfkKXYq6RE';
 
 const { createClient } = supabase;
 const sb     = (SB_URL.startsWith('https://') && SB_KEY.length > 20)
@@ -1376,7 +1377,8 @@ function refreshNav() {
 }
 
 function refreshAuthNote() {
-  document.getElementById('authNote').classList.toggle('on', !user);
+  const el = document.getElementById('authNote');
+  if (el) el.classList.toggle('on', !user);
 }
 
 function openAuth(mode) {
@@ -2579,20 +2581,7 @@ async function uploadListingImages(listingId, userId, _ignored) {
 }
 </script>
 
-<script>
-(function() {
-  const page = window.location.pathname.split('/').pop() || 'home-v2.html';
-  const map = {
-    'home-v2.html':   'nlHome',
-    'browse-v2.html': 'nlBrowse',
-    'events-v2.html': 'nlEvents',
-    'plans-v2.html':  'nlPlans',
-    'list-v2.html':   'nlList',
-  };
-  const el = document.getElementById(map[page]);
-  if (el) el.classList.add('active');
-})();
-</script>
+
 <script>
 (function() {
   const p = window.location.pathname.split('/').pop() || 'home-v2.html';

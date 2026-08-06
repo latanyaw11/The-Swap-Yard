@@ -1175,6 +1175,7 @@ img { max-width: 100%; display: block; }
   <span>·</span>
   <span>🌎 Nationwide · Rooted in RTP, NC</span>
 </div>
+<div id="authNote" style="display:none"></div>
 <nav class="nav">
   <a href="home-v2.html" class="nav-logo"><div class="nav-logo-dot"></div>The Swap Yard</a>
   <div class="nav-links">
@@ -1316,7 +1317,7 @@ img { max-width: 100%; display: block; }
 //  from Supabase (Settings → API) and Stripe (Developers → API Keys)
 // ══════════════════════════════════════════════════════════
 const SB_URL  = 'https://qkmvznvetsfijwhikiar.supabase.co';
-const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbXZ6bnZldHNmaWp3aGlraWFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNzE0ODksImV4cCI6MjA5Njg0NzQ4OX0.uaDC_xktlWLEpbavCdA9vAL56Pd2PN3xhU_SmHBzlZw';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbXZ6bnZldHNmaWp3aGlraWFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNzE0ODksImV4cCI6MjA5Njg0NzQ4OX0.uaDC_xktlWLEpbavCdA9vAL56Pd2PN3xhU_SmHBzlZwE';
 const STR_KEY = 'pk_test_51TZd7TPyU1gEZjMMp97f70mBAvNZL5Doaaakb5IbgqG0GyMS9ju6He4rgwYv8KcXCywcW93qMq82ykCia2ZQ0ZBp00hfkKXYq6';
 
 const { createClient } = supabase;
@@ -1356,7 +1357,8 @@ function refreshNav() {
 }
 
 function refreshAuthNote() {
-  document.getElementById('authNote').classList.toggle('on', !user);
+  const el = document.getElementById('authNote');
+  if (el) el.classList.toggle('on', !user);
 }
 
 function openAuth(mode) {
