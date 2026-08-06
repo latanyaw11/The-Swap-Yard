@@ -1205,7 +1205,18 @@ footer{background:#111827;color:rgba(255,255,255,.5);padding:2.5rem 1.5rem;margi
     <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="authEmail" type="email" placeholder="you@email.com"></div>
     <div class="form-group"><label class="form-label">Password</label><input class="form-input" id="authPw" type="password" placeholder="••••••••"></div>
     <button class="btn btn-ink" style="width:100%;padding:.85rem;font-size:.85rem;" id="authBtn2" onclick="doAuth()">Sign In</button>
-    <div style="margin-top:.6rem;"><button class="btn btn-outline" style="width:100%;font-size:.78rem;" onclick="doGoogle()">🔑 Continue with Google</button></div>
+    <div style="text-align:center;margin-top:.5rem;">
+      <button onclick="showForgotPw()" id="forgotPwBtn"
+        style="background:none;border:none;color:var(--accent);font-size:.78rem;cursor:pointer;text-decoration:underline;">
+        Forgot your password?
+      </button>
+    </div>
+    <div id="forgotPwPanel" style="display:none;margin-top:.75rem;padding:.85rem;background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.2);border-radius:8px;">
+      <p style="font-size:.78rem;color:var(--text2);margin-bottom:.6rem;">Enter your email and we'll send you a reset link.</p>
+      <input type="email" id="resetEmail" class="form-input" placeholder="you@email.com" style="margin-bottom:.5rem;">
+      <button class="btn btn-primary btn-sm" onclick="sendResetEmail()" style="width:100%;">Send Reset Link</button>
+      <div id="resetMsg" style="font-size:.75rem;margin-top:.4rem;"></div>
+    </div><div style="margin-top:.6rem;"><button class="btn btn-outline" style="width:100%;font-size:.78rem;" onclick="doGoogle()">🔑 Continue with Google</button></div>
   </div>
 </div>
 
@@ -1342,6 +1353,39 @@ async function doAuth() {
 }
 
 async function doGoogle() { await sb.auth.signInWithOAuth({provider:'google'}); }
+function showForgotPw() {
+  const panel = document.getElementById('forgotPwPanel');
+  const btn   = document.getElementById('forgotPwBtn');
+  const email = document.getElementById('authEmail');
+  if (!panel) return;
+  const showing = panel.style.display === 'block';
+  panel.style.display = showing ? 'none' : 'block';
+  btn.textContent = showing ? 'Forgot your password?' : 'Hide';
+  const resetInput = document.getElementById('resetEmail');
+  if (!showing && email && email.value) resetInput.value = email.value;
+}
+
+async function sendResetEmail() {
+  const email = document.getElementById('resetEmail').value.trim();
+  const msg   = document.getElementById('resetMsg');
+  if (!email) { msg.textContent = 'Please enter your email.'; msg.style.color = 'var(--red)'; return; }
+  msg.textContent = 'Sending…'; msg.style.color = 'var(--text3)';
+  try {
+    const { error } = await sb.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/?reset=true',
+    });
+    if (error) {
+      msg.textContent = error.message;
+      msg.style.color = 'var(--red)';
+    } else {
+      msg.textContent = '✅ Reset link sent! Check your email inbox.';
+      msg.style.color = 'var(--green)';
+    }
+  } catch(e) {
+    msg.textContent = 'Something went wrong. Please try again.';
+    msg.style.color = 'var(--red)';
+  }
+}  
 
 // ── LOAD LISTINGS ─────────────────────────────────────────
 async function loadListings() {
