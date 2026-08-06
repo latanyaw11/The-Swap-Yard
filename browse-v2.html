@@ -1154,6 +1154,14 @@ img { max-width: 100%; display: block; }
   .events-grid{grid-template-columns:1fr;padding:1rem;}
   .list-wrap{padding:1.5rem 1rem;}
 }
+
+.search-wrap { padding: 1rem 2.5rem; border-bottom: 1px solid var(--border); display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+.search-wrap-inner { display: flex; align-items: center; gap: .5rem; flex: 1; min-width: 200px; background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: .6rem 1rem; }
+.search-icon { font-size: .9rem; color: var(--ink4); }
+.search-input { flex: 1; border: none; background: transparent; font-size: .84rem; color: var(--ink); outline: none; font-family: var(--font-body); }
+.search-input::placeholder { color: var(--ink4); }
+.radius-select { padding: .5rem .75rem; border: 1px solid var(--border); border-radius: 8px; font-size: .78rem; background: var(--white); color: var(--ink2); outline: none; font-family: var(--font-mono); }
+.filter-row { padding: .6rem 2.5rem; border-bottom: 1px solid var(--border); display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
 </style>
 </head>
 <script>
@@ -1515,7 +1523,7 @@ async function loadListings() {
     if (error) throw error;
     listings = data || [];
   } catch(e) { listings = DEMO_LISTINGS; }
-  document.getElementById('hStatListings').textContent = listings.length || '—';
+  const _hsl = document.getElementById('hStatListings'); if(_hsl) _hsl.textContent = listings.length || '—';
   renderListings();
 }
 
