@@ -816,6 +816,20 @@ footer{background:#111827;color:rgba(255,255,255,.5);padding:2.5rem 1.5rem;margi
         </div>
       </div>
 
+      <!-- BARTER FIELDS — shown when barter is checked -->
+      <div id="barterGroup" style="display:none;">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">What will you accept in trade?</label>
+            <input class="form-input" id="lBarter" placeholder="e.g. Road bike, camera gear, guitar…">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Barter Item FMV ($)</label>
+            <input class="form-input" type="number" id="lBarterFMV" placeholder="0.00" min="0">
+          </div>
+        </div>
+      </div>
+
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Fulfillment</label>
@@ -1119,7 +1133,14 @@ footer{background:#111827;color:rgba(255,255,255,.5);padding:2.5rem 1.5rem;margi
     </div>
     <div class="stripe-note" id="dStripeNote" style="display:none;">
       💳 Powered by Stripe · Secure Checkout · <a href="terms.html#disputes" style="color:var(--teal)">Buyer protection →</a>
+    </div><!-- Other payment channels panel -->
+    <div id="dOtherPay" style="display:none;margin-top:.75rem;background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(5,150,105,.02));border:1px solid rgba(5,150,105,.2);border-radius:10px;padding:1rem;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:.6rem;">Vendor also accepts</div>
+      <div id="dOtherPayMethods" style="display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.6rem;"></div>
+      <p style="font-size:.75rem;color:var(--text2);line-height:1.5;margin-bottom:.5rem;">Message the seller to arrange payment via their preferred channel. Stripe card checkout above is also available for secure protected payments.</p>
+      <button class="btn btn-ink btn-sm" onclick="contactSeller()" style="font-size:.75rem;">💬 Message to Arrange →</button>
     </div>
+    <div class="stripe-note" id="dStripeNote" style="display:none">💳 Powered by Stripe · Secure checkout · <a href="terms.html#disputes" style="color:var(--teal)">Buyer protection →</a></div>
 
     <!-- REVIEWS -->
     <div class="reviews-wrap">
@@ -1216,7 +1237,8 @@ footer{background:#111827;color:rgba(255,255,255,.5);padding:2.5rem 1.5rem;margi
       <input type="email" id="resetEmail" class="form-input" placeholder="you@email.com" style="margin-bottom:.5rem;">
       <button class="btn btn-primary btn-sm" onclick="sendResetEmail()" style="width:100%;">Send Reset Link</button>
       <div id="resetMsg" style="font-size:.75rem;margin-top:.4rem;"></div>
-    </div><div style="margin-top:.6rem;"><button class="btn btn-outline" style="width:100%;font-size:.78rem;" onclick="doGoogle()">🔑 Continue with Google</button></div>
+    </div>
+    <div style="margin-top:.6rem;"><button class="btn btn-outline" style="width:100%;font-size:.78rem;" onclick="doGoogle()">🔑 Continue with Google</button></div>
   </div>
 </div>
 
@@ -1269,7 +1291,7 @@ footer{background:#111827;color:rgba(255,255,255,.5);padding:2.5rem 1.5rem;margi
       <button class="msg-send" onclick="sendMsg()">↑</button>
     </div>
   </div>
-</div
+</div>
 
 <!-- TOAST -->
 <div class="toast" id="toast"><span id="tIcon"></span><span id="tMsg"></span></div>
@@ -1280,8 +1302,8 @@ footer{background:#111827;color:rgba(255,255,255,.5);padding:2.5rem 1.5rem;margi
 //  from Supabase (Settings → API) and Stripe (Developers → API Keys)
 // ══════════════════════════════════════════════════════════
 const SB_URL  = 'https://qkmvznvetsfijwhikiar.supabase.co';
-const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbXZ6bnZldHNmaWp3aGlraWFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNzE0ODksImV4cCI6MjA5Njg0NzQ4OX0.uaDC_xktlWLEpbavCdA9vAL56Pd2PN3xhU_SmHBzlZw';
-const STR_KEY = 'pk_test_51TZd7TPyU1gEZjMMp97f70mBAvNZL5Doaaakb5IbgqG0GyMS9ju6He4rgwYv8KcXCywcW93qMq82ykCia2ZQ0ZBp00hfkKXYq6';
+const SB_KEY  = 'PASTE_SUPABASE_ANON_KEY_HERE';
+const STR_KEY = 'PASTE_STRIPE_PUBLISHABLE_KEY_HERE';
 
 const { createClient } = supabase;
 const sb     = (SB_URL.startsWith('https://') && SB_KEY.length > 20)
@@ -1323,7 +1345,26 @@ function refreshAuthNote() {
   document.getElementById('authNote').classList.toggle('on', !user);
 }
 
-function openAuth() { document.getElementById('authOverlay').classList.add('on'); setTimeout(()=>document.getElementById('authEmail').focus(),120); }
+function openAuth(mode) {
+  if (mode) setAuthMode(mode);
+  document.getElementById('authOverlay').classList.add('on');
+  setTimeout(() => document.getElementById('authEmail').focus(), 120);
+}
+
+function setAuthMode(mode) {
+  authMode = mode;
+  const btn    = document.getElementById('authBtn2');
+  const tabIn  = document.getElementById('authTabIn');
+  const tabUp  = document.getElementById('authTabUp');
+  const err    = document.getElementById('authErr');
+  const ok     = document.getElementById('authOk');
+  if (btn)   btn.textContent = mode === 'in' ? 'Sign In' : 'Create Account';
+  if (tabIn) tabIn.classList.toggle('active', mode === 'in');
+  if (tabUp) tabUp.classList.toggle('active', mode === 'up');
+  if (err)   err.classList.remove('on');
+  if (ok)    ok.classList.remove('on');
+  if (document.getElementById('authPw')) document.getElementById('authPw').value = '';
+}
 function closeAuthEv(e) { if (e.target===document.getElementById('authOverlay')) document.getElementById('authOverlay').classList.remove('on'); }
 function closeAuth() { document.getElementById('authOverlay').classList.remove('on'); }
 
@@ -1332,6 +1373,11 @@ function switchAuth(mode) {
   document.getElementById('atIn').classList.toggle('on', mode==='in');
   document.getElementById('atUp').classList.toggle('on', mode==='up');
   document.getElementById('authModalTitle').textContent = mode==='in'?'Welcome back':'Create account';
+  // Show/hide forgot password based on mode
+  const forgotBtn   = document.getElementById('forgotPwBtn');
+  const forgotPanel = document.getElementById('forgotPwPanel');
+  if (forgotBtn)   forgotBtn.style.display   = mode === 'in' ? 'inline' : 'none';
+  if (forgotPanel) forgotPanel.style.display = 'none';
   document.getElementById('authSub').textContent = mode==='in'?'Sign in to list items, message sellers, and track orders.':'Free account — no credit card required.';
   document.getElementById('authBtn2').textContent = mode==='in'?'Sign In':'Create Account';
   document.getElementById('authErr').classList.remove('on');
@@ -1340,19 +1386,56 @@ function switchAuth(mode) {
 
 async function doAuth() {
   const email = document.getElementById('authEmail').value.trim();
-  const pw = document.getElementById('authPw').value;
-  const err = document.getElementById('authErr'), ok = document.getElementById('authOk'), btn = document.getElementById('authBtn2');
-  err.classList.remove('on'); ok.classList.remove('on');
-  btn.textContent = '⏳ Please wait…'; btn.disabled = true;
+  const pw    = document.getElementById('authPw').value;
+  const err   = document.getElementById('authErr');
+  const ok    = document.getElementById('authOk');
+  const btn   = document.getElementById('authBtn2');
+
+  // Clear previous messages
+  err.classList.remove('on');
+  ok.classList.remove('on');
+
+  // Validate
+  if (!email) { err.textContent = 'Please enter your email.'; err.classList.add('on'); return; }
+  if (!pw || pw.length < 6) { err.textContent = 'Password must be at least 6 characters.'; err.classList.add('on'); return; }
+
+  btn.textContent = '⏳ Please wait…';
+  btn.disabled = true;
+
   try {
-    const r = authMode==='in' ? await sb.auth.signInWithPassword({email,password:pw}) : await sb.auth.signUp({email,password:pw});
-    if (r.error) { err.textContent = r.error.message; err.classList.add('on'); }
-    else if (authMode==='up') { ok.textContent = '✅ Check your email to confirm, then sign in.'; ok.classList.add('on'); }
-  } catch(e) { err.textContent = 'Something went wrong.'; err.classList.add('on'); }
-  btn.textContent = authMode==='in'?'Sign In':'Create Account'; btn.disabled = false;
+    let r;
+    if (authMode === 'in') {
+      r = await sb.auth.signInWithPassword({ email, password: pw });
+    } else {
+      r = await sb.auth.signUp({ email, password: pw });
+    }
+
+    if (r.error) {
+      // Friendly error messages
+      let msg = r.error.message;
+      if (msg.includes('Invalid login')) msg = 'Wrong email or password. Please try again.';
+      if (msg.includes('already registered')) msg = 'This email is already registered. Try signing in instead.';
+      if (msg.includes('rate limit')) msg = 'Too many attempts. Please wait a minute and try again.';
+      err.textContent = msg;
+      err.classList.add('on');
+    } else if (authMode === 'up') {
+      ok.textContent = '✅ Account created! Check your email for a confirmation link, then sign in.';
+      ok.classList.add('on');
+      // Clear the form
+      document.getElementById('authEmail').value = '';
+      document.getElementById('authPw').value = '';
+    }
+  } catch(e) {
+    err.textContent = 'Something went wrong. Please try again.';
+    err.classList.add('on');
+  }
+
+  btn.textContent = authMode === 'in' ? 'Sign In' : 'Create Account';
+  btn.disabled = false;
 }
 
 async function doGoogle() { await sb.auth.signInWithOAuth({provider:'google'}); }
+
 function showForgotPw() {
   const panel = document.getElementById('forgotPwPanel');
   const btn   = document.getElementById('forgotPwBtn');
@@ -1361,6 +1444,7 @@ function showForgotPw() {
   const showing = panel.style.display === 'block';
   panel.style.display = showing ? 'none' : 'block';
   btn.textContent = showing ? 'Forgot your password?' : 'Hide';
+  // Pre-fill email if already typed
   const resetInput = document.getElementById('resetEmail');
   if (!showing && email && email.value) resetInput.value = email.value;
 }
@@ -1385,7 +1469,7 @@ async function sendResetEmail() {
     msg.textContent = 'Something went wrong. Please try again.';
     msg.style.color = 'var(--red)';
   }
-}  
+}
 
 // ── LOAD LISTINGS ─────────────────────────────────────────
 async function loadListings() {
@@ -1672,7 +1756,8 @@ if (up.get('stripe')==='success') { showToast('✅','Stripe Connect set up! You 
 document.querySelectorAll('.pcheck').forEach(label => {
   label.querySelector('input')?.addEventListener('change', () => {
     const hasBarter = [...document.querySelectorAll('.pcheck input:checked')].some(i=>i.value==='barter');
-    document.getElementById('barterGroup').style.display = hasBarter ? 'block' : 'none';
+    const bg = document.getElementById('barterGroup');
+    if (bg) bg.style.display = hasBarter ? 'block' : 'none';
   });
 });
 
@@ -1830,14 +1915,14 @@ document.getElementById('authPw').addEventListener('keydown',e=>{ if(e.key==='En
 
 // ── DEMO DATA ─────────────────────────────────────────────
 const DEMO_LISTINGS = [
-  {id:1,type:'goods',title:'Sony A7III Camera Body',description:'Excellent condition, low shutter count. Original box included.',price_usd:750,fmv_usd:720,fmv_source:'retail_price',accepts:['cash','card'],seller_name:'@photopro',seller_contact:'seller@email.com',emoji:'📦',city:'Durham',state:'NC',images:[],avg_rating:5,review_count:2,is_active:true},
-  {id:2,type:'service',title:'Full-Stack Web Development',description:'React, Node.js, and database work. Block of 5 hours.',price_usd:500,fmv_usd:500,fmv_source:'market_price',accepts:['cash','card','venmo'],seller_name:'@devpro',seller_contact:'dev@email.com',emoji:'🛠️',city:'Raleigh',state:'NC',images:[],avg_rating:5,review_count:1,is_active:true},
-  {id:3,type:'goods',title:'Vintage Peugeot PX10 Road Bike',description:'1984 Peugeot PX10. Fully serviced with new cables and brake pads.',price_usd:null,fmv_usd:300,fmv_source:'seller_estimate',accepts:['cash','barter'],barter_for:'Camera gear or quality tools',seller_name:'@cyclist',seller_contact:'bike@email.com',emoji:'📦',city:'Chapel Hill',state:'NC',images:[],avg_rating:0,review_count:0,is_active:true},
-  {id:4,type:'service',title:'Brand Identity & Logo Package',description:'3 logo concepts with unlimited revisions. Delivered as SVG, PNG, and PDF.',price_usd:200,fmv_usd:200,fmv_source:'market_price',accepts:['cash','card','paypal'],seller_name:'@designstudio',seller_contact:'design@email.com',emoji:'🛠️',city:'Durham',state:'NC',images:[],avg_rating:5,review_count:1,is_active:true},
-  {id:5,type:'goods',title:'Mid-Century Walnut Writing Desk',description:'Solid walnut, 58 inch wide. Minor surface wear. Must arrange pickup.',price_usd:450,fmv_usd:500,fmv_source:'market_price',accepts:['cash','barter'],barter_for:'Quality furniture or art',seller_name:'@furniturefind',seller_contact:'furniture@email.com',emoji:'📦',city:'Cary',state:'NC',images:[],avg_rating:0,review_count:0,is_active:true},
-  {id:6,type:'service',title:'Guitar Lessons — 4-Session Block',description:'15 years experience. Rock, blues, and fingerstyle. Beginner to advanced.',price_usd:120,fmv_usd:120,fmv_source:'market_price',accepts:['cash','venmo','zelle'],seller_name:'@guitarteacher',seller_contact:'guitar@email.com',emoji:'🛠️',city:'Durham',state:'NC',images:[],avg_rating:5,review_count:1,is_active:true},
-  {id:7,type:'goods',title:'DeWalt 20V Power Tool Bundle',description:'Drill, circular saw, jigsaw, two batteries and charger. All fully functional.',price_usd:280,fmv_usd:260,fmv_source:'retail_price',accepts:['cash','card'],seller_name:'@toolshed',seller_contact:'tools@email.com',emoji:'📦',city:'Apex',state:'NC',images:[],avg_rating:0,review_count:0,is_active:true},
-  {id:8,type:'digital',title:'Lightroom Preset Collection (200+)',description:'Curated presets for portraits, landscapes, and street photography. Instant download.',price_usd:25,fmv_usd:25,fmv_source:'retail_price',accepts:['cash','card','paypal'],seller_name:'@photoedits',seller_contact:'presets@email.com',emoji:'💾',city:'Online',state:'NC',images:[],avg_rating:0,review_count:0,is_active:true},
+  {id:1,type:'goods',title:'Sony A7III Camera Body',description:'Excellent condition, low shutter count. Original box included.',price_usd:750,fmv_usd:720,fmv_source:'retail_price',accepts:['cash','card','barter'],seller_name:'@lensman_jay',city:'Cary',state:'NC',emoji:'📷',avg_rating:4.8,review_count:12,is_active:true,images:[]},
+  {id:2,type:'service',title:'Full-Stack Web Development',description:'React, Node.js, and database work. Block of 5 hours.',price_usd:500,fmv_usd:500,fmv_source:'market_price',accepts:['cash','card','venmo'],seller_name:'@devpro',city:'Raleigh',state:'NC',emoji:'🛠️',avg_rating:5,review_count:1,is_active:true,images:[]},
+  {id:3,type:'goods',title:'Vintage Peugeot PX10 Road Bike',description:'1984 Peugeot PX10. Fully serviced with new cables and brake pads.',price_usd:null,fmv_usd:300,fmv_source:'seller_estimate',accepts:['cash','barter'],barter_for:'Camera gear or quality tools',seller_name:'@cyclist',city:'Chapel Hill',state:'NC',emoji:'📦',avg_rating:0,review_count:0,is_active:true,images:[]},
+  {id:4,type:'service',title:'Brand Identity & Logo Package',description:'3 logo concepts with unlimited revisions. Delivered as SVG, PNG, PDF.',price_usd:200,fmv_usd:200,fmv_source:'market_price',accepts:['cash','card','paypal'],seller_name:'@designstudio',city:'Durham',state:'NC',emoji:'🛠️',avg_rating:5,review_count:1,is_active:true,images:[]},
+  {id:5,type:'goods',title:'Mid-Century Walnut Writing Desk',description:'Solid walnut, 58 inch wide. Minor surface wear. Must arrange pickup.',price_usd:450,fmv_usd:500,fmv_source:'market_price',accepts:['cash','barter'],seller_name:'@furniturefind',city:'Cary',state:'NC',emoji:'📦',avg_rating:0,review_count:0,is_active:true,images:[]},
+  {id:6,type:'service',title:'Guitar Lessons 4-Session Block',description:'15 years experience. Rock, blues, and fingerstyle. Beginner to advanced.',price_usd:120,fmv_usd:120,fmv_source:'market_price',accepts:['cash','venmo','zelle'],seller_name:'@guitarteacher',city:'Durham',state:'NC',emoji:'🛠️',avg_rating:5,review_count:1,is_active:true,images:[]},
+  {id:7,type:'goods',title:'DeWalt 20V Power Tool Bundle',description:'Drill, circular saw, jigsaw, two batteries and charger. All fully functional.',price_usd:280,fmv_usd:260,fmv_source:'retail_price',accepts:['cash','card'],seller_name:'@toolshed',city:'Apex',state:'NC',emoji:'📦',avg_rating:0,review_count:0,is_active:true,images:[]},
+  {id:8,type:'digital',title:'Lightroom Preset Collection 200+',description:'Curated presets for portraits, landscapes, and street photography. Instant download.',price_usd:25,fmv_usd:25,fmv_source:'retail_price',accepts:['cash','card','paypal'],seller_name:'@photoedits',city:'Online',state:'NC',emoji:'💾',avg_rating:0,review_count:0,is_active:true,images:[]},
 ];
 
 const DEMO_REVIEWS = [
