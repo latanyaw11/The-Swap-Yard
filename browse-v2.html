@@ -1154,14 +1154,6 @@ img { max-width: 100%; display: block; }
   .events-grid{grid-template-columns:1fr;padding:1rem;}
   .list-wrap{padding:1.5rem 1rem;}
 }
-
-.search-wrap { padding: 1rem 2.5rem; border-bottom: 1px solid var(--border); display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
-.search-wrap-inner { display: flex; align-items: center; gap: .5rem; flex: 1; min-width: 200px; background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: .6rem 1rem; }
-.search-icon { font-size: .9rem; color: var(--ink4); }
-.search-input { flex: 1; border: none; background: transparent; font-size: .84rem; color: var(--ink); outline: none; font-family: var(--font-body); }
-.search-input::placeholder { color: var(--ink4); }
-.radius-select { padding: .5rem .75rem; border: 1px solid var(--border); border-radius: 8px; font-size: .78rem; background: var(--white); color: var(--ink2); outline: none; font-family: var(--font-mono); }
-.filter-row { padding: .6rem 2.5rem; border-bottom: 1px solid var(--border); display: flex; gap: .4rem; flex-wrap: wrap; align-items: center; }
 </style>
 </head>
 <script>
@@ -1245,35 +1237,16 @@ img { max-width: 100%; display: block; }
       <!-- AD SLOT 2 -->
       <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;display:flex;align-items:center;min-height:72px;margin-bottom:1rem;position:relative;">
         <span style="font-family:'JetBrains Mono',monospace;font-size:.52rem;color:var(--border2);position:absolute;top:4px;left:8px;letter-spacing:.08em;text-transform:uppercase;">Sponsored</span>
-        <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:1rem;padding:1rem 1.5rem;border:1.5px dashed var(--border);border-radius:8px;margin:.4rem;font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--text3);">🔨 Inline Banner — Replace with AdSense or sponsor code</div>
+        
       </div>
       <div id="listingsGrid"><div class="loading"><span class="spin"></span>Loading listings…</div></div>
     </div>
-    <aside class="ad-sidebar">
-      <span style="font-family:'JetBrains Mono',monospace;font-size:.52rem;letter-spacing:.1em;text-transform:uppercase;color:var(--border2)">Sponsored</span>
-      <div class="ad-block ad-block-med">📦<span>300×250</span><span>AdSense / Sponsor</span></div>
-      <div class="ad-block ad-block-tall">⚡<span>300×600</span><span>Premium Placement</span></div>
-      <div class="ad-cta-card">
-        <p>Reach thousands of active buyers and traders — locally and nationwide.</p>
-        <button class="btn btn-lime btn-sm" onclick="showToast('📧','Advertising inquiry sent!')">Advertise Here</button>
-      </div>
-    </aside>
+    
   </div>
 </div>
 
 <!-- SPONSOR STRIP -->
-<div class="sponsor-strip">
-  <div class="sponsor-inner">
-    <div class="sponsor-label">Our Partners & Sponsors</div>
-    <div class="sponsor-logos">
-      <a class="sponsor-slot" onclick="showToast('📧','Sponsor inquiry!')"><span>🏠</span><span>Your Logo</span></a>
-      <a class="sponsor-slot" onclick="showToast('📧','Sponsor inquiry!')"><span>🔧</span><span>Your Logo</span></a>
-      <a class="sponsor-slot" onclick="showToast('📧','Sponsor inquiry!')"><span>🚗</span><span>Your Logo</span></a>
-      <a class="sponsor-slot" onclick="showToast('📧','Sponsor inquiry!')"><span>🎵</span><span>Your Logo</span></a>
-      <a class="sponsor-slot" onclick="showToast('📧','Sponsor inquiry!')"><span>💳</span><span>Your Logo</span></a>
-    </div>
-  </div>
-</div>
+
 <div class="toast" id="toast"><span id="tIcon"></span><span id="tMsg"></span></div>
 <div class="overlay" id="authOverlay" onclick="closeAuthEv(event)" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
   <div class="auth-modal-card">
@@ -1523,7 +1496,7 @@ async function loadListings() {
     if (error) throw error;
     listings = data || [];
   } catch(e) { listings = DEMO_LISTINGS; }
-  const _hsl = document.getElementById('hStatListings'); if(_hsl) _hsl.textContent = listings.length || '—';
+  const _el_hSta = document.getElementById('hStatListings'); if(_el_hSta) _el_hSta.textContent = listings.length || '—';  
   renderListings();
 }
 
@@ -1882,13 +1855,13 @@ async function deleteListing() {
 
 // ── EVENTS ────────────────────────────────────────────────
 async function loadEvents() {
-  document.getElementById('eventsGrid').innerHTML = '<div class="loading"><span class="spin"></span>Loading events…</div>';
+  const _eg = document.getElementById('eventsGrid'); if(_eg) _eg.innerHTML = '<div class="loading"><span class="spin"></span>Loading events…</div>';
   try {
     const {data,error} = await sb.from('events').select('*').eq('status','upcoming').order('event_date',{ascending:true});
     if (error) throw error;
     events = data || [];
   } catch(e) { events = DEMO_EVENTS; }
-  document.getElementById('hStatEvents').textContent = events.length;
+  const _el_hSta = document.getElementById('hStatEvents'); if(_el_hSta) _el_hSta.textContent = events.length;  
   renderEvents();
 }
 
