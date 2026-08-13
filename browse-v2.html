@@ -1001,6 +1001,92 @@ img { max-width: 100%; display: block; }
   .sus { padding: 3rem 1.5rem; }
   .browse-head { padding: 1.5rem; }
 }
+
+/* ── LISTING CARDS ── */
+.lcard {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.lcard:hover { border-color: var(--ink3); box-shadow: 0 4px 20px rgba(20,20,18,.08); }
+.lcard-img {
+  height: 160px;
+  background: var(--cream2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.75rem;
+}
+.lcard-body { padding: 1rem 1.1rem; }
+.lcard-type {
+  font-family: var(--font-mono);
+  font-size: .58rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: .2rem .55rem;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: .6rem;
+  background: var(--cream2);
+  color: var(--ink3);
+}
+.lcard-title {
+  font-family: var(--font-display);
+  font-size: .92rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: .3rem;
+  line-height: 1.25;
+}
+.lcard-location {
+  font-family: var(--font-mono);
+  font-size: .65rem;
+  color: var(--ink4);
+  margin-bottom: .5rem;
+}
+.lcard-price {
+  font-family: var(--font-mono);
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--green);
+}
+.lcard-price.trade { color: var(--ink3); font-style: italic; }
+.lcard-actions {
+  display: flex;
+  gap: .5rem;
+  margin-top: .75rem;
+  padding-top: .75rem;
+  border-top: 1px solid var(--border2);
+}
+.lcard-btn {
+  flex: 1;
+  padding: .4rem .6rem;
+  font-family: var(--font-display);
+  font-size: .72rem;
+  font-weight: 700;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all .15s;
+}
+.lcard-btn.primary { background: var(--green); color: #fff; }
+.lcard-btn.primary:hover { background: var(--green2); }
+.lcard-btn.secondary { background: var(--cream2); color: var(--ink2); }
+.lcard-btn.secondary:hover { background: var(--cream3); }
+.tag { font-family: var(--font-mono); font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; padding: .2rem .55rem; border-radius: 4px; }
+.tag-goods { background: var(--amberlt); color: var(--amber); }
+.tag-service { background: var(--greenlt); color: var(--green2); }
+.tag-digital { background: #EEF2FF; color: #3730A3; }
+.tag-event { background: #FDF2F8; color: #9D174D; }
+.tag-certified { background: var(--greenlt); color: var(--green2); }
+.rating-row { display: flex; align-items: center; gap: .3rem; margin-bottom: .35rem; }
+.stars-sm { color: var(--amber); font-size: .75rem; }
+.rating-num { font-family: var(--font-mono); font-size: .65rem; color: var(--ink3); }
+.rating-ct { font-size: .65rem; color: var(--ink4); }
+
 </style>
 <style>
 /* Auth modal overlay */
@@ -1154,6 +1240,92 @@ img { max-width: 100%; display: block; }
   .events-grid{grid-template-columns:1fr;padding:1rem;}
   .list-wrap{padding:1.5rem 1rem;}
 }
+
+/* ── LISTING CARDS ── */
+.lcard {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.lcard:hover { border-color: var(--ink3); box-shadow: 0 4px 20px rgba(20,20,18,.08); }
+.lcard-img {
+  height: 160px;
+  background: var(--cream2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.75rem;
+}
+.lcard-body { padding: 1rem 1.1rem; }
+.lcard-type {
+  font-family: var(--font-mono);
+  font-size: .58rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: .2rem .55rem;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: .6rem;
+  background: var(--cream2);
+  color: var(--ink3);
+}
+.lcard-title {
+  font-family: var(--font-display);
+  font-size: .92rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: .3rem;
+  line-height: 1.25;
+}
+.lcard-location {
+  font-family: var(--font-mono);
+  font-size: .65rem;
+  color: var(--ink4);
+  margin-bottom: .5rem;
+}
+.lcard-price {
+  font-family: var(--font-mono);
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--green);
+}
+.lcard-price.trade { color: var(--ink3); font-style: italic; }
+.lcard-actions {
+  display: flex;
+  gap: .5rem;
+  margin-top: .75rem;
+  padding-top: .75rem;
+  border-top: 1px solid var(--border2);
+}
+.lcard-btn {
+  flex: 1;
+  padding: .4rem .6rem;
+  font-family: var(--font-display);
+  font-size: .72rem;
+  font-weight: 700;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all .15s;
+}
+.lcard-btn.primary { background: var(--green); color: #fff; }
+.lcard-btn.primary:hover { background: var(--green2); }
+.lcard-btn.secondary { background: var(--cream2); color: var(--ink2); }
+.lcard-btn.secondary:hover { background: var(--cream3); }
+.tag { font-family: var(--font-mono); font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; padding: .2rem .55rem; border-radius: 4px; }
+.tag-goods { background: var(--amberlt); color: var(--amber); }
+.tag-service { background: var(--greenlt); color: var(--green2); }
+.tag-digital { background: #EEF2FF; color: #3730A3; }
+.tag-event { background: #FDF2F8; color: #9D174D; }
+.tag-certified { background: var(--greenlt); color: var(--green2); }
+.rating-row { display: flex; align-items: center; gap: .3rem; margin-bottom: .35rem; }
+.stars-sm { color: var(--amber); font-size: .75rem; }
+.rating-num { font-family: var(--font-mono); font-size: .65rem; color: var(--ink3); }
+.rating-ct { font-size: .65rem; color: var(--ink4); }
+
 </style>
 </head>
 <script>
@@ -1198,14 +1370,14 @@ img { max-width: 100%; display: block; }
     <a href="vendor-dashboard.html" class="nav-btn-list" id="vdash">Dashboard</a>
   </div>
 </nav>
-<div class="section-head">
+<div class="section-head" style="max-width:100%;padding:1.5rem 2.5rem;">
   <div>
     <div class="section-eyebrow">Open Marketplace</div>
     <div class="section-title">Browse Listings</div>
   </div>
   <button class="btn btn-primary-g" onclick="goList()">+ List Item</button>
 </div>
-<div class="page active" id="listings" style="overflow-x:hidden;">
+<div class="page active" id="listings" style="overflow-x:hidden;padding-left:0;">
   
 
   <div class="search-wrap" style="padding-left:0;">
@@ -1530,22 +1702,6 @@ function renderListingsData(data) {
     filtered = filtered.filter(l => l.city?.toLowerCase().replace(' ','_') === activeArea || l.zip_code?.startsWith(AREA_ZIPS[activeArea]||''));
   }
 
-  const sponsored = `<div class="lcard lcard-sponsored" onclick="showToast('🏠','Redirecting to sponsor...')"><div class="lcard-sponsored-tag">Sponsored</div><span class="tag tag-goods" style="margin-bottom:.7rem">Partner</span><div class="lcard-img" style="background:rgba(184,242,65,.06);border:1.5px dashed rgba(184,242,65,.2)">🏠</div><div class="lcard-title"></div><div class="lcard-desc">Everything for your next project. Power tools, paint, lumber and more.</div><div class="lcard-footer"><div class="lcard-price" style="color:#5a8a00">Shop Now →</div><div class="lcard-seller">homedepot.com</div></div></div>`;
-
-  if (!filtered.length) { grid.innerHTML = '<div class="loading">No listings found — try broadening your search.</div>'; return; }
-
-  const cards = filtered.map(l => {
-    const price = l.price_usd ? `$${parseFloat(l.price_usd).toFixed(2)}` : (l.accepts?.includes('barter') ? 'Trade Only' : 'Contact for price');
-    const tc = {goods:'tag-goods',service:'tag-service',digital:'tag-digital',event:'tag-event'}[l.type]||'tag-goods';
-    const tl = {goods:'Goods',service:'Service',digital:'Digital',event:'Event'}[l.type]||l.type;
-    const isOwn = user && l.user_id === user.id;
-    const certBadge = l.certified ? `<span class="tag tag-certified" style="margin-bottom:.4rem;display:inline-flex">✅ Verified</span><br>` : '';
-    const ratingRow = l.avg_rating ? `<div class="rating-row"><span class="stars-sm">${'★'.repeat(Math.round(l.avg_rating))}${'☆'.repeat(5-Math.round(l.avg_rating))}</span><span class="rating-num">${parseFloat(l.avg_rating).toFixed(1)}</span><span class="rating-ct">(${l.review_count||0})</span></div>` : '';
-    const locRow = l.city ? `<div class="lcard-location">📍 ${esc(l.city)}${l.ships?'  · 📦 Ships':'  · 🤝 Local only'}</div>` : '';
-    return `<div class="lcard" onclick="openDetail('${l.id}')">${isOwn?'<span class="lcard-own">Yours</span>':''}<span class="tag ${tc}" style="margin-bottom:.7rem">${tl}</span>${certBadge}<div class="lcard-img">${l.emoji||'📦'}</div><div class="lcard-title">${esc(l.title)}</div><div class="lcard-desc">${esc((l.description||'').slice(0,70))}${(l.description||'').length>70?'…':''}</div>${ratingRow}${locRow}<div class="lcard-footer"><div><div class="lcard-price">${price}</div></div><div class="lcard-seller">${esc(l.seller_name||'')}</div></div><div class="lcard-actions"><button class="btn btn-ink" onclick="event.stopPropagation();openDetail('${l.id}')">Buy / Contact</button>${l.accepts?.includes('barter')?`<button class="btn btn-teal" onclick="event.stopPropagation();openDetail('${l.id}')">Trade</button>`:''}</div></div>`;
-  });
-
-  if (cards.length >= 3) cards.splice(2, 0, sponsored); else cards.push(sponsored);
   grid.innerHTML = cards.join('');
 }
 
@@ -2357,7 +2513,93 @@ function appendTyping() {
         0%,80%,100%{transform:translateY(0);opacity:.4}
         40%{transform:translateY(-4px);opacity:1}
       }
-    </style>
+    
+/* ── LISTING CARDS ── */
+.lcard {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.lcard:hover { border-color: var(--ink3); box-shadow: 0 4px 20px rgba(20,20,18,.08); }
+.lcard-img {
+  height: 160px;
+  background: var(--cream2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.75rem;
+}
+.lcard-body { padding: 1rem 1.1rem; }
+.lcard-type {
+  font-family: var(--font-mono);
+  font-size: .58rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: .2rem .55rem;
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: .6rem;
+  background: var(--cream2);
+  color: var(--ink3);
+}
+.lcard-title {
+  font-family: var(--font-display);
+  font-size: .92rem;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: .3rem;
+  line-height: 1.25;
+}
+.lcard-location {
+  font-family: var(--font-mono);
+  font-size: .65rem;
+  color: var(--ink4);
+  margin-bottom: .5rem;
+}
+.lcard-price {
+  font-family: var(--font-mono);
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--green);
+}
+.lcard-price.trade { color: var(--ink3); font-style: italic; }
+.lcard-actions {
+  display: flex;
+  gap: .5rem;
+  margin-top: .75rem;
+  padding-top: .75rem;
+  border-top: 1px solid var(--border2);
+}
+.lcard-btn {
+  flex: 1;
+  padding: .4rem .6rem;
+  font-family: var(--font-display);
+  font-size: .72rem;
+  font-weight: 700;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: all .15s;
+}
+.lcard-btn.primary { background: var(--green); color: #fff; }
+.lcard-btn.primary:hover { background: var(--green2); }
+.lcard-btn.secondary { background: var(--cream2); color: var(--ink2); }
+.lcard-btn.secondary:hover { background: var(--cream3); }
+.tag { font-family: var(--font-mono); font-size: .58rem; letter-spacing: .08em; text-transform: uppercase; padding: .2rem .55rem; border-radius: 4px; }
+.tag-goods { background: var(--amberlt); color: var(--amber); }
+.tag-service { background: var(--greenlt); color: var(--green2); }
+.tag-digital { background: #EEF2FF; color: #3730A3; }
+.tag-event { background: #FDF2F8; color: #9D174D; }
+.tag-certified { background: var(--greenlt); color: var(--green2); }
+.rating-row { display: flex; align-items: center; gap: .3rem; margin-bottom: .35rem; }
+.stars-sm { color: var(--amber); font-size: .75rem; }
+.rating-num { font-family: var(--font-mono); font-size: .65rem; color: var(--ink3); }
+.rating-ct { font-size: .65rem; color: var(--ink4); }
+
+</style>
   `;
   container.appendChild(div);
   container.scrollTop = container.scrollHeight;
