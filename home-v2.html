@@ -1206,7 +1206,7 @@ img { max-width: 100%; display: block; }
 <section class="hero">
   <div>
     <div class="hero-eyebrow">The Local Trading Marketplace</div>
-    <h1 class="hero-h1">Buy. Sell.<br><em>Trade</em> Anything.</h1>
+    <h1 class="hero-h1">Buy. Sell.<br><em>Trade</em> &amp; Barter.</h1>
     <p class="hero-sub">The Swap Yard connects buyers, sellers, and traders across the nation. Pay by card, cash, Venmo, Zelle — or skip money entirely and barter.</p>
     <div class="hero-btns">
       <a href="browse-v2.html" class="btn-primary">Browse Listings →</a>
@@ -1354,7 +1354,7 @@ function refreshNav() {
     btn.textContent = 'Sign Out'; btn.onclick = () => sb.auth.signOut();
     em.textContent = user.email.split('@')[0];
     mb.style.display = 'inline-flex';
-    vd.style.display = 'block';
+    vd.style.display = 'inline-flex';
     loadVendorStats();
   } else {
     btn.textContent = 'Sign In'; btn.onclick = openAuth;
@@ -1931,7 +1931,7 @@ function showToast(icon,msg) {
   const t = document.getElementById('toast'); document.getElementById('tIcon').textContent=icon; document.getElementById('tMsg').textContent=msg;
   t.classList.add('on'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('on'),3500);
 }
-function goList() { document.getElementById('list').scrollIntoView({behavior:'smooth'}); }
+function goList() { window.location.href = 'list-v2.html'; }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ document.querySelectorAll('.overlay.on').forEach(o=>o.classList.remove('on')); document.getElementById('msgPanel').classList.remove('on'); }});
 document.getElementById('authPw').addEventListener('keydown',e=>{ if(e.key==='Enter')doAuth(); });
 
