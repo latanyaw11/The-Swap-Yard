@@ -972,11 +972,30 @@ let allOrders = [];
 let allListings = [];
 
 // ── INIT ──
-sb.auth.onAuthStateChange((event, session) => {
-  currentUser = session?.user || null;
-  if (currentUser) { updateSidebar(); loadDashboardData(); }
-  else { if(sb) window.location.href = 'index.html'; }
-});
+// Use getSession() first - more reliable than onAuthStateChange on page load
+(async function initAuth() {
+  if (!sb) { window.location.href = 'index.html'; return; }
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && session.user) {
+      currentUser = session.user;
+      updateSidebar();
+      loadDashboardData();
+    } else {
+      window.location.href = 'index.html';
+      return;
+    }
+  } catch(e) {
+    console.error('Auth error:', e);
+    window.location.href = 'index.html';
+    return;
+  }
+  // Listen for sign out
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_OUT') window.location.href = 'index.html';
+    if (session) { currentUser = session.user; updateSidebar(); }
+  });
+})();
 
 function updateSidebar() {
   if (!currentUser) return;
