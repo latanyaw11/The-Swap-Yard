@@ -494,7 +494,7 @@ html,body{font-family:var(--font-body);background:var(--cream);color:var(--ink);
 ══════════════════════════════════════ -->
 <script>
 const SB_URL  = 'https://qkmvznvetsfijwhikiar.supabase.co';
-const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbXZ6bnZldHNmaWp3aGlraWFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNzE0ODksImV4cCI6MjA5Njg0NzQ4OX0.uaDC_xktlWLEpbavCdA9vAL56Pd2PN3xhU_SmHBzlZw';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbXZ6bnZldHNmaWp3aGlraWFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNzE0ODksImV4cCI6MjA5Njg0NzQ4OX0.uaDC_xktlWLEpbavCdA9vAL56Pd2PN3xhU_SmHBzlZw';
 const { createClient } = supabase;
 const sb = (SB_URL.startsWith('https://') && SB_KEY.length > 20)
   ? createClient(SB_URL, SB_KEY)
@@ -537,11 +537,11 @@ function refreshNav() {
   if (currentUser) {
     btn.style.display = 'none';
     em.textContent = currentUser.email?.split('@')[0] || '';
-    if (vd) 
+    if (vd) vd.style.display = "inline-flex";
   } else {
     btn.style.display = 'inline-flex';
     em.textContent = '';
-    if (vd) 
+    if (vd) vd.style.display = "none";
   }
 }
 

@@ -972,28 +972,19 @@ let allOrders = [];
 let allListings = [];
 
 // ── INIT ──
-// Use getSession() first - more reliable than onAuthStateChange on page load
-(async function initAuth() {
+(async function() {
   if (!sb) { window.location.href = 'index.html'; return; }
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (session && session.user) {
-      currentUser = session.user;
-      updateSidebar();
-      loadDashboardData();
-    } else {
-      window.location.href = 'index.html';
-      return;
-    }
-  } catch(e) {
-    console.error('Auth error:', e);
+  const { data: { session } } = await sb.auth.getSession();
+  if (session?.user) {
+    currentUser = session.user;
+    updateSidebar();
+    loadDashboardData();
+  } else {
     window.location.href = 'index.html';
-    return;
   }
-  // Listen for sign out
-  sb.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_OUT') window.location.href = 'index.html';
-    if (session) { currentUser = session.user; updateSidebar(); }
+  sb.auth.onAuthStateChange((ev, s) => {
+    if (ev === 'SIGNED_OUT') window.location.href = 'index.html';
+    if (s?.user) { currentUser = s.user; updateSidebar(); }
   });
 })();
 
