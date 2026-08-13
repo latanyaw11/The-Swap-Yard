@@ -1495,13 +1495,13 @@ async function sendResetEmail() {
 
 // ── LOAD LISTINGS ─────────────────────────────────────────
 async function loadListings() {
-  document.getElementById('listingsGrid').innerHTML = '<div class="loading"><span class="spin"></span>Loading…</div>';
+  const _lg = document.getElementById('listingsGrid'); if(_lg) _lg.innerHTML = '<div class="loading"><span class="spin"></span>Loading…</div>';
   try {
     const {data,error} = await sb.from('listings').select('*').eq('status','active').order('created_at',{ascending:false});
     if (error) throw error;
     listings = data || [];
   } catch(e) { listings = DEMO_LISTINGS; }
-  document.getElementById('hStatListings').textContent = listings.length || '—';
+  const _hs = document.getElementById('hStatListings'); if(_hs) _hs.textContent = listings.length || '—';
   renderListings();
 }
 
@@ -1860,13 +1860,13 @@ async function deleteListing() {
 
 // ── EVENTS ────────────────────────────────────────────────
 async function loadEvents() {
-  document.getElementById('eventsGrid').innerHTML = '<div class="loading"><span class="spin"></span>Loading events…</div>';
+  const _eg = document.getElementById('eventsGrid'); if(_eg) _eg.innerHTML = '<div class="loading"><span class="spin"></span>Loading events…</div>';
   try {
     const {data,error} = await sb.from('events').select('*').eq('status','upcoming').order('event_date',{ascending:true});
     if (error) throw error;
     events = data || [];
   } catch(e) { events = DEMO_EVENTS; }
-  document.getElementById('hStatEvents').textContent = events.length;
+  const _hse = document.getElementById('hStatEvents'); if(_hse) _hse.textContent = events.length;
   renderEvents();
 }
 
