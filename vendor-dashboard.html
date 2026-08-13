@@ -975,7 +975,7 @@ let allListings = [];
 sb.auth.onAuthStateChange((event, session) => {
   currentUser = session?.user || null;
   if (currentUser) { updateSidebar(); loadDashboardData(); }
-  else { window.location.href = 'index.html'; }
+  else { if(sb) window.location.href = 'index.html'; }
 });
 
 function updateSidebar() {
