@@ -1530,6 +1530,7 @@ function renderListings() { renderListingsData(listings); }
 
 function renderListingsData(data) {
   const grid = document.getElementById('listingsGrid');
+  if (!grid) return;
   let filtered = activeFilt === 'all' ? data : data.filter(l => getTags(l).includes(activeFilt));
   if (activeArea !== 'all' && activeArea !== 'nearby') {
     filtered = filtered.filter(l => l.city?.toLowerCase().replace(' ','_') === activeArea || l.zip_code?.startsWith(AREA_ZIPS[activeArea]||''));
@@ -1863,7 +1864,7 @@ async function deleteListing() {
 async function loadEvents() {
   const _eg = document.getElementById('eventsGrid'); if(_eg) _eg.innerHTML = '<div class="loading"><span class="spin"></span>Loading events…</div>';
   try {
-    const {data,error} = await sb.from('events').select('*').eq('status','upcoming').order('event_date',{ascending:true});
+    const {data,error} = await sb.from('events').select('*').order('event_date',{ascending:true});
     if (error) throw error;
     events = data || [];
   } catch(e) { events = DEMO_EVENTS; }
@@ -1880,6 +1881,7 @@ function filtEvent(f, btn) {
 
 function renderEvents() {
   const grid = document.getElementById('eventsGrid');
+  if (!grid) return;
   const filtered = activeEvFilt==='all' ? events : events.filter(e=>e.event_type===activeEvFilt);
   if (!filtered.length) { grid.innerHTML = '<div class="loading">No events found. Be the first to post one!</div>'; return; }
   const typeLabel = {yard_sale:'🏡 Yard Sale',estate_sale:'🏛 Estate Sale',pop_up:'🎪 Pop-Up',swap_meet:'⇄ Swap Meet',auction:'🔨 Auction',other:'📅 Event'};
