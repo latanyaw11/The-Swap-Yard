@@ -1377,48 +1377,49 @@ img { max-width: 100%; display: block; }
   </div>
   <button class="btn btn-primary-g" onclick="goList()">+ List Item</button>
 </div>
-<div class="page active" id="listings" style="overflow-x:hidden;padding-left:0;">
-  
+<div class="page active" id="listings">
 
-  <div class="search-wrap" style="padding-left:0;">
-    <div class="search-wrap-inner">
-      <span class="search-icon">🔍</span>
-      <input class="search-input" id="searchInput" placeholder="Search listings, services, barter…" oninput="doSearch()">
+  <!-- Search bar -->
+  <div style="padding:1.25rem 2.5rem;border-bottom:1px solid var(--border);display:flex;gap:.75rem;align-items:center;flex-wrap:wrap;">
+    <div style="flex:1;min-width:200px;display:flex;align-items:center;gap:.5rem;background:var(--white);border:1px solid var(--border);border-radius:8px;padding:.6rem 1rem;">
+      <span style="color:var(--ink4);">🔍</span>
+      <input style="flex:1;border:none;background:transparent;font-size:.84rem;color:var(--ink);outline:none;font-family:var(--font-body);" id="searchInput" placeholder="Search listings, services, barter…" oninput="doSearch()">
     </div>
-    <select class="radius-select" id="radiusSelect" onchange="doSearch()">
+    <select style="padding:.55rem .85rem;border:1px solid var(--border);border-radius:8px;font-size:.78rem;background:var(--white);color:var(--ink2);outline:none;font-family:var(--font-mono);" id="radiusSelect" onchange="doSearch()">
       <option value="all">Any Distance</option>
-      <option value="5">Within 5 mi</option>
-      <option value="10">Within 10 mi</option>
       <option value="25" selected>Within 25 mi</option>
       <option value="50">Within 50 mi</option>
     </select>
   </div>
 
-  <div class="filters">
-    <button class="filt on" onclick="filt('all',this)">All</button>
-    <button class="filt" onclick="filt('goods',this)">🛒 Goods</button>
-    <button class="filt" onclick="filt('service',this)">🛠 Services</button>
-    <button class="filt" onclick="filt('digital',this)">💾 Digital</button>
-    <button class="filt" onclick="filt('barter',this)">⇄ Barter</button>
-    
-    <button class="filt" onclick="filt('certified',this)">✅ Certified</button>
-    <button class="filt" onclick="filt('local',this)">📍 Local Only</button>
+  <!-- Location chips -->
+  <div style="padding:.6rem 2.5rem;border-bottom:1px solid var(--border);display:flex;gap:.4rem;flex-wrap:wrap;">
+    <button class="loc-chip on" onclick="setArea('all',this)">All Areas</button>
+    <button class="loc-chip" onclick="setArea('durham',this)">Durham</button>
+    <button class="loc-chip" onclick="setArea('raleigh',this)">Raleigh</button>
+    <button class="loc-chip" onclick="setArea('chapel_hill',this)">Chapel Hill</button>
+    <button class="loc-chip" onclick="setArea('cary',this)">Cary</button>
+    <button class="loc-chip" onclick="setArea('apex',this)">Apex</button>
+    <button class="loc-chip" onclick="setArea('nearby',this)">📍 Near Me</button>
   </div>
 
-  <div class="listings-layout">
-    <div>
-      <!-- AD SLOT 2 -->
-      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;display:flex;align-items:center;min-height:72px;margin-bottom:1rem;position:relative;">
-        <span style="font-family:'JetBrains Mono',monospace;font-size:.52rem;color:var(--border2);position:absolute;top:4px;left:8px;letter-spacing:.08em;text-transform:uppercase;">Sponsored</span>
-        
-      </div>
-      <div id="listingsGrid"><div class="loading"><span class="spin"></span>Loading listings…</div></div>
-    </div>
-    
+  <!-- Type filters -->
+  <div style="padding:.6rem 2.5rem;border-bottom:1px solid var(--border);display:flex;gap:.4rem;flex-wrap:wrap;">
+    <button class="filter-btn on" id="fAll" onclick="filt('all',this)">All</button>
+    <button class="filter-btn" onclick="filt('goods',this)">🛒 Goods</button>
+    <button class="filter-btn" onclick="filt('service',this)">🛠 Services</button>
+    <button class="filter-btn" onclick="filt('digital',this)">💾 Digital</button>
+    <button class="filter-btn" onclick="filt('barter',this)">⇄ Barter</button>
+    <button class="filter-btn" onclick="filt('certified',this)">✅ Certified</button>
+    <button class="filter-btn" onclick="filt('local',this)">📍 Local Only</button>
   </div>
+
+  <!-- Listings grid -->
+  <div id="listingsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.25rem;padding:2rem 2.5rem;">
+    <div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--ink4);">Loading listings…</div>
+  </div>
+
 </div>
-
-<!-- SPONSOR STRIP -->
 
 <div class="toast" id="toast"><span id="tIcon"></span><span id="tMsg"></span></div>
 <div class="overlay" id="authOverlay" onclick="closeAuthEv(event)" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
