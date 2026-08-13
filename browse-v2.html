@@ -1367,7 +1367,7 @@ img { max-width: 100%; display: block; }
       </button>
     </div>
     <button class="nav-sign-in" id="authBtn" onclick="openAuth()">Sign In</button>
-    <a href="vendor-dashboard.html" class="nav-btn-list" id="vdash" style="display:none;">Dashboard</a>
+    <a href="vendor-dashboard.html" class="nav-btn-list" id="vdash">Dashboard</a>
   </div>
 </nav>
 <div class="section-head" style="max-width:100%;padding:1.5rem 2.5rem;">
@@ -1527,7 +1527,7 @@ function refreshNav() {
   const mb = document.getElementById('msgBtn');
   const vd = document.getElementById('vdash');
   if (user) {
-    if(vd) { vd.style.display = 'inline-flex'; }
+    
     btn.textContent = 'Sign Out'; btn.onclick = () => sb.auth.signOut();
     em.textContent = user.email.split('@')[0];
     mb.style.display = 'inline-flex';
@@ -1535,7 +1535,7 @@ function refreshNav() {
     loadVendorStats();
   } else {
     btn.textContent = 'Sign In'; btn.onclick = openAuth;
-    em.textContent = ''; mb.style.display = 'none'; vd.style.display = 'none';
+    em.textContent = ''; mb.style.display = 'none'; 
   }
 }
 
