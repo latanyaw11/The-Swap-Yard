@@ -52,15 +52,6 @@ button { font-family: inherit; }
 img { max-width: 100%; display: block; }
 
 /* ── LANDING PAGE ──────────────────────────────────── */
-.landing-wrap {
-  position: fixed;
-  inset: 0;
-  background: var(--cream);
-  display: flex;
-  flex-direction: column;
-  z-index: 100;
-  overflow-y: auto;
-}
 
 /* Landing Nav */
 .l-nav {
@@ -2033,30 +2024,7 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 
-<script>
-// Age Gate (18+)
-(function() {
-  if (sessionStorage.getItem('tsy_age_ok') === '1') return;
-  const gate = document.createElement('div');
-  gate.id = 'age-gate';
-  gate.setAttribute('role','dialog');
-  gate.setAttribute('aria-modal','true');
-  gate.setAttribute('aria-labelledby','age-gate-title');
-  gate.style.cssText = 'position:fixed;inset:0;background:rgba(10,10,15,.97);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1.5rem;font-family:Inter,sans-serif';
-  gate.innerHTML = `
-    <div style="background:#ffffff;border:1px solid rgba(5,150,105,.2);border-radius:16px;padding:2.5rem;max-width:420px;width:100%;text-align:center">
-      <div style="font-size:2.5rem;margin-bottom:1rem">🔒</div>
-      <h1 id="age-gate-title" style="font-size:1.3rem;font-weight:900;color:#111827;margin-bottom:.5rem"><span style="color:#7c3aed">The Swap</span> Yard</h1>
-      <p style="color:#374151;font-size:.88rem;line-height:1.6;margin-bottom:1.5rem">This marketplace involves financial transactions. You must be <strong>18 years or older</strong> to use this platform.</p>
-      <div style="display:flex;flex-direction:column;gap:.75rem">
-        <button onclick="document.getElementById('age-gate').remove();sessionStorage.setItem('tsy_age_ok','1');document.body.style.overflow=''" style="background:#7c3aed;color:#fff;border:none;padding:.9rem;border-radius:8px;font-size:.95rem;font-weight:700;cursor:pointer;font-family:inherit">I am 18 or older — Enter</button>
-        <a href="https://www.google.com" style="display:block;background:transparent;color:#9ca3af;border:1px solid #e5e7eb;padding:.75rem;border-radius:8px;font-size:.82rem;text-decoration:none">I am under 18 — Exit</a>
-      </div>
-    </div>`;
-  document.body.appendChild(gate);
-  document.body.style.overflow = 'hidden';
-})();
-</script>
+
 
 <script>
 // Wishlist
