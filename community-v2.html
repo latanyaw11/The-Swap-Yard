@@ -248,7 +248,7 @@ html,body{font-family:var(--font-body);background:var(--cream);color:var(--ink);
   <div class="nav-right">
     <span id="navEmail"></span>
     <button class="nav-sign-in" id="authBtn" onclick="openAuth()">Sign In</button>
-    <a href="vendor-dashboard.html" class="nav-btn-list" id="vdash" style="display:none;">Dashboard</a>
+    <a href="vendor-dashboard.html" class="nav-btn-list" id="vdash">Dashboard</a>
   </div>
 </nav>
 
@@ -537,11 +537,11 @@ function refreshNav() {
   if (currentUser) {
     btn.style.display = 'none';
     em.textContent = currentUser.email?.split('@')[0] || '';
-    if (vd) vd.style.display = 'inline-flex';
+    if (vd) 
   } else {
     btn.style.display = 'inline-flex';
     em.textContent = '';
-    if (vd) vd.style.display = 'none';
+    if (vd) 
   }
 }
 
