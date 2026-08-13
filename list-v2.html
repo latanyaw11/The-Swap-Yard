@@ -1512,6 +1512,13 @@ const stripe = (STR_KEY.startsWith('pk_') && window.Stripe)
 let user = null, listings = [], events = [], activeFilt = 'all', activeArea = 'all', activeEvFilt = 'all', revRating = 0, currentListing = null, authMode = 'in';
 
 // ── AUTH ─────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  if (sb) {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) { user = session.user; refreshNav(); }
+  }
+});
+
 sb.auth.onAuthStateChange((ev, session) => {
   user = session?.user || null;
   refreshNav();
