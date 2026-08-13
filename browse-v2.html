@@ -1697,11 +1697,27 @@ function renderListings() { renderListingsData(listings); }
 
 function renderListingsData(data) {
   const grid = document.getElementById('listingsGrid');
+  if (!grid) return;
   let filtered = activeFilt === 'all' ? data : data.filter(l => getTags(l).includes(activeFilt));
   if (activeArea !== 'all' && activeArea !== 'nearby') {
     filtered = filtered.filter(l => l.city?.toLowerCase().replace(' ','_') === activeArea || l.zip_code?.startsWith(AREA_ZIPS[activeArea]||''));
   }
-
+  if (!filtered.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:4rem;color:var(--ink4);"><div style="font-size:2rem;margin-bottom:.75rem;">📭</div><div style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--ink3);margin-bottom:.35rem;">No listings found</div><div style="font-size:.82rem;">Try broadening your search or <a href=\"list-v2.html\" style=\"color:var(--green)\">add your own</a>.</div></div>';
+    return;
+  }
+  const cards = filtered.map(l => {
+    const price = l.price_usd ? '$'+parseFloat(l.price_usd).toFixed(2) : ((l.accepts||[]).includes('barter') ? 'Trade Only' : 'Contact');
+    const typeLabel = ({goods:'Goods',service:'Service',digital:'Digital',event:'Event'})[l.type] || 'Goods';
+    const typeClass = ({goods:'tag-goods',service:'tag-service',digital:'tag-digital',event:'tag-event'})[l.type] || 'tag-goods';
+    const isTradeOnly = !l.price_usd && (l.accepts||[]).includes('barter');
+    const stars = l.avg_rating ? '★'.repeat(Math.round(l.avg_rating)) : '';
+    const rating = l.avg_rating ? `<div style="font-family:var(--font-mono);font-size:.62rem;color:var(--amber);margin-bottom:.3rem;">${stars} <span style="color:var(--ink4)">(${l.review_count||0})</span></div>` : '';
+    const img = (l.images && l.images[0]) ? `<img src="${l.images[0]}" style="width:100%;height:100%;object-fit:cover;">` : String(l.emoji||'📦');
+    const verified = l.certified ? `<span class="lcard-type tag-certified" style="margin-left:.35rem;">✅ Verified</span>` : '';
+    const lid = String(l.id);
+    return `<div class="lcard" onclick="openDetail('${lid}')"><div class="lcard-img">${img}</div><div class="lcard-body"><span class="lcard-type ${typeClass}">${typeLabel}</span>${verified}<div class="lcard-title">${esc(l.title)}</div>${rating}<div class="lcard-location">📍 ${esc(l.city||'RTP Area')}</div><div class="lcard-price${isTradeOnly?' trade':''}">${esc(price)}</div></div></div>`;
+  });
   grid.innerHTML = cards.join('');
 }
 
@@ -2083,20 +2099,24 @@ function showToast(icon,msg) {
   const t = document.getElementById('toast'); document.getElementById('tIcon').textContent=icon; document.getElementById('tMsg').textContent=msg;
   t.classList.add('on'); clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('on'),3500);
 }
-function goList() { document.getElementById('list').scrollIntoView({behavior:'smooth'}); }
+function goList() { window.location.href = 'list-v2.html'; }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ document.querySelectorAll('.overlay.on').forEach(o=>o.classList.remove('on')); document.getElementById('msgPanel').classList.remove('on'); }});
 document.getElementById('authPw').addEventListener('keydown',e=>{ if(e.key==='Enter')doAuth(); });
 
 // ── DEMO DATA ─────────────────────────────────────────────
 const DEMO_LISTINGS = [
-  {id:1,type:'goods',title:'Sony A7III Camera Body',description:'Excellent condition, low shutter count. Original box included.',price_usd:750,fmv_usd:720,fmv_source:'retail_price',accepts:['cash','card','barter'],seller_name:'@lensman_jay',city:'Cary',state:'NC',emoji:'📷',avg_rating:4.8,review_count:12,is_active:true,images:[]},
-  {id:2,type:'service',title:'Full-Stack Web Development',description:'React, Node.js, and database work. Block of 5 hours.',price_usd:500,fmv_usd:500,fmv_source:'market_price',accepts:['cash','card','venmo'],seller_name:'@devpro',city:'Raleigh',state:'NC',emoji:'🛠️',avg_rating:5,review_count:1,is_active:true,images:[]},
-  {id:3,type:'goods',title:'Vintage Peugeot PX10 Road Bike',description:'1984 Peugeot PX10. Fully serviced with new cables and brake pads.',price_usd:null,fmv_usd:300,fmv_source:'seller_estimate',accepts:['cash','barter'],barter_for:'Camera gear or quality tools',seller_name:'@cyclist',city:'Chapel Hill',state:'NC',emoji:'📦',avg_rating:0,review_count:0,is_active:true,images:[]},
-  {id:4,type:'service',title:'Brand Identity & Logo Package',description:'3 logo concepts with unlimited revisions. Delivered as SVG, PNG, PDF.',price_usd:200,fmv_usd:200,fmv_source:'market_price',accepts:['cash','card','paypal'],seller_name:'@designstudio',city:'Durham',state:'NC',emoji:'🛠️',avg_rating:5,review_count:1,is_active:true,images:[]},
-  {id:5,type:'goods',title:'Mid-Century Walnut Writing Desk',description:'Solid walnut, 58 inch wide. Minor surface wear. Must arrange pickup.',price_usd:450,fmv_usd:500,fmv_source:'market_price',accepts:['cash','barter'],seller_name:'@furniturefind',city:'Cary',state:'NC',emoji:'📦',avg_rating:0,review_count:0,is_active:true,images:[]},
-  {id:6,type:'service',title:'Guitar Lessons 4-Session Block',description:'15 years experience. Rock, blues, and fingerstyle. Beginner to advanced.',price_usd:120,fmv_usd:120,fmv_source:'market_price',accepts:['cash','venmo','zelle'],seller_name:'@guitarteacher',city:'Durham',state:'NC',emoji:'🛠️',avg_rating:5,review_count:1,is_active:true,images:[]},
-  {id:7,type:'goods',title:'DeWalt 20V Power Tool Bundle',description:'Drill, circular saw, jigsaw, two batteries and charger. All fully functional.',price_usd:280,fmv_usd:260,fmv_source:'retail_price',accepts:['cash','card'],seller_name:'@toolshed',city:'Apex',state:'NC',emoji:'📦',avg_rating:0,review_count:0,is_active:true,images:[]},
-  {id:8,type:'digital',title:'Lightroom Preset Collection 200+',description:'Curated presets for portraits, landscapes, and street photography. Instant download.',price_usd:25,fmv_usd:25,fmv_source:'retail_price',accepts:['cash','card','paypal'],seller_name:'@photoedits',city:'Online',state:'NC',emoji:'💾',avg_rating:0,review_count:0,is_active:true,images:[]},
+  {id:'d1',type:'goods',title:'Sony A7III Camera Body',description:'Excellent condition, low shutter count (~12k). Original box included. Perfect for photo or video production.',price_usd:750,fmv_usd:720,accepts:['cash','card','barter'],barter_for:'Camera lenses or audio gear',seller_name:'@photopro_rtp',city:'Cary',state:'NC',emoji:'📷',avg_rating:4.8,review_count:12,certified:true,is_active:true,images:[]},
+  {id:'d2',type:'service',title:'Full-Stack Web Development',description:'React, Node.js, and database work. Block of 5 hours, can be split across sessions.',price_usd:500,accepts:['cash','card','venmo'],seller_name:'@devpro',city:'Durham',state:'NC',emoji:'🛠️',avg_rating:5,review_count:3,certified:false,is_active:true,images:[]},
+  {id:'d3',type:'goods',title:'Vintage Peugeot PX10 Road Bike',description:'1984 Peugeot PX10. Fully serviced with new cables and brake pads. Great commuter or weekend rider.',price_usd:null,accepts:['cash','barter'],barter_for:'Camera gear or quality tools',seller_name:'@cyclist_nc',city:'Chapel Hill',state:'NC',emoji:'🚲',avg_rating:0,review_count:0,certified:false,is_active:true,images:[]},
+  {id:'d4',type:'service',title:'Brand Identity & Logo Package',description:'3 logo concepts with unlimited revisions. Delivered as SVG, PNG, and PDF. 5-day turnaround.',price_usd:200,accepts:['cash','card','paypal'],seller_name:'@designstudio',city:'Raleigh',state:'NC',emoji:'🎨',avg_rating:5,review_count:7,certified:true,is_active:true,images:[]},
+  {id:'d5',type:'goods',title:'Mid-Century Walnut Writing Desk',description:'Solid walnut, 58 inches wide. Minor surface wear, structurally perfect. Local pickup only.',price_usd:450,accepts:['cash','barter'],seller_name:'@furniturefind',city:'Durham',state:'NC',emoji:'🪑',avg_rating:0,review_count:0,certified:false,is_active:true,images:[]},
+  {id:'d6',type:'service',title:'Guitar Lessons — 4-Session Block',description:'15 years experience. Rock, blues, and fingerstyle. Beginner to advanced. Triangle area or online.',price_usd:120,accepts:['cash','venmo','zelle'],seller_name:'@guitarteacher',city:'Durham',state:'NC',emoji:'🎸',avg_rating:5,review_count:4,certified:false,is_active:true,images:[]},
+  {id:'d7',type:'goods',title:'DeWalt 20V Power Tool Bundle',description:'Drill, circular saw, jigsaw, two batteries and charger. All tools fully functional.',price_usd:280,accepts:['cash','card'],seller_name:'@toolshed_rtp',city:'Apex',state:'NC',emoji:'🔧',avg_rating:0,review_count:0,certified:false,is_active:true,images:[]},
+  {id:'d8',type:'digital',title:'Lightroom Preset Collection (200+)',description:'Curated presets for portraits, landscapes, and street photography. Instant download.',price_usd:25,accepts:['cash','card','paypal'],seller_name:'@photoedits',city:'Raleigh',state:'NC',emoji:'💾',avg_rating:4.5,review_count:9,certified:false,is_active:true,images:[]},
+  {id:'d9',type:'goods',title:'Standing Desk — Flexispot E7',description:'Electric height-adjustable desk. 60x24 inch bamboo top. Works perfectly, selling due to office move.',price_usd:380,accepts:['cash','zelle'],seller_name:'@homeofficer',city:'Morrisville',state:'NC',emoji:'🖥️',avg_rating:0,review_count:0,certified:false,is_active:true,images:[]},
+  {id:'d10',type:'service',title:'Hair Braiding — Knotless Braids',description:'Professional knotless braids. Natural and protective styles. Book a slot today.',price_usd:125,accepts:['cash','cashapp','zelle'],seller_name:'@wookie',city:'Durham',state:'NC',emoji:'💇',avg_rating:4.9,review_count:22,certified:false,is_active:true,images:[]},
+  {id:'d11',type:'goods',title:'Vinyl Record Collection — 40 LPs',description:'Curated collection of jazz, soul, and funk. 1960s–1980s. All in good to excellent condition.',price_usd:null,accepts:['barter','cash'],barter_for:'Other vinyl or quality audio gear',seller_name:'@vinyl_rtp',city:'Chapel Hill',state:'NC',emoji:'🎵',avg_rating:0,review_count:0,certified:false,is_active:true,images:[]},
+  {id:'d12',type:'goods',title:'Trek FX3 Disc Hybrid Bike 2022',description:'Barely used, 200 miles. Disc brakes, carbon fork. Size M. Includes lock and lights.',price_usd:650,accepts:['cash','zelle','venmo'],seller_name:'@bikelife',city:'Cary',state:'NC',emoji:'🚴',avg_rating:0,review_count:0,certified:false,is_active:true,images:[]},
 ];
 
 const DEMO_REVIEWS = [
