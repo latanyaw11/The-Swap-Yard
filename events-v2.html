@@ -1204,23 +1204,24 @@ img { max-width: 100%; display: block; }
     <div class="section-title">Events</div>
   </div>
 </div>
-<div class="page" id="events">
-  <div class="section-head">
-    <div>
-      <div class="section-eyebrow">Events · RTP Area &amp; Nationwide</div>
-      <h2 class="section-title">Yard Sales & Estate Sales</h2>
-    </div>
-    <button class="btn btn-ink btn-sm" onclick="openEventForm()">+ Post Event</button>
+<div class="page active" id="events">
+
+  <!-- Type filters -->
+  <div style="padding:.75rem 2.5rem;border-bottom:1px solid var(--border);display:flex;gap:.4rem;flex-wrap:wrap;align-items:center;">
+    <button class="filter-btn on" onclick="filtEvent('all',this)">All Events</button>
+    <button class="filter-btn" onclick="filtEvent('yard_sale',this)">🏡 Yard Sales</button>
+    <button class="filter-btn" onclick="filtEvent('estate_sale',this)">🏛 Estate Sales</button>
+    <button class="filter-btn" onclick="filtEvent('pop_up',this)">🎪 Pop-Up Markets</button>
+    <button class="filter-btn" onclick="filtEvent('swap_meet',this)">⇄ Swap Meets</button>
+    <button class="filter-btn" onclick="filtEvent('auction',this)">🔨 Auctions</button>
+    <button class="filter-btn" onclick="openEventForm()" style="margin-left:auto;background:var(--ink);color:#fff;border-color:var(--ink);">+ Post Event</button>
   </div>
-  <div class="filters" style="margin-bottom:1.25rem;">
-    <button class="filt on" onclick="filtEvent('all',this)">All Events</button>
-    <button class="filt" onclick="filtEvent('yard_sale',this)">🏡 Yard Sales</button>
-    <button class="filt" onclick="filtEvent('estate_sale',this)">🏛 Estate Sales</button>
-    <button class="filt" onclick="filtEvent('pop_up',this)">🎪 Pop-Up Markets</button>
-    <button class="filt" onclick="filtEvent('swap_meet',this)">⇄ Swap Meets</button>
-    <button class="filt" onclick="filtEvent('auction',this)">🔨 Auctions</button>
+
+  <!-- Events grid -->
+  <div id="eventsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;padding:2rem 2.5rem;">
+    <div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--ink4);">Loading events…</div>
   </div>
-  <div id="eventsGrid"><div class="loading"><span class="spin"></span>Loading events…</div></div>
+
 </div>
 
 <!-- HOW IT WORKS -->
@@ -1840,7 +1841,7 @@ async function loadEvents() {
     if (error) throw error;
     events = data || [];
   } catch(e) { events = DEMO_EVENTS; }
-  document.getElementById('hStatEvents').textContent = events.length;
+  const _hse = document.getElementById('hStatEvents'); if(_hse) _hse.textContent = events.length;
   renderEvents();
 }
 
@@ -1853,19 +1854,42 @@ function filtEvent(f, btn) {
 
 function renderEvents() {
   const grid = document.getElementById('eventsGrid');
-  const filtered = activeEvFilt==='all' ? events : events.filter(e=>e.event_type===activeEvFilt);
-  if (!filtered.length) { grid.innerHTML = '<div class="loading">No events found. Be the first to post one!</div>'; return; }
-  const typeLabel = {yard_sale:'🏡 Yard Sale',estate_sale:'🏛 Estate Sale',pop_up:'🎪 Pop-Up',swap_meet:'⇄ Swap Meet',auction:'🔨 Auction',other:'📅 Event'};
-  const typeClass = {yard_sale:'et-yard',estate_sale:'et-estate',pop_up:'et-popup',swap_meet:'et-popup',auction:'et-estate',other:'et-yard'};
-  grid.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1px;background:var(--border);border:1.5px solid var(--border);border-radius:14px;overflow:hidden;">${filtered.map(ev=>{
-    const d = new Date(ev.event_date);
-    const mon = d.toLocaleString('en-US',{month:'short'}).toUpperCase();
-    const day = d.getDate();
-    const time = d.toLocaleString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
-    return `<div class="ecard" onclick="showToast('📅','${esc(ev.title)} — ${esc(ev.city||'RTP')}')"><div class="ecard-date-block"><div class="ecard-month">${mon}</div><div class="ecard-day">${day}</div></div><div class="ecard-title">${esc(ev.title)}</div><div class="ecard-loc">📍 ${esc(ev.address||ev.city||'RTP Area')} · ${time}</div><div class="ecard-desc">${esc((ev.description||'').slice(0,100))}${(ev.description||'').length>100?'…':''}</div><div class="ecard-footer"><span class="ecard-type ${typeClass[ev.event_type]||'et-yard'}">${typeLabel[ev.event_type]||'Event'}</span><span style="font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--text3)">${ev.admission?`$${ev.admission} admission`:'Free entry'}</span></div></div>`;
-  }).join('')}</div>`;
-}
+  if (!grid) return;
+  const filtered = activeEvFilt === 'all' ? events : events.filter(e => e.event_type === activeEvFilt);
 
+  if (!filtered.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:4rem;color:var(--ink4);"><div style="font-size:2rem;margin-bottom:.75rem;">📅</div><div style="font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--ink3);margin-bottom:.35rem;">No events yet</div><div style="font-size:.82rem;">Be the first to post one!</div></div>';
+    return;
+  }
+
+  const typeLabel = {yard_sale:'🏡 Yard Sale',estate_sale:'🏛 Estate Sale',pop_up:'🎪 Pop-Up',swap_meet:'⇄ Swap Meet',auction:'🔨 Auction',other:'📅 Event'};
+
+  grid.innerHTML = filtered.map(ev => {
+    const d = new Date(ev.event_date);
+    const mon = d.toLocaleString('en-US', {month:'short'}).toUpperCase();
+    const day = d.getDate();
+    const time = d.toLocaleString('en-US', {hour:'numeric', minute:'2-digit', hour12:true});
+    const label = typeLabel[ev.event_type] || '📅 Event';
+    const free = !ev.admission || ev.admission === 0;
+
+    return `<div class="lcard" onclick="showEventDetail('${ev.id}')">
+      <div style="background:var(--ink);height:80px;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:.75rem;">
+        <div style="font-family:var(--font-mono);font-size:.58rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);">${mon}</div>
+        <div style="font-family:var(--font-display);font-size:2rem;font-weight:800;color:#fff;line-height:1;">${day}</div>
+      </div>
+      <div class="lcard-body">
+        <span class="lcard-type" style="background:var(--cream2);color:var(--ink3);">${label}</span>
+        <div class="lcard-title">${esc(ev.title)}</div>
+        <div class="lcard-location">📍 ${esc(ev.address || ev.city || 'RTP Area')} · ${time}</div>
+        <div style="font-size:.75rem;color:var(--ink3);line-height:1.5;margin:.4rem 0 .75rem;">${esc((ev.description||'').slice(0,100))}${(ev.description||'').length>100?'…':''}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-family:var(--font-mono);font-size:.7rem;font-weight:600;color:${free?'var(--green)':'var(--amber)'};">${free?'Free Entry':'$'+ev.admission+' admission'}</span>
+          <button class="lcard-btn primary" style="flex:0;padding:.35rem .85rem;" onclick="event.stopPropagation();rsvpEvent('${ev.id}',this)">RSVP</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
 function openEventForm() {
   if (!user) { showToast('🔒','Sign in to post an event.'); openAuth(); return; }
   document.getElementById('eventOverlay').classList.add('on');
