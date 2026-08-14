@@ -188,13 +188,177 @@ window.addEventListener('DOMContentLoaded', async () => {
   clock();
   setupPWA();
   const { data:{ session } } = await sb.auth.getSession();
-  if (session) { currentUser = session.user; goto('home'); }
-  else goto('signin');
-  sb.auth.onAuthStateChange((ev, session) => {
+  if (session) {
+    currentUser = session.user;
+    await loadAllData();
+    goto('home');
+  } else goto('signin');
+  sb.auth.onAuthStateChange(async (ev, session) => {
     currentUser = session?.user || null;
+    if (ev === 'SIGNED_IN') { await loadAllData(); goto('home'); }
     if (ev === 'SIGNED_OUT') goto('signin');
   });
 });
+
+async function loadAllData() {
+  try {
+    const [l, e, c] = await Promise.all([
+      sb.from('listings').select('*').eq('is_active', true)
+        .order('created_at', { ascending: false }).limit(20),
+      sb.from('events').select('*')
+        .gte('event_date', new Date().toISOString())
+        .order('event_date', { ascending: true }).limit(20),
+      sb.from('communities').select('*').eq('is_active', true)
+        .order('member_count', { ascending: false }).limit(20),
+    ]);
+    if (l.data && l.data.length) st.liveListings = l.data;
+    if (e.data && e.data.length) st.liveEvents   = e.data;
+    if (c.data && c.data.length) st.liveCommunities = c.data;
+    if (currentUser) await loadDashStats();
+  } catch(err) { console.warn('Data load:', err); }
+}
+
+async function loadDashStats() {
+  try {
+    const [listings, orders] = await Promise.all([
+      sb.from('listings').select('id', { count: 'exact' })
+        .eq('user_id', currentUser.id).eq('is_active', true),
+      sb.from('orders').select('*').eq('seller_id', currentUser.id).limit(10),
+    ]);
+    st.dashStats = {
+      listings: listings.count || 0,
+      orders: orders.data || [],
+      revenue: (orders.data || []).reduce((s, o) => s + (o.amount_usd || 0), 0),
+    };
+  } catch(err) { st.dashStats = null; }
+}
+
+async function loadCommunityDetail(communityId) {
+  try {
+    const [posts, members, chatData] = await Promise.all([
+      sb.from('community_posts').select('*, profiles(display_name, avatar_url)')
+        .eq('community_id', communityId).order('created_at', { ascending: false }).limit(20),
+      sb.from('community_members').select('*, profiles(display_name)')
+        .eq('community_id', communityId).limit(30),
+      sb.from('community_chat').select('*, profiles(display_name)')
+        .eq('community_id', communityId).order('created_at', { ascending: false }).limit(40),
+    ]);
+    st.commPosts   = posts.data   || [];
+    st.commMembers = members.data || [];
+    st.commChat    = (chatData.data || []).reverse();
+    render();
+  } catch(err) { console.warn('Community load:', err); }
+}
+
+async function loadMessages() {
+  if (!currentUser) return;
+  try {
+    const { data } = await sb.from('messages')
+      .select('*, sender:profiles!sender_id(display_name), listing:listings(title)')
+      .or('sender_id.eq.'+currentUser.id+',receiver_id.eq.'+currentUser.id)
+      .order('created_at', { ascending: false }).limit(30);
+    st.messages = data || [];
+    render();
+  } catch(err) { console.warn('Messages load:', err); }
+}
+
+async function sendMessage(receiverId, listingId, body) {
+  if (!body.trim()) return;
+  const { error } = await sb.from('messages').insert({
+    sender_id: currentUser.id, receiver_id: receiverId,
+    listing_id: listingId, body: body.trim(),
+  });
+  if (error) { toast('Failed to send'); return; }
+  toast('Message sent ✓');
+  await loadMessages();
+}
+
+async function sendChatMessage(communityId) {
+  const inp = document.getElementById('chat-input-field');
+  if (!inp || !inp.value.trim()) return;
+  const body = inp.value.trim();
+  inp.value = '';
+  const { error } = await sb.from('community_chat').insert({
+    community_id: communityId, user_id: currentUser.id, body,
+  });
+  if (error) { toast('Failed to send'); return; }
+  await loadCommunityDetail(communityId);
+}
+
+async function rsvpEvent(eventId) {
+  if (!currentUser) { toast('Sign in to RSVP'); return; }
+  const on = !!st.rsvp[eventId];
+  if (on) {
+    await sb.from('event_rsvps').delete()
+      .eq('event_id', eventId).eq('user_id', currentUser.id);
+  } else {
+    await sb.from('event_rsvps').upsert({
+      event_id: eventId, user_id: currentUser.id,
+    });
+  }
+  setState(s => ({ rsvp: { ...s.rsvp, [eventId]: !on } }));
+}
+
+async function joinCommunity(communityId) {
+  if (!currentUser) { toast('Sign in to join'); return; }
+  const on = !!st.joined[communityId];
+  if (on) {
+    await sb.from('community_members').delete()
+      .eq('community_id', communityId).eq('user_id', currentUser.id);
+    await sb.from('communities').update({ member_count: sb.rpc('decrement') })
+      .eq('id', communityId);
+  } else {
+    await sb.from('community_members').upsert({
+      community_id: communityId, user_id: currentUser.id, role: 'member',
+    });
+    await sb.from('communities').update({ member_count: sb.rpc('increment') })
+      .eq('id', communityId);
+  }
+  setState(s => ({ joined: { ...s.joined, [communityId]: !on } }));
+  toast(on ? 'Left community' : 'Joined! ✓');
+}
+
+async function submitPost(communityId) {
+  const inp = document.getElementById('post-composer');
+  if (!inp || !inp.value.trim()) return;
+  const body = inp.value.trim();
+  const { error } = await sb.from('community_posts').insert({
+    community_id: communityId, user_id: currentUser.id, body,
+  });
+  if (error) { toast('Failed to post'); return; }
+  inp.value = '';
+  toast('Posted ✓');
+  await loadCommunityDetail(communityId);
+}
+
+async function likePost(postId) {
+  const on = !!st.likes[postId];
+  if (on) {
+    await sb.from('community_post_likes').delete()
+      .eq('post_id', postId).eq('user_id', currentUser.id);
+  } else {
+    await sb.from('community_post_likes').upsert({
+      post_id: postId, user_id: currentUser.id,
+    });
+  }
+  setState(s => ({ likes: { ...s.likes, [postId]: !on } }));
+}
+
+async function submitEvent() {
+  const title   = document.getElementById('ev-title')?.value?.trim();
+  const date    = document.getElementById('ev-date')?.value;
+  const address = document.getElementById('ev-address')?.value?.trim();
+  if (!title || !date) { toast('Add a title and date'); return; }
+  const { error } = await sb.from('events').insert({
+    title, event_date: date, event_address: address || '',
+    user_id: currentUser.id, event_type: 'swap_meet',
+  });
+  if (error) { toast('Error: ' + error.message); return; }
+  toast('Event posted ✓');
+  await loadAllData();
+  goto('eventsScr');
+}
+
 
 function clock() {
   const el = document.getElementById('sb-time');
@@ -299,6 +463,14 @@ function toast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg; el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2500);
+}
+function timeAgo(dateStr) {
+  var d = new Date(dateStr), now = new Date();
+  var diff = Math.floor((now - d) / 1000);
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.floor(diff/60)+'m ago';
+  if (diff < 86400) return Math.floor(diff/3600)+'h ago';
+  return Math.floor(diff/86400)+'d ago';
 }
 function esc(str) { return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function backBtn(fn) {
@@ -407,7 +579,7 @@ function scrSignin() {
 }
 
 function buildFeedCard(l) {
-  return '<div class="card" onclick="goto(\'listing\')" style="cursor:pointer">'
+  return '<div class="card" onclick="openListing('+JSON.stringify(l)+'||'+JSON.stringify({})+')" style="cursor:pointer">'
     + photoHTML(132,'')
     + '<div style="padding:12px 16px 16px">'
     + '<div style="display:flex;gap:6px;margin-bottom:8px">' + tg(l.mode,modeStyle(l.mode),'') + '</div>'
@@ -417,7 +589,7 @@ function buildFeedCard(l) {
 }
 
 function scrHome() {
-  const feed = DEMO_LISTINGS.slice(0,3);
+  const feed = (st.liveListings.length ? st.liveListings : DEMO_LISTINGS).slice(0,3);
   const cats = [{n:'Tools',i:'T',bg:'var(--a200)',fg:'var(--a800)'},{n:'Home',i:'H',bg:'var(--a2-200)',fg:'var(--a2-800)'},{n:'Garden',i:'G',bg:'var(--n200)',fg:'var(--n800)'},{n:'Services',i:'S',bg:'var(--a100)',fg:'var(--a800)'}];
   const stats = [{v:'2,481',l:'Live'},{v:'936',l:'Traders'},{v:'RTP',l:'Rooted'}];
   return '<div class="pad">'
@@ -445,6 +617,15 @@ function scrHome() {
 function scrBrowse() {
   var filters = ['All','Goods','Services','Trade','Barter'];
   var radii   = ['Any','5 mi','25 mi','50 mi'];
+  var allListings = st.liveListings.length ? st.liveListings : DEMO_LISTINGS;
+  var filtered = allListings.filter(function(l) {
+    if (st.filter === 'All') return true;
+    if (st.filter === 'Goods')    return l.type === 'goods';
+    if (st.filter === 'Services') return l.type === 'service';
+    if (st.filter === 'Trade')    return l.mode === 'Trade' || l.trade_ok;
+    if (st.filter === 'Barter')   return l.mode === 'Barter' || l.barter_ok;
+    return true;
+  });
   return '<div class="pad">'
     + '<h2 style="font-size:26px;margin:0 0 12px">Browse</h2>'
     + '<div style="min-height:46px;border-radius:999px;border:1px solid var(--div);background:var(--n100);color:var(--n600);padding:12px 18px;font-size:14px;margin-bottom:12px">Search listings, services, barter…</div>'
@@ -453,10 +634,10 @@ function scrBrowse() {
     + '</div><div class="hscroll" style="margin-bottom:12px">'
     + filters.map(function(f){ return chip(f, st.filter===f, 'setFilter(\''+f+'\')'); }).join('')
     + '</div>'
-    + '<div style="font-size:12.5px;color:var(--n700);margin-bottom:12px">'+DEMO_LISTINGS.length+' near Durham · within '+st.radius+'</div>'
+    + '<div style="font-size:12.5px;color:var(--n700);margin-bottom:12px">'+filtered.length+' near Durham · within '+st.radius+'</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
-    + DEMO_LISTINGS.map(function(l){
-        return '<button onclick="goto(\'listing\')" style="text-align:left;padding:0;border:1px solid var(--div);background:var(--n100);border-radius:var(--r-md);overflow:hidden;font-family:var(--body)">'
+    + filtered.map(function(l){
+        return '<button onclick="st.activeListing=l;goto(\'listing\')" style="text-align:left;padding:0;border:1px solid var(--div);background:var(--n100);border-radius:var(--r-md);overflow:hidden;font-family:var(--body)">'
           + '<div class="photo-ph" style="height:96px;font-size:2rem;display:flex;align-items:center;justify-content:center">'+l.emoji+'</div>'
           + '<div style="padding:12px"><div style="font-size:14px;font-weight:700;line-height:1.25;margin-bottom:4px">'+esc(l.title)+'</div>'
           + '<div style="font-size:12px;color:var(--n700);margin-bottom:6px">'+(l.price_usd?'$'+l.price_usd:'Barter')+'</div>'
@@ -466,6 +647,13 @@ function scrBrowse() {
 }
 
 function scrListing() {
+  var l = st.activeListing || {};
+  var title = l.title || 'Ryobi 18V drill set, barely used';
+  var price = l.price_usd ? '$'+l.price_usd : '—';
+  var priceLabel = l.barter_ok ? (l.price_usd ? '$'+l.price_usd+' or trade' : 'Barter only') : (l.price_usd ? '$'+l.price_usd : '—');
+  var city = l.city || 'Durham';
+  var desc = l.description || 'Two batteries, charger, hard case. Used on one deck build.';
+  var emoji = l.emoji || '📦';
   return '<div>'
     + '<div class="listing-hero">'
     + photoHTML(240,'')
@@ -475,13 +663,13 @@ function scrListing() {
     + '<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">'
     + tg('Open to trade','var(--a2-200)','var(--a2-800)') + tg('0.8 mi · Durham','var(--n200)','var(--n700)') + tg('Ships','var(--a100)','var(--a800)')
     + '</div>'
-    + '<h2 style="font-size:26px;margin:0 0 6px;line-height:1.1">Ryobi 18V drill set, barely used</h2>'
-    + '<div style="font-family:var(--h);font-size:22px;color:var(--a700);margin-bottom:16px">$180 <span style="font-family:var(--body);font-size:13px;font-weight:600;color:var(--n700)">or trade</span></div>'
+    + '<h2 style="font-size:26px;margin:0 0 6px;line-height:1.1">'+esc(title)+'</h2>'
+    + '<div style="font-family:var(--h);font-size:22px;color:var(--a700);margin-bottom:16px">'+esc(priceLabel)+'</div>'
     + '<div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--r-md);background:var(--n100);border:1px solid var(--div);margin-bottom:16px">'
     + av('DK','var(--a2-200)','var(--a2-800)',44)
     + '<div style="flex:1"><div style="font-weight:700;font-size:14px">Dre K.</div><div style="font-size:12px;color:var(--n700)">4.9 ★ · 61 swaps</div></div>'
     + tg('ID verified','var(--a2-100)','var(--a2-700)') + '</div>'
-    + '<p style="font-size:14px;color:var(--n800);margin-bottom:16px">Two batteries, charger, hard case. Used on one deck build.</p>'
+    + '<p style="font-size:14px;color:var(--n800);margin-bottom:16px">'+esc(desc)+'</p>'
     + '<div class="section-lbl">Takes payment by</div>'
     + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px">'
     + ['Cash','Card','Venmo','Zelle','Barter'].map(function(p){ return '<span style="font-size:12px;padding:6px 12px;border-radius:999px;background:var(--n100);border:1px solid var(--div)">'+p+'</span>'; }).join('')
@@ -546,7 +734,7 @@ function scrOffer() {
 function scrChats() {
   return '<div style="display:flex;flex-direction:column;min-height:100vh">'
     + '<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--div)">'
-    + '<button onclick="goto(\'listing\')" style="width:40px;height:40px;border-radius:999px;border:1px solid var(--div);background:var(--n100);font-size:16px">←</button>'
+    + '<button onclick="st.activeListing=l;goto(\'listing\')" style="width:40px;height:40px;border-radius:999px;border:1px solid var(--div);background:var(--n100);font-size:16px">←</button>'
     + av('DK','var(--a2-200)','var(--a2-800)',40)
     + '<div style="flex:1"><div style="font-weight:700;font-size:14.5px">Dre K.</div><div style="font-size:12px;color:var(--n700)">Ryobi drill set</div></div></div>'
     + '<div style="flex:1;padding:16px;display:flex;flex-direction:column;gap:12px">'
@@ -617,7 +805,7 @@ function scrPost() {
       + '<button class="pill pill-primary" onclick="setPostStep(1)" style="margin-top:24px">Next — details</button>';
   } else if (st.postStep===2) {
     html += '<div style="display:flex;flex-direction:column;gap:16px">'
-      + '<div><div class="field-lbl">Title</div><div class="field-box">Kayak, 10ft sit-on-top</div></div>'
+      + '<div><div class="field-lbl">Title *</div><input id="post-title" type="text" placeholder="e.g. Kayak, 10ft sit-on-top" style="width:100%;padding:13px 18px;border-radius:999px;border:1.5px solid var(--div);background:var(--n100);font-family:var(--body);font-size:14px;outline:none"></div>'
       + '<div><div class="field-lbl">Type</div><div style="display:flex;flex-wrap:wrap;gap:7px">'
       + cats.map(function(c){ var on=st.cat===c; return '<button onclick="setState({cat:\''+c+'\'})" style="font-size:12.5px;padding:9px 14px;border-radius:999px;background:'+(on?'var(--a200)':'transparent')+';color:'+(on?'var(--a800)':'var(--n800)')+';border:1px solid '+(on?'var(--a300)':'var(--div)')+';font-family:var(--body);min-height:40px">'+c+'</button>'; }).join('')
       + '</div></div>'
@@ -635,7 +823,8 @@ function scrPost() {
       + '<div><div class="field-lbl">Payment you\'ll take</div><div style="display:flex;flex-wrap:wrap;gap:8px">'
       + pays.map(function(p){ var on=!!st.pays[p]; return '<button onclick="togglePay(\''+p+'\')" style="min-height:44px;padding:0 15px;border-radius:999px;border:1.5px solid '+(on?'var(--a2-400)':'var(--div)')+';background:'+(on?'var(--a2-100)':'transparent')+';color:'+(on?'var(--a2-800)':'var(--n800)')+';font-size:13px;font-weight:700;font-family:var(--body)">'+p+'</button>'; }).join('')
       + '</div></div>'
-      + '<div><div class="field-lbl">Asking price</div><div class="field-box" style="font-family:var(--h);font-size:18px;color:var(--a700)">$240</div></div>'
+      + '<div><div class="field-lbl">Asking price</div><input id="post-price" type="number" placeholder="0" style="width:100%;padding:13px 18px;border-radius:999px;border:1.5px solid var(--div);background:var(--n100);font-family:var(--body);font-size:14px;outline:none"></div>'
+      + '<div><div class="field-lbl">Description</div><textarea id="post-desc" placeholder="Describe your item or service…" style="width:100%;padding:13px 18px;border-radius:var(--r-md);border:1.5px solid var(--div);background:var(--n100);font-family:var(--body);font-size:14px;outline:none;resize:vertical;min-height:80px"></textarea></div>'
       + '<button onclick="toggleLegal()" style="display:flex;align-items:flex-start;gap:10px;text-align:left;background:none;border:0;padding:0;font-family:var(--body)">'
       + '<span style="width:24px;height:24px;border-radius:8px;flex-shrink:0;border:1.5px solid '+(st.legal?'var(--a2-500)':'var(--n400)')+';background:'+(st.legal?'var(--a2-500)':'transparent')+';color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:13px">'+(st.legal?'✓':'')+'</span>'
       + '<span style="font-size:12.5px;color:var(--n800)">I\'ve read the prohibited items list and confirm this listing follows it.</span></button>'
@@ -650,11 +839,14 @@ function scrEventsScreen() {
   return '<div class="pad">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
     + '<h2 style="font-size:26px">Events</h2>'
-    + '<button style="min-height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--div);background:var(--n100);font-family:var(--body);font-size:13px">+ Post</button></div>'
+    + '<button onclick="showEventForm()" style="min-height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--div);background:var(--n100);font-family:var(--body);font-size:13px">+ Post</button></div>'
     + '<div class="hscroll" style="margin-bottom:12px">'
     + filters.map(function(f){ return chip(f, st.eventFilter===f, 'setEventFilter(\''+f+'\')'); }).join('')
     + '</div><div style="display:flex;flex-direction:column;gap:12px">'
-    + DEMO_EVENTS.map(function(e){
+    var _evts = st.liveEvents.length ? st.liveEvents : DEMO_EVENTS;
+  var _evtMap={'Yard sales':'yard_sale','Estate sales':'estate_sale','Pop-ups':'pop_up','Swap meets':'swap_meet','Auctions':'auction'};
+  if(st.eventFilter!=='All') _evts=_evts.filter(function(e){return e.event_type===_evtMap[st.eventFilter];});
+  + _evts.map(function(e){
         var on = !!st.rsvp[e.id];
         var d  = new Date(e.event_date);
         var mon = d.toLocaleString('en-US',{month:'short'}).toUpperCase();
@@ -684,7 +876,8 @@ function scrCommunity() {
     + '<div class="hscroll" style="margin-bottom:12px">'
     + filters.map(function(f){ return chip(f, st.commFilter===f, 'setCommFilter(\''+f+'\')'); }).join('')
     + '</div><div style="display:flex;flex-direction:column;gap:8px">'
-    + DEMO_COMMUNITIES.map(function(c){
+    var _comms = st.liveCommunities.length ? st.liveCommunities : DEMO_COMMUNITIES;
+  + _comms.map(function(c){
         var on = !!st.joined[c.id];
         return '<div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:28px;background:var(--n100);border:1px solid var(--div)">'
           + '<button onclick="goto(\'commDetail\')" style="display:flex;align-items:center;gap:12px;flex:1;text-align:left;background:none;border:0;padding:0;font-family:var(--body)">'
@@ -699,12 +892,26 @@ function scrCommunity() {
 function scrCommDetail() {
   var tabs = ['Feed','Chat','Members'];
   var t = st.commTab;
-  var posts = [
+  var rawPosts = st.commPosts.length ? st.commPosts : [
     {key:'p1',i:'MR',who:'Marisol R.',when:'2h',body:'Splitting a bulk order of compost Saturday. Bring buckets.',attached:false,count:14},
     {key:'p2',i:'DK',who:'Dre K.',when:'5h',body:'Listed my spare drill here first before it goes public.',attached:true,listing:'Ryobi 18V drill set',count:6},
     {key:'p3',i:'JT',who:'Jamal T.',when:'Yesterday',body:'Anyone trading okra starts for tomato cages?',attached:false,count:9},
   ];
-  var members = [{i:'MR',name:'Marisol R.',role:'Admin'},{i:'DK',name:'Dre K.',role:'Member'},{i:'JT',name:'Jamal T.',role:'Member'},{i:'LW',name:'Latanya W.',role:'Member'},{i:'PS',name:'Priya S.',role:'Mod'},{i:'EB',name:'Ed B.',role:'Member'}];
+  var posts = rawPosts.map(function(p) {
+    return {
+      key: p.id || p.key,
+      i: (p.profiles&&p.profiles.display_name ? p.profiles.display_name.charAt(0) : (p.i||'?')).toUpperCase(),
+      who: p.profiles&&p.profiles.display_name ? p.profiles.display_name : (p.who||'User'),
+      when: p.created_at ? timeAgo(p.created_at) : (p.when||''),
+      body: p.body||p.content||'',
+      attached: p.listing_id||p.attached||false,
+      listing: p.listing_title||p.listing||'',
+      count: p.like_count||p.count||0,
+    };
+  });
+  var members = st.commMembers.length ? st.commMembers.map(function(m) {
+    return { i: (m.profiles&&m.profiles.display_name?m.profiles.display_name.charAt(0):'?').toUpperCase(), name: m.profiles&&m.profiles.display_name?m.profiles.display_name:'Member', role: m.role||'Member' };
+  }) : [{i:'MR',name:'Marisol R.',role:'Admin'},{i:'DK',name:'Dre K.',role:'Member'},{i:'JT',name:'Jamal T.',role:'Member'},{i:'LW',name:'Latanya W.',role:'Member'}];
   var html = '<div class="pad">'
     + backBtn("goto('community')")
     + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
@@ -727,9 +934,13 @@ function scrCommDetail() {
   } else if (t==='Chat') {
     html += '<div style="display:flex;flex-direction:column;gap:8px">'
       + '<div style="font-size:11.5px;color:var(--n600);text-align:center;margin-bottom:8px">Live chat · 12 online</div>'
-      + '<div class="bubble bubble-in">Anyone got okra starts to spare?</div>'
-      + '<div class="bubble bubble-in">I\'ve got six. Trade for tomato cages?</div>'
-      + '<div class="bubble bubble-out" style="align-self:flex-end">Deal. Saturday at the library lot?</div>'
+      + (st.commChat.length ? st.commChat.map(function(m) {
+        var own = currentUser && m.user_id === currentUser.id;
+        var who = m.profiles&&m.profiles.display_name ? m.profiles.display_name : 'User';
+        return '<div class="bubble '+(own?'bubble-out':'bubble-in')+'" style="align-self:'+(own?'flex-end':'flex-start')+'"><span style="font-size:10px;opacity:.5;display:block;margin-bottom:2px">'+(own?'You':who)+'</span>'+esc(m.body)+'</div>';
+      }).join('') :
+      '<div class="bubble bubble-in">Anyone got okra starts to spare?</div><div class="bubble bubble-in">I\'ve got six. Trade for tomato cages?</div><div class="bubble bubble-out" style="align-self:flex-end">Deal. Saturday at the library lot?</div>'
+    )
       + '<div style="min-height:46px;border-radius:999px;border:1px solid var(--div);background:var(--n100);color:var(--n600);padding:13px 18px;font-size:13.5px;margin-top:12px">Message the group…</div></div>';
   } else {
     html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
@@ -763,12 +974,21 @@ function scrPlans() {
 }
 
 function scrDash() {
-  var kpis = [{v:'12',l:'Active listings'},{v:'$1,840',l:'Revenue, 30d'},{v:'7',l:'Open orders'},{v:'4.9',l:'Rating'}];
-  var orders = [
+  var ds = st.dashStats;
+  var kpis = [
+    {v: ds ? String(ds.listings) : '0',        l:'Active listings'},
+    {v: ds ? '$'+ds.revenue.toFixed(0) : '$0', l:'Revenue total'},
+    {v: ds ? String(ds.orders.length) : '0',   l:'Orders'},
+    {v: '4.9', l:'Rating'},
+  ];
+  var demoOrders = [
     {item:'Mid-century dresser',who:'Jamal T.',amount:'$240',status:'Shipped',bg:'var(--a2-200)',fg:'var(--a2-800)'},
     {item:'Ryobi drill set',who:'Dre K.',amount:'$80+trade',status:'Escrow',bg:'var(--a200)',fg:'var(--a800)'},
     {item:'Canning jars',who:'Priya S.',amount:'$20',status:'Complete',bg:'var(--n200)',fg:'var(--n800)'},
   ];
+  var orders = (ds && ds.orders && ds.orders.length) ? ds.orders.map(function(o) {
+    return { item: o.listing_title||o.item||'Order', who: o.buyer_name||'Buyer', amount: o.amount_usd?'$'+o.amount_usd:'—', status: o.status||'Pending', bg:'var(--n200)', fg:'var(--n800)' };
+  }) : demoOrders;
   var trust = [
     {name:'Email',state:'Verified',ok:true},
     {name:'Phone',state:'Verified',ok:true},
@@ -862,6 +1082,28 @@ const screens = {
   safety: scrSafety,
 };
 
+// ── EVENT FORM ────────────────────────────────────────────────
+function closeEventModal() { var m=document.getElementById('event-modal'); if(m)m.remove(); }
+function showEventForm() {
+  var existing = document.getElementById('event-modal');
+  if (existing) { existing.remove(); return; }
+  var modal = document.createElement('div');
+  modal.id = 'event-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(32,30,29,.5);z-index:300;display:flex;align-items:flex-end';
+  modal.innerHTML = '<div style="width:100%;background:var(--bg);border-radius:28px 28px 0 0;padding:20px 16px 40px">'
+    + '<div style="font-family:var(--h);font-size:22px;margin-bottom:16px">Post an event</div>'
+    + '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px">'
+    + '<input id="ev-title" placeholder="Event title" style="padding:12px 18px;border-radius:999px;border:1.5px solid var(--div);background:var(--n100);font-family:var(--body);font-size:14px;outline:none">'
+    + '<input id="ev-date" type="datetime-local" style="padding:12px 18px;border-radius:999px;border:1.5px solid var(--div);background:var(--n100);font-family:var(--body);font-size:14px;outline:none">'
+    + '<input id="ev-address" placeholder="Location / address" style="padding:12px 18px;border-radius:999px;border:1.5px solid var(--div);background:var(--n100);font-family:var(--body);font-size:14px;outline:none">'
+    + '</div>'
+    + '<div style="display:flex;gap:8px">'
+    + '<button onclick="submitEvent()" class="pill pill-primary">Post event</button>'
+    + '<button onclick="closeEventModal()" class="pill pill-secondary" style="width:auto;padding:0 20px">Cancel</button>'
+    + '</div></div>';
+  document.body.appendChild(modal);
+}
+
 // ── INSTALL PROMPT ────────────────────────────────────────────
 function showInstallPrompt() {
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -872,6 +1114,16 @@ function showInstallPrompt() {
     if (b) b.style.display = 'block';
   } else {
     toast('Open in Chrome or Safari to install');
+  }
+}
+
+// ── COMMUNITY OPEN ────────────────────────────────────────────
+function openCommunity(id) {
+  st.activeCommunity = (st.liveCommunities.length ? st.liveCommunities : DEMO_COMMUNITIES)
+    .find(function(c){ return (c.id||c.key) === id; }) || null;
+  goto('commDetail');
+  if (id && typeof id === 'string' && id.length > 4) {
+    loadCommunityDetail(id);
   }
 }
 
@@ -893,11 +1145,34 @@ function toggleRsvp(id)       { setState(s=>({rsvp:{...s.rsvp,[id]:!s.rsvp[id]}}
 function toggleJoin(id)       { setState(s=>({joined:{...s.joined,[id]:!s.joined[id]}})); }
 function toggleLike(k)        { setState(s=>({likes:{...s.likes,[k]:!s.likes[k]}})); }
 function toggleSafety(k)      { setState({safetyOpen:st.safetyOpen===k?null:k}); }
-async function doPublish()    {
+async function doPublish() {
   if (!st.legal) { toast('Please confirm the prohibited items policy'); return; }
-  toast('Publishing listing…');
-  const ok = await publishListing({ title:'Kayak, 10ft sit-on-top', price_usd:240, type:st.cat, city:'Durham', is_active:true });
-  if (ok) { setState({postStep:1,fmv:false,legal:false}); goto('dash'); }
+  if (!currentUser) { toast('Sign in to publish'); goto('signin'); return; }
+  const titleEl = document.getElementById('post-title');
+  const priceEl = document.getElementById('post-price');
+  const descEl  = document.getElementById('post-desc');
+  const title = titleEl ? titleEl.value.trim() : 'New listing';
+  const price = priceEl ? Number(priceEl.value) : 0;
+  const desc  = descEl  ? descEl.value.trim()  : '';
+  if (!title) { toast('Add a title'); return; }
+  const btn = document.getElementById('publish-btn');
+  if (btn) { btn.textContent = 'Publishing…'; btn.disabled = true; }
+  toast('Publishing…');
+  const { error } = await sb.from('listings').insert({
+    title, price_usd: price||null, description: desc,
+    type: st.cat.toLowerCase(), city: 'Durham',
+    barter_ok: !!st.pays.Barter, ships: false,
+    user_id: currentUser.id, is_active: true,
+  });
+  if (error) {
+    toast('Error: '+error.message);
+    if (btn) { btn.textContent = 'Publish listing'; btn.disabled = false; }
+    return;
+  }
+  await loadAllData();
+  toast('Listing published! ✓');
+  setState({postStep:1, fmv:false, legal:false, cat:'Outdoors', pays:{Cash:true,Card:true,Barter:true}});
+  goto('browse');
 }
 
 // ── PWA INSTALL ───────────────────────────────────────────────
@@ -956,5 +1231,152 @@ function setupPWA() {
   }
 }
 </script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f5ead8;--surface:#ebddc5;--text:#201e1d;--accent:#c67139;--a2:#7a8a5e;
+  --div:rgba(32,30,29,0.16);
+  --n100:#f9f4ed;--n200:#eee7db;--n300:#dcd3c4;--n600:#82796a;--n700:#645c50;--n800:#474238;--n900:#2e2b25;
+  --a100:#fff2eb;--a200:#ffe1d0;--a300:#ffc6a5;--a600:#b2622d;--a700:#8c491a;--a800:#643312;
+  --a2-100:#f0fae1;--a2-200:#e1eecc;--a2-300:#ccdbb2;--a2-400:#aebf92;--a2-500:#8fa073;--a2-700:#56633f;--a2-800:#3d472b;
+  --h:'Caprasimo',system-ui;
+  --body:'Figtree',system-ui;
+  --sp1:4px;--sp2:8px;--sp3:12px;--sp4:16px;--sp6:24px;--sp8:32px;
+  --r-sm:8px;--r-md:16px;--r-lg:28px;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);font-family:var(--body);color:var(--text);font-size:15px;line-height:1.55}
+h1,h2,h3,h4{font-family:var(--h);font-weight:400;line-height:1.05;margin:0}
+button{font-family:var(--body);cursor:pointer;-webkit-appearance:none}
+input{font-family:var(--body);-webkit-appearance:none}
+/* ── LAYOUT ── */
+#app{display:flex;flex-direction:column;height:100%;padding-top:var(--safe-top)}
+#statusbar{height:44px;background:var(--bg);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0;font-size:13px;font-weight:700}
+#content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:none}
+#tabbar{flex-shrink:0;border-top:1px solid var(--div);background:var(--n100);display:flex;padding-bottom:var(--safe-bot)}
+.tab{flex:1;min-height:52px;border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:6px 0 0}
+.tab-icon{width:34px;height:34px;border-radius:999px;display:flex;align-items:center;justify-content:center;transition:background .12s}
+.tab-icon.on{background:var(--accent);color:var(--bg)}
+.tab-icon.off{background:transparent;color:var(--n700)}
+.tab-lbl{font-size:10px;letter-spacing:.02em}
+.tab-lbl.on{color:var(--text);font-weight:700}
+.tab-lbl.off{color:var(--n600)}
+#ai-fab{position:fixed;right:16px;bottom:calc(72px + var(--safe-bot));width:54px;height:54px;border-radius:999px;border:0;background:var(--accent);color:var(--bg);font-family:var(--h);font-size:20px;box-shadow:0 8px 24px rgba(198,113,57,.35);z-index:100;display:flex;align-items:center;justify-content:center}
+/* ── INSTALL BANNER ── */
+#install-banner{display:none;position:fixed;top:calc(44px + var(--safe-top));left:0;right:0;z-index:200;padding:12px 16px;background:var(--a2-800);color:#fff;align-items:center;gap:12px}
+#install-banner p{flex:1;font-size:13px;line-height:1.4}
+#install-banner button{padding:8px 16px;border-radius:999px;border:2px solid rgba(255,255,255,.4);background:transparent;color:#fff;font-size:13px;font-weight:700;font-family:var(--body)}
+/* ── UTILITIES ── */
+.pad{padding:16px 16px 32px}
+.chip{display:inline-flex;align-items:center;flex-shrink:0;min-height:36px;padding:0 14px;border-radius:999px;font-size:12.5px;font-weight:600;border:1px solid var(--div);background:transparent;color:var(--n800);transition:all .12s;white-space:nowrap}
+.chip.on{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.hscroll{display:flex;gap:7px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+.hscroll::-webkit-scrollbar{display:none}
+.seg{display:flex;gap:4px;background:var(--n200);padding:4px;border-radius:999px;margin-bottom:16px}
+.seg-btn{flex:1;min-height:40px;border:0;border-radius:999px;font-size:13px;font-weight:700;font-family:var(--body);transition:all .12s;color:var(--n700);background:transparent}
+.seg-btn.on{background:var(--bg);color:var(--text)}
+.pill{min-height:50px;padding:0 20px;border-radius:999px;font-size:15px;font-weight:700;font-family:var(--body);border:1.5px solid;transition:all .12s;display:flex;align-items:center;justify-content:center;width:100%}
+.pill-primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+.pill-secondary{background:var(--n100);color:var(--n800);border-color:var(--div)}
+.pill-sage{background:var(--a2-100);color:var(--a2-800);border-color:var(--a2-400)}
+.pill-sm{min-height:42px;font-size:13.5px}
+.card{border:1px solid var(--div);background:var(--n100);border-radius:var(--r-lg);overflow:hidden}
+.tag{display:inline-flex;align-items:center;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.photo-ph{background:repeating-linear-gradient(45deg,var(--n200) 0 10px,var(--n300) 10px 20px);filter:saturate(.6)contrast(.85)brightness(1.1);display:flex;align-items:center;justify-content:center}
+.av{border-radius:999px;display:flex;align-items:center;justify-content:center;font-family:var(--h);flex-shrink:0}
+.field-lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--n700);margin-bottom:5px}
+.field-box{min-height:50px;border-radius:999px;border:1px solid var(--div);background:var(--n100);padding:14px 18px;font-size:14px;font-family:var(--body);color:var(--text);display:flex;align-items:center}
+.field-box input{width:100%;border:0;background:transparent;font-size:14px;font-family:var(--body);color:var(--text);outline:none}
+.row-list{display:flex;flex-direction:column;border:1px solid var(--div);border-radius:var(--r-lg);overflow:hidden;background:var(--n100)}
+.row-btn{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:0 16px;background:none;border:0;border-bottom:1px solid var(--div);font-family:var(--body);text-align:left;font-size:14px;font-weight:600;color:var(--text)}
+.row-btn:last-child{border-bottom:0}
+.section-lbl{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--n700);margin-bottom:8px}
+/* ── TOAST ── */
+#toast{position:fixed;top:calc(var(--safe-top) + 54px);left:50%;transform:translateX(-50%) translateY(-80px);background:var(--n900);color:#fff;border-radius:99px;padding:10px 20px;font-size:13px;font-weight:600;z-index:999;transition:transform .25s ease;white-space:nowrap;pointer-events:none}
+#toast.show{transform:translateX(-50%) translateY(0)}
+/* ── SCREEN: SIGNIN ── */
+.auth-pill{width:100%;min-height:52px;border-radius:999px;border:0;font-size:16px;font-weight:700;font-family:var(--body);cursor:pointer}
+/* ── SCREEN: LISTING ── */
+.listing-hero{position:relative}
+.listing-body{margin-top:-28px;background:var(--bg);border-radius:28px 28px 0 0;position:relative;padding:16px 16px 32px}
+/* ── SCREEN: CHATS ── */
+.bubble{padding:11px 12px;font-size:14px;max-width:80%}
+.bubble-in{background:var(--n200);border-radius:20px 20px 20px 6px;align-self:flex-start}
+.bubble-out{background:var(--a200);border-radius:20px 20px 6px 20px;align-self:flex-end;color:var(--a800)}
+/* ── SCREEN: DEAL ── */
+.step-dot{width:26px;height:26px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.step-line{flex:1;width:2px;background:var(--n300);min-height:22px;margin:0 auto}
+/* ── SCREEN: AI ── */
+.ai-bubble{padding:12px;font-size:14px;max-width:86%;line-height:1.55}
+.ai-bubble.in{background:var(--a2-100);border-radius:20px 20px 20px 6px;align-self:flex-start;color:var(--a2-800)}
+.ai-bubble.out{background:var(--a200);border-radius:20px 20px 6px 20px;align-self:flex-end;color:var(--a800)}
+/* ── SCREEN: SAFETY ── */
+.safety-hero{background:var(--n900);color:#fff;padding:24px 16px}
+/* ── SCREEN: DASH ── */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.kpi-card{background:var(--n100);border:1px solid var(--div);border-radius:var(--r-md);padding:12px}
+/* ── OFFER BUILDER ── */
+.offer-bar{height:10px;border-radius:999px;background:var(--a2-200);overflow:hidden}
+.offer-bar-fill{height:100%;border-radius:999px;background:var(--a2-500);transition:width .3s ease}
+/* ── SPINNER ── */
+.spinner{width:32px;height:32px;border:3px solid var(--div);border-top-color:var(--accent);border-radius:999px;animation:spin .7s linear infinite;margin:40px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* Scrollbar hide */
+::-webkit-scrollbar{width:0;height:0}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="statusbar">
+    <span id="sb-time">9:41</span>
+    <span id="sb-user" style="font-size:11px;color:var(--n700);font-weight:400"></span>
+    <span style="font-size:12px">🔋 100%</span>
+  </div>
+  <div id="content"></div>
+  <button id="ai-fab" onclick="goto('ai')">?</button>
+  <div id="tabbar"></div>
+</div>
+
+<!-- Android install banner -->
+<div id="install-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;padding:16px;background:var(--a2-800);color:#fff;flex-direction:column;gap:10px;border-radius:20px 20px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,.2)">
+  <div style="display:flex;align-items:center;gap:12px">
+    <span style="width:44px;height:44px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🔄</span>
+    <div style="flex:1">
+      <div style="font-weight:700;font-size:15px">Install Swap Yard</div>
+      <div style="font-size:12px;opacity:.7">Add to home screen for the full app</div>
+    </div>
+    <button id="install-close" style="background:transparent;border:0;color:rgba(255,255,255,.5);font-size:22px;padding:0;line-height:1">✕</button>
+  </div>
+  <button id="install-btn" style="width:100%;min-height:48px;border-radius:999px;border:0;background:var(--accent);color:#fff;font-size:15px;font-weight:700;font-family:var(--body)">Add to Home Screen</button>
+</div>
+
+<!-- iOS install instructions -->
+<div id="ios-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;padding:20px 16px;background:var(--n900);color:#fff;border-radius:20px 20px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,.3)">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-family:var(--h);font-size:18px">Install Swap Yard</div>
+    <button onclick="document.getElementById('ios-banner').style.display='none'" style="background:transparent;border:0;color:rgba(255,255,255,.5);font-size:22px;padding:0">✕</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="width:36px;height:36px;border-radius:999px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px">1</span>
+      <span style="font-size:14px;opacity:.85">Tap the <strong>Share</strong> button <span style="font-size:18px">⎋</span> at the bottom of Safari</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="width:36px;height:36px;border-radius:999px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px">2</span>
+      <span style="font-size:14px;opacity:.85">Scroll down and tap <strong>Add to Home Screen</strong></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="width:36px;height:36px;border-radius:999px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px">3</span>
+      <span style="font-size:14px;opacity:.85">Tap <strong>Add</strong> — Swap Yard appears on your home screen</span>
+    </div>
+  </div>
+  <div style="text-align:center;font-size:11px;opacity:.4;letter-spacing:.05em;text-transform:uppercase">Safari only · requires iOS 11.3+</div>
+</div>
+
+<div id="toast"></div>
+
+
 </body>
 </html>
