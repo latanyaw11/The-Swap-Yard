@@ -10,18 +10,17 @@
 //   ✅ Periodic background fetch for new listings
 // ═══════════════════════════════════════════════════════════════
 
-const CACHE_NAME    = 'swapyard-v3';
+const CACHE_NAME    = 'swapyard-v4';
 const OFFLINE_URL   = '/offline.html';
 
 // Files to cache immediately on install (app shell)
 const PRECACHE = [
   '/',
   '/index.html',
-  '/vendor-dashboard.html',
+  '/mobile.html',
   '/terms.html',
   '/manifest.json',
-  '/offline.html',
-  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap',
+  'https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap',
 ];
 
 // ── INSTALL: cache app shell ──
