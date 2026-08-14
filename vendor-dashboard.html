@@ -267,6 +267,791 @@ input,select,textarea{font-family:inherit;}
   .stat-grid,.kpi-grid{grid-template-columns:repeat(2,1fr);}
   .plans-grid{grid-template-columns:1fr 1fr;}
 }
+
+.filter-chip {
+  font-family: var(--font-mono, 'JetBrains Mono', monospace);
+  font-size: .6rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: .35rem .85rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink4, #9C9C90);
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.filter-chip:hover, .filter-chip.on {
+  background: var(--ink, #141412);
+  color: #fff;
+  border-color: var(--ink, #141412);
+}
+.ev-card {
+  background: var(--white, #FDFCFA);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.ev-card:hover {
+  border-color: var(--ink3, #5C5C54);
+  box-shadow: 0 4px 20px rgba(20,20,18,.08);
+}
+.ev-card-date {
+  background: var(--ink, #141412);
+  padding: .85rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.ev-date-block {
+  text-align: center;
+  min-width: 48px;
+}
+.ev-month {
+  font-family: var(--font-mono, monospace);
+  font-size: .55rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.35);
+}
+.ev-day {
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+}
+.ev-time {
+  font-family: var(--font-mono, monospace);
+  font-size: .65rem;
+  color: rgba(255,255,255,.5);
+}
+.ev-card-body {
+  padding: 1rem 1.25rem;
+}
+.ev-type-badge {
+  font-family: var(--font-mono, monospace);
+  font-size: .58rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  padding: .2rem .55rem;
+  border-radius: 4px;
+  background: var(--cream2, #E8E4DC);
+  color: var(--ink3, #5C5C54);
+  display: inline-block;
+  margin-bottom: .6rem;
+}
+.ev-title {
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: .92rem;
+  font-weight: 700;
+  color: var(--ink, #141412);
+  margin-bottom: .35rem;
+  line-height: 1.25;
+}
+.ev-location {
+  font-family: var(--font-mono, monospace);
+  font-size: .65rem;
+  color: var(--ink4, #9C9C90);
+  margin-bottom: .5rem;
+}
+.ev-desc {
+  font-size: .76rem;
+  color: var(--ink3, #5C5C54);
+  line-height: 1.55;
+  margin-bottom: .75rem;
+}
+.ev-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: .75rem;
+  border-top: 1px solid var(--border2, rgba(20,20,18,.06));
+}
+.ev-rsvp-count {
+  font-family: var(--font-mono, monospace);
+  font-size: .65rem;
+  color: var(--ink4, #9C9C90);
+}
+.btn-ev-rsvp {
+  font-family: var(--font-display, 'Syne', sans-serif);
+  font-size: .72rem;
+  font-weight: 700;
+  padding: .35rem .85rem;
+  background: var(--green, #2A6040);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.btn-ev-rsvp:hover { background: var(--green2, #1E4A30); }
+
+
+/* ══════════════════════════════════════════════
+   THE SWAP YARD — DEPTH & DEFINITION LAYER
+   Adds visual weight, shadows, hover states,
+   and refined component styling site-wide
+══════════════════════════════════════════════ */
+
+/* ── REFINED COLOR TOKENS ── */
+:root {
+  --shadow-xs:  0 1px 2px rgba(20,20,18,.06);
+  --shadow-sm:  0 2px 8px rgba(20,20,18,.08), 0 1px 2px rgba(20,20,18,.04);
+  --shadow-md:  0 4px 16px rgba(20,20,18,.10), 0 2px 4px rgba(20,20,18,.06);
+  --shadow-lg:  0 8px 32px rgba(20,20,18,.12), 0 4px 8px rgba(20,20,18,.06);
+  --shadow-xl:  0 20px 60px rgba(20,20,18,.15), 0 8px 16px rgba(20,20,18,.08);
+  --green-glow: 0 0 0 3px rgba(42,96,64,.15);
+}
+
+/* ── BODY TEXTURE ── */
+body { 
+  background: var(--cream);
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(42,96,64,.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(42,96,64,.03) 0%, transparent 40%);
+}
+
+/* ── NAV DEPTH ── */
+.nav {
+  box-shadow: 0 1px 0 var(--border), var(--shadow-xs);
+  backdrop-filter: saturate(180%) blur(12px);
+  background: rgba(240,237,230,.92) !important;
+}
+.nav-link {
+  font-weight: 500;
+  transition: all .15s ease;
+}
+.nav-link:hover {
+  color: var(--ink) !important;
+  background: rgba(20,20,18,.06) !important;
+}
+.nav-link.active {
+  color: var(--ink) !important;
+  background: rgba(20,20,18,.08) !important;
+  font-weight: 600;
+}
+.nav-logo {
+  letter-spacing: -.02em;
+}
+.nav-logo-dot {
+  box-shadow: 0 0 0 3px rgba(42,96,64,.2);
+}
+.nav-btn-list {
+  box-shadow: var(--shadow-sm);
+  transition: all .15s ease;
+  letter-spacing: .01em;
+}
+.nav-btn-list:hover {
+  background: var(--green2) !important;
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+/* ── HERO SECTION DEPTH ── */
+.hero {
+  border-bottom: 1px solid var(--border);
+}
+.hero-h1 {
+  text-shadow: 0 1px 0 rgba(255,255,255,.8);
+}
+.hero-eyebrow::before {
+  background: linear-gradient(90deg, var(--green), transparent) !important;
+}
+.h-card {
+  box-shadow: var(--shadow-md) !important;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.h-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg) !important;
+}
+.h-card-price { font-weight: 700; }
+
+/* ── STAT IMPROVEMENTS ── */
+.h-stat-val {
+  background: linear-gradient(135deg, var(--green), var(--green3));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── HOW IT WORKS DEPTH ── */
+.how-steps {
+  box-shadow: var(--shadow-sm);
+}
+.how-step {
+  transition: background .15s ease;
+  position: relative;
+}
+.how-step:hover {
+  background: var(--cream) !important;
+}
+.how-step-num {
+  color: var(--green) !important;
+  font-weight: 700;
+}
+.how-step-icon {
+  font-size: 1.75rem !important;
+}
+.how-step-title {
+  font-size: 1rem !important;
+}
+
+/* ── SUSTAINABILITY SECTION ── */
+.sus { position: relative; overflow: hidden; }
+.sus::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -20%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(42,96,64,.15) 0%, transparent 60%);
+  pointer-events: none;
+}
+.sus-stat {
+  transition: all .2s ease;
+  position: relative;
+}
+.sus-stat:hover {
+  border-color: rgba(61,122,86,.3) !important;
+  background: rgba(42,96,64,.05);
+}
+.sus-stat-val {
+  text-shadow: 0 2px 4px rgba(0,0,0,.2);
+}
+
+/* ── LISTING CARDS DEPTH ── */
+.lcard {
+  box-shadow: var(--shadow-sm) !important;
+  transition: all .2s ease !important;
+}
+.lcard:hover {
+  border-color: var(--green3) !important;
+  box-shadow: var(--shadow-lg) !important;
+  transform: translateY(-3px) !important;
+}
+.lcard-img {
+  position: relative;
+  overflow: hidden;
+}
+.lcard-img::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 60%, rgba(20,20,18,.04));
+  pointer-events: none;
+}
+.lcard-title { font-size: .95rem !important; }
+.lcard-price { font-weight: 700 !important; letter-spacing: -.01em; }
+
+/* ── EVENT CARDS DEPTH ── */
+.ev-card {
+  box-shadow: var(--shadow-sm);
+  transition: all .2s ease;
+}
+.ev-card:hover {
+  border-color: var(--green3);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px);
+}
+.ev-card-date {
+  background: linear-gradient(135deg, var(--ink) 0%, var(--ink2) 100%) !important;
+}
+.ev-day { letter-spacing: -.03em; }
+.btn-ev-rsvp {
+  box-shadow: var(--shadow-xs);
+  transition: all .15s ease;
+}
+.btn-ev-rsvp:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── COMMUNITY CARDS DEPTH ── */
+.comm-card {
+  box-shadow: var(--shadow-sm);
+  transition: all .2s ease;
+}
+.comm-card:hover {
+  border-color: var(--green3);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px);
+}
+.comm-cover {
+  background: linear-gradient(135deg, var(--cream2) 0%, var(--cream3) 100%) !important;
+  position: relative;
+  overflow: hidden;
+}
+.comm-cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(255,255,255,.1), transparent);
+  pointer-events: none;
+}
+.comm-join-btn {
+  box-shadow: var(--shadow-xs);
+  transition: all .15s ease;
+}
+.comm-join-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── PLAN CARDS DEPTH ── */
+.plan-card {
+  box-shadow: var(--shadow-sm);
+  transition: all .2s ease;
+}
+.plan-card:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px);
+}
+.plan-card.featured, .plan-card.current {
+  box-shadow: 0 0 0 2px var(--green), var(--shadow-md) !important;
+}
+.plan-price {
+  background: linear-gradient(135deg, var(--green) 0%, var(--green3) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── BUTTONS DEPTH ── */
+.btn-primary, .btn.btn-primary-g, .form-submit {
+  box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255,255,255,.1);
+  transition: all .15s ease;
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary:hover, .btn.btn-primary-g:hover, .form-submit:hover {
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255,255,255,.1);
+  transform: translateY(-1px);
+}
+.btn-primary::after, .form-submit::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(255,255,255,.08), transparent);
+  pointer-events: none;
+}
+.btn-secondary, .btn.btn-outline {
+  transition: all .15s ease;
+  box-shadow: var(--shadow-xs);
+}
+.btn-secondary:hover, .btn.btn-outline:hover {
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+  background: var(--white) !important;
+}
+
+/* ── FILTER CHIPS DEPTH ── */
+.filter-btn, .filter-chip, .loc-chip {
+  transition: all .15s ease;
+  box-shadow: var(--shadow-xs);
+}
+.filter-btn:hover, .filter-chip:hover, .loc-chip:hover {
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+.filter-btn.on, .filter-chip.on, .loc-chip.on {
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── FORM INPUTS DEPTH ── */
+.form-input:focus, .form-select:focus, .form-ta:focus,
+.field-input:focus, input[type="email"]:focus, input[type="password"]:focus {
+  box-shadow: var(--green-glow) !important;
+}
+
+/* ── SECTION DIVIDERS ── */
+.section-head {
+  border-bottom: 2px solid var(--border) !important;
+  background: linear-gradient(to bottom, var(--cream), rgba(240,237,230,.5));
+}
+
+/* ── ANNOUNCE BAR ── */
+.announce-bar {
+  border-bottom: 1px solid var(--border) !important;
+  font-size: .62rem !important;
+  letter-spacing: .12em !important;
+}
+
+/* ── TOAST DEPTH ── */
+.toast {
+  box-shadow: var(--shadow-xl) !important;
+  border: 1px solid rgba(255,255,255,.1);
+}
+
+/* ── SIDEBAR (vendor dashboard) ── */
+.sidebar {
+  box-shadow: 4px 0 24px rgba(20,20,18,.12);
+  border-right: 1px solid rgba(255,255,255,.04);
+}
+.sidebar-logo {
+  background: linear-gradient(to bottom, rgba(255,255,255,.04), transparent);
+}
+.nav-item {
+  transition: all .12s ease;
+  border-radius: 6px;
+  margin: 1px 8px;
+  padding-left: 1rem !important;
+}
+.nav-item:hover {
+  background: rgba(255,255,255,.06) !important;
+  color: rgba(255,255,255,.9) !important;
+}
+.nav-item.active {
+  background: rgba(255,255,255,.08) !important;
+  color: #fff !important;
+  border-left: 2px solid #b8f241 !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+/* ── STAT CARDS (vendor dashboard) ── */
+.stat-card, .kpi-card {
+  box-shadow: var(--shadow-sm);
+  transition: all .2s ease;
+  border-top: 3px solid transparent;
+}
+.stat-card:hover, .kpi-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-top-color: var(--green);
+}
+.stat-val {
+  background: linear-gradient(135deg, var(--ink) 0%, var(--ink2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── DATA TABLES DEPTH ── */
+.table-wrap {
+  box-shadow: var(--shadow-sm);
+}
+.data-table tr:hover td {
+  background: linear-gradient(to right, rgba(42,96,64,.03), transparent) !important;
+}
+
+/* ── PANELS DEPTH ── */
+.panel, .settings-section, .sidebar-card, .auth-modal-card {
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow .2s ease;
+}
+.panel:hover, .settings-section:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* ── CHIP / BADGE POLISH ── */
+.chip, .tag, .lcard-type, .ev-type-badge {
+  font-weight: 600 !important;
+  letter-spacing: .06em !important;
+}
+
+/* ── POST CARDS (community feed) ── */
+.post-card {
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow .2s ease;
+}
+.post-card:hover { box-shadow: var(--shadow-md); }
+
+/* ── CHAT BUBBLES ── */
+.chat-bubble {
+  box-shadow: var(--shadow-xs);
+}
+
+/* ── VERIFY BADGES ── */
+.verify-badge {
+  box-shadow: var(--shadow-xs);
+  transition: all .15s ease;
+}
+.verify-badge:hover { box-shadow: var(--shadow-sm); }
+
+/* ── TOPBAR (vendor dashboard) ── */
+.topbar {
+  box-shadow: 0 1px 0 var(--border), var(--shadow-xs);
+  backdrop-filter: blur(8px);
+  background: rgba(240,237,230,.92) !important;
+}
+
+/* ── PAGE TRANSITIONS ── */
+.page.active {
+  animation: fadeInUp .2s ease;
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── SELECTION ── */
+::selection {
+  background: rgba(42,96,64,.2);
+  color: var(--green2);
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--cream2); }
+::-webkit-scrollbar-thumb { background: var(--sand); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--ink4); }
+
+
+/* ── DEEPER CREAM/GREEN TREATMENT ── */
+:root {
+  --cream-dark: #E8E3D8;
+  --green-mid: #3D7A56;
+  --lime: #b8f241;
+}
+.app { background: var(--cream, #F0EDE6); }
+.main { background: var(--cream, #F0EDE6); }
+.content { background: var(--cream, #F0EDE6); }
+
+/* Sidebar deeper */
+.sidebar {
+  background: linear-gradient(180deg, #141412 0%, #1a1a16 100%) !important;
+  border-right: 1px solid rgba(255,255,255,.04);
+}
+.sidebar-logo {
+  background: rgba(184,242,65,.06);
+  border-bottom: 1px solid rgba(184,242,65,.08) !important;
+}
+.logo-dot { box-shadow: 0 0 8px rgba(184,242,65,.4); }
+.nav-section-label {
+  color: rgba(255,255,255,.2) !important;
+  padding: .85rem 1.25rem .3rem !important;
+  font-size: .48rem !important;
+}
+.nav-item {
+  border-radius: 6px !important;
+  margin: 1px 8px !important;
+}
+.nav-item.active {
+  background: rgba(184,242,65,.08) !important;
+  border-left-color: #b8f241 !important;
+  color: #b8f241 !important;
+}
+.nav-item:hover { background: rgba(255,255,255,.05) !important; }
+.btn-signout {
+  border-color: rgba(255,255,255,.08) !important;
+  font-size: .58rem !important;
+  transition: all .15s;
+}
+.btn-signout:hover { border-color: rgba(255,255,255,.2) !important; color: rgba(255,255,255,.6) !important; }
+
+/* Topbar */
+.topbar {
+  background: var(--cream, #F0EDE6) !important;
+  border-bottom: 2px solid rgba(20,20,18,.08) !important;
+  box-shadow: 0 1px 0 rgba(20,20,18,.04), 0 2px 8px rgba(20,20,18,.04) !important;
+}
+.topbar-title {
+  font-size: 1.15rem !important;
+  font-weight: 900 !important;
+  letter-spacing: -.03em !important;
+}
+
+/* Stat cards */
+.stat-card {
+  background: #fff !important;
+  border: 1.5px solid rgba(20,20,18,.08) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 12px rgba(20,20,18,.06) !important;
+  transition: all .2s ease !important;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--green,#2A6040), var(--green3,#3D7A56));
+  opacity: 0;
+  transition: opacity .2s;
+}
+.stat-card:hover::before { opacity: 1; }
+.stat-card:hover {
+  box-shadow: 0 6px 24px rgba(20,20,18,.10) !important;
+  transform: translateY(-2px) !important;
+  border-color: rgba(42,96,64,.2) !important;
+}
+.stat-val {
+  font-size: 2rem !important;
+  font-weight: 900 !important;
+  letter-spacing: -.04em !important;
+  color: var(--ink,#141412) !important;
+}
+.stat-label {
+  font-size: .58rem !important;
+  letter-spacing: .12em !important;
+  color: var(--ink4,#9C9C90) !important;
+  text-transform: uppercase;
+}
+
+/* Panels */
+.panel {
+  background: #fff !important;
+  border: 1.5px solid rgba(20,20,18,.08) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 12px rgba(20,20,18,.04) !important;
+}
+.panel-title {
+  font-weight: 800 !important;
+  font-size: .92rem !important;
+  color: var(--ink,#141412) !important;
+  border-bottom: 1px solid rgba(20,20,18,.06);
+  padding-bottom: .75rem;
+  margin-bottom: .75rem;
+}
+
+/* Tables */
+.table-wrap {
+  border: 1.5px solid rgba(20,20,18,.08) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(20,20,18,.04) !important;
+}
+.data-table th {
+  background: var(--cream,#F0EDE6) !important;
+  font-size: .56rem !important;
+  letter-spacing: .12em !important;
+  padding: .85rem 1rem !important;
+  border-bottom: 1.5px solid rgba(20,20,18,.08) !important;
+}
+.data-table td {
+  padding: .85rem 1rem !important;
+  border-bottom: 1px solid rgba(20,20,18,.04) !important;
+  font-size: .8rem !important;
+}
+.data-table tr:last-child td { border-bottom: none !important; }
+.data-table tr:hover td { background: rgba(42,96,64,.03) !important; }
+
+/* Event cards in dashboard */
+.ev-card {
+  background: #fff !important;
+  border: 1.5px solid rgba(20,20,18,.08) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(20,20,18,.06) !important;
+  transition: all .2s ease !important;
+}
+.ev-card:hover {
+  border-color: rgba(42,96,64,.3) !important;
+  box-shadow: 0 6px 24px rgba(20,20,18,.10) !important;
+  transform: translateY(-3px) !important;
+}
+.ev-card-date {
+  background: var(--ink,#141412) !important;
+  padding: 1rem 1.25rem !important;
+}
+.ev-day { font-size: 2.25rem !important; font-weight: 900 !important; }
+.ev-month { letter-spacing: .15em !important; }
+.ev-title { font-size: .95rem !important; font-weight: 800 !important; letter-spacing: -.01em !important; }
+.ev-type-badge {
+  border-radius: 4px !important;
+  font-weight: 700 !important;
+  letter-spacing: .08em !important;
+}
+.btn-ev-rsvp {
+  border-radius: 6px !important;
+  font-weight: 800 !important;
+  letter-spacing: .02em !important;
+  box-shadow: 0 2px 6px rgba(42,96,64,.25) !important;
+  transition: all .15s !important;
+}
+.btn-ev-rsvp:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(42,96,64,.3) !important;
+}
+
+/* Filter chips */
+.filter-chip {
+  border-radius: 4px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 1px 3px rgba(20,20,18,.06) !important;
+  transition: all .15s !important;
+}
+.filter-chip.on {
+  box-shadow: 0 2px 8px rgba(20,20,18,.12) !important;
+}
+.filter-chip:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 3px 8px rgba(20,20,18,.1) !important;
+}
+
+/* Buttons */
+.btn-primary {
+  box-shadow: 0 2px 8px rgba(42,96,64,.25) !important;
+  transition: all .15s !important;
+  font-weight: 800 !important;
+}
+.btn-primary:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 16px rgba(42,96,64,.3) !important;
+}
+
+/* Section headers */
+.sec-eyebrow {
+  font-size: .58rem !important;
+  letter-spacing: .15em !important;
+  color: var(--green,#2A6040) !important;
+  font-weight: 700 !important;
+}
+.sec-title {
+  font-size: 1.5rem !important;
+  font-weight: 900 !important;
+  letter-spacing: -.03em !important;
+  color: var(--ink,#141412) !important;
+}
+
+/* KPI cards */
+.kpi-card {
+  background: #fff !important;
+  border: 1.5px solid rgba(20,20,18,.08) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 8px rgba(20,20,18,.04) !important;
+  transition: all .2s !important;
+}
+.kpi-card:hover {
+  border-color: rgba(42,96,64,.2) !important;
+  box-shadow: 0 4px 16px rgba(20,20,18,.08) !important;
+}
+.kpi-val { font-weight: 900 !important; letter-spacing: -.03em !important; }
+
+/* Settings sections */
+.settings-section {
+  background: #fff !important;
+  border: 1.5px solid rgba(20,20,18,.08) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 12px rgba(20,20,18,.04) !important;
+}
+.settings-title {
+  font-weight: 800 !important;
+  font-size: .95rem !important;
+  border-bottom: 1.5px solid rgba(20,20,18,.08) !important;
+}
+
+/* Chips */
+.chip {
+  font-weight: 700 !important;
+  letter-spacing: .04em !important;
+  border-radius: 4px !important;
+}
+.chip-paid { background: rgba(42,96,64,.1) !important; color: var(--green2,#1E4A30) !important; }
+.chip-pending { background: rgba(184,92,0,.1) !important; color: var(--amber,#B85C00) !important; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--cream2,#E8E4DC); }
+::-webkit-scrollbar-thumb { background: rgba(20,20,18,.15); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(20,20,18,.25); }
+
 </style>
 </head>
 <body>
@@ -569,18 +1354,26 @@ input,select,textarea{font-family:inherit;}
       <!-- ── EVENTS PAGE ── -->
 
 <div class="page" id="page-events">
-        <div class="sec-hdr">
-          <div><div class="sec-mono">Community</div><div class="sec-title">Events — RTP &amp; Nationwide</div></div>
-          <button class="btn btn-primary btn-sm" onclick="showPage('new-listing');document.getElementById('nl-type').value='event';document.getElementById('eventFields').style.display='block'">+ Post Event</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem;">
+          <div>
+            <div class="sec-eyebrow">Community</div>
+            <div class="sec-title">Events</div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="showPage('new-listing');document.getElementById('nl-type').value='event';">+ Post Event</button>
         </div>
-        <div style="display:flex;gap:.5rem;margin-bottom:1.25rem;flex-wrap:wrap">
-          <button class="btn btn-ghost btn-sm" onclick="filterEvents('all')">All Events</button>
-          <button class="btn btn-amber btn-sm" onclick="filterEvents('yard_sale')">🏡 Yard Sales</button>
-          <button class="btn btn-ghost btn-sm" onclick="filterEvents('estate_sale')">🏛 Estate Sales</button>
-          <button class="btn btn-ghost btn-sm" onclick="filterEvents('popup')">🛍 Pop-Up Markets</button>
-          <button class="btn btn-ghost btn-sm" onclick="filterEvents('swap_meet')">⇄ Swap Meets</button>
+
+        <!-- Filter chips -->
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1.5rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border);">
+          <button class="filter-chip on" id="evChipAll"      onclick="filterEvents('all',this)">All Events</button>
+          <button class="filter-chip" id="evChipYard"        onclick="filterEvents('yard_sale',this)">🏡 Yard Sales</button>
+          <button class="filter-chip" id="evChipEstate"      onclick="filterEvents('estate_sale',this)">🏛 Estate Sales</button>
+          <button class="filter-chip" id="evChipPopup"       onclick="filterEvents('popup',this)">🎪 Pop-Up Markets</button>
+          <button class="filter-chip" id="evChipSwap"        onclick="filterEvents('swap_meet',this)">⇄ Swap Meets</button>
+          <button class="filter-chip" id="evChipAuction"     onclick="filterEvents('auction',this)">🔨 Auctions</button>
         </div>
-        <div id="eventsGrid"></div>
+
+        <!-- Events grid -->
+        <div id="eventsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.25rem;"></div>
       </div>
 
       <!-- ── BARTER TRADES PAGE ── -->
@@ -1172,24 +1965,63 @@ const SAMPLE_EVENTS = [
 ];
 
 let currentEventFilter = 'all';
+
+function rsvpClick(btn) { btn.textContent = '✓ Going!'; btn.style.background = '#1E4A30'; }
+
 function loadEvents() {
-  const filtered = currentEventFilter === 'all' ? SAMPLE_EVENTS : SAMPLE_EVENTS.filter(e => e.event_type === currentEventFilter);
-  const typeMap = { yard_sale:['et-yard','🏡 Yard Sale'], estate_sale:['et-estate','🏛 Estate Sale'], popup:['et-popup','🛍 Pop-Up'], swap_meet:['et-swap','⇄ Swap Meet'] };
-  document.getElementById('eventsGrid').innerHTML = filtered.map(e => {
-    const [cls, label] = typeMap[e.event_type] || ['et-popup', e.event_type];
-    return `<div class="event-card">
-      <span class="event-type-badge ${cls}">${label}</span>
-      <div class="event-title">${esc(e.title)}</div>
-      <div class="event-meta">
-        <span>📅 ${e.event_date}</span>
-        <span>🕐 ${e.event_start} – ${e.event_end}</span>
-        <span>📍 ${esc(e.event_address)}</span>
-      </div>
-      <div style="font-size:.76rem;color:var(--text3);margin-top:.4rem">${esc(e.description||'')}</div>
-    </div>`;
-  }).join('') || '<div style="text-align:center;padding:2rem;color:var(--text3)">No events found</div>';
+  const grid = document.getElementById('eventsGrid');
+  if (!grid) return;
+  const filtered = currentEventFilter === 'all'
+    ? SAMPLE_EVENTS
+    : SAMPLE_EVENTS.filter(function(e) { return e.event_type === currentEventFilter; });
+
+  if (!filtered.length) {
+    grid.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--ink4,#9C9C90);grid-column:1/-1"><div style="font-size:2rem;margin-bottom:.5rem">📅</div><div style="font-family:Syne,sans-serif;font-weight:700;margin-bottom:.25rem">No events found</div></div>';
+    return;
+  }
+
+  var typeLabel = {
+    yard_sale:'🏡 Yard Sale', estate_sale:'🏛 Estate Sale',
+    popup:'🎪 Pop-Up Market', swap_meet:'⇄ Swap Meet', auction:'🔨 Auction'
+  };
+
+  grid.innerHTML = filtered.map(function(e) {
+    var d = new Date(e.event_date + 'T' + (e.event_start || '09:00'));
+    var mon = d.toLocaleString('en-US', {month:'short'}).toUpperCase();
+    var day = d.getDate();
+    var timeStr = e.event_start ? (e.event_start + (e.event_end ? ' – ' + e.event_end : '')) : '';
+    var label = typeLabel[e.event_type] || '📅 Event';
+    var desc = (e.description || '').slice(0, 100);
+    var addr = esc(e.event_address || e.city || 'RTP Area');
+    return '<div class="ev-card">' +
+      '<div class="ev-card-date">' +
+        '<div class="ev-date-block">' +
+          '<div class="ev-month">' + mon + '</div>' +
+          '<div class="ev-day">' + day + '</div>' +
+        '</div>' +
+        '<div class="ev-time">' + esc(timeStr) + '</div>' +
+      '</div>' +
+      '<div class="ev-card-body">' +
+        '<span class="ev-type-badge">' + label + '</span>' +
+        '<div class="ev-title">' + esc(e.title) + '</div>' +
+        '<div class="ev-location">📍 ' + addr + '</div>' +
+        (desc ? '<div class="ev-desc">' + esc(desc) + '</div>' : '') +
+        '<div class="ev-footer">' +
+          '<span class="ev-rsvp-count">📋 ' + (e.rsvp_count || 0) + ' going</span>' +
+          '<button class="btn-ev-rsvp" onclick="rsvpClick(this)">RSVP</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
 }
-function filterEvents(type) { currentEventFilter = type; loadEvents(); }
+
+
+function filterEvents(type, btn) {
+  currentEventFilter = type;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  loadEvents();
+}
 
 // ── LOCAL SEARCH ──
 const LOCAL_SELLERS = [
