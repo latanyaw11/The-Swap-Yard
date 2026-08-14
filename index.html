@@ -1,19 +1,439 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>The Swap Yard</title>
-  <meta http-equiv="refresh" content="0; url=/mobile.html">
-  <link rel="canonical" href="/mobile.html">
-  <style>
-    body { margin: 0; background: #f5ead8; display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: system-ui; }
-    p { color: #645c50; font-size: 14px; }
-    a { color: #c67139; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="The Swap Yard — Buy, sell, trade and barter goods and services across the Triangle and nationwide.">
+<meta property="og:title" content="The Swap Yard">
+<meta property="og:description" content="Buy, sell, trade and barter. No middleman. Your rules.">
+<meta property="og:image" content="/icons/icon-512.png">
+<title>The Swap Yard — Buy, Sell, Trade & Barter</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="theme-color" content="#f5ead8">
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5ead8;--n100:#f9f4ed;--n200:#eee7db;--n700:#645c50;--n800:#474238;--n900:#2e2b25;
+  --accent:#c67139;--a600:#b2622d;--a100:#fff2eb;--a200:#ffe1d0;--a800:#643312;
+  --a2-100:#f0fae1;--a2-400:#aebf92;--a2-500:#8fa073;--a2-700:#56633f;--a2-800:#3d472b;
+  --div:rgba(32,30,29,0.14);
+  --h:'Caprasimo',system-ui;--body:'Figtree',system-ui;
+}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:var(--body);background:var(--bg);color:var(--n900);-webkit-font-smoothing:antialiased;line-height:1.6}
+h1,h2,h3{font-family:var(--h);font-weight:400;line-height:1.05}
+a{color:inherit;text-decoration:none}
+
+/* ── NAV ── */
+nav{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2rem;height:60px;
+  background:rgba(245,234,216,.92);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--div);
+}
+.nav-logo{display:flex;align-items:center;gap:.5rem;font-family:var(--h);font-size:1.05rem;color:var(--n900)}
+.nav-dot{width:10px;height:10px;border-radius:50%;background:var(--a2-500)}
+.nav-links{display:flex;gap:.25rem}
+.nav-link{font-size:.8rem;font-weight:600;color:var(--n700);padding:.4rem .85rem;border-radius:999px;transition:background .12s}
+.nav-link:hover{background:var(--n200)}
+.nav-cta{
+  background:var(--accent);color:#fff;
+  font-size:.82rem;font-weight:700;
+  padding:.5rem 1.2rem;border-radius:999px;
+  border:0;cursor:pointer;transition:background .12s;
+  font-family:var(--body);
+}
+.nav-cta:hover{background:var(--a600)}
+
+/* ── HERO ── */
+.hero{
+  max-width:1100px;margin:0 auto;
+  padding:6rem 2rem 5rem;
+  display:grid;grid-template-columns:1fr 1fr;
+  gap:4rem;align-items:center;
+}
+.hero-eye{
+  display:flex;align-items:center;gap:.6rem;
+  font-size:.7rem;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--a2-700);margin-bottom:1.25rem;
+}
+.hero-eye::before{content:'';width:1.5rem;height:1.5px;background:var(--a2-500)}
+.hero-h1{font-size:clamp(3rem,5.5vw,5rem);letter-spacing:-.03em;color:var(--n900);margin-bottom:1.25rem}
+.hero-h1 em{font-style:normal;color:var(--accent)}
+.hero-sub{font-size:1rem;color:var(--n700);line-height:1.75;margin-bottom:2.25rem;max-width:40ch}
+.hero-btns{display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:3rem}
+.btn-primary{
+  display:inline-flex;align-items:center;gap:.4rem;
+  background:var(--accent);color:#fff;
+  font-family:var(--body);font-size:.95rem;font-weight:700;
+  padding:.75rem 1.75rem;border-radius:999px;border:0;cursor:pointer;
+  transition:all .12s;
+}
+.btn-primary:hover{background:var(--a600);transform:translateY(-1px)}
+.btn-secondary{
+  display:inline-flex;align-items:center;gap:.4rem;
+  background:transparent;color:var(--n800);
+  font-family:var(--body);font-size:.95rem;font-weight:700;
+  padding:.75rem 1.75rem;border-radius:999px;
+  border:1.5px solid var(--div);cursor:pointer;transition:all .12s;
+}
+.btn-secondary:hover{background:var(--n200);transform:translateY(-1px)}
+.hero-stats{display:flex;gap:2rem}
+.stat-val{font-family:var(--h);font-size:1.85rem;color:var(--accent);line-height:1}
+.stat-label{font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--n700);margin-top:.2rem;font-weight:600}
+
+/* ── PHONE MOCKUP ── */
+.phone-wrap{position:relative;display:flex;justify-content:center}
+.phone{
+  width:280px;background:var(--bg);
+  border-radius:40px;
+  box-shadow:0 0 0 10px var(--n900),0 0 0 12px #444,0 32px 80px rgba(46,43,37,.35);
+  overflow:hidden;position:relative;
+}
+.phone-status{height:44px;background:var(--bg);display:flex;align-items:center;justify-content:space-between;padding:0 20px;font-size:11px;font-weight:700;position:relative}
+.phone-notch{width:100px;height:26px;background:var(--n900);border-radius:13px;position:absolute;left:50%;transform:translateX(-50%)}
+.phone-screen{padding:16px}
+.phone-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.phone-logo{font-family:var(--h);font-size:18px}
+.phone-av{width:38px;height:38px;border-radius:999px;background:var(--a200);display:flex;align-items:center;justify-content:center;font-family:var(--h);font-size:12px;color:var(--a800)}
+.phone-search{height:40px;border-radius:999px;background:var(--n100);border:1px solid var(--div);display:flex;align-items:center;padding:0 14px;font-size:12px;color:var(--n700);margin-bottom:14px}
+.phone-card{background:var(--n100);border:1px solid var(--div);border-radius:20px;overflow:hidden;margin-bottom:10px}
+.phone-card-img{height:90px;background:repeating-linear-gradient(45deg,var(--n200) 0 8px,var(--n200) 8px 16px);display:flex;align-items:center;justify-content:center;font-size:1.75rem;filter:saturate(.7)}
+.phone-card-body{padding:10px 12px}
+.phone-card-tag{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--a2-100);color:var(--a2-800);display:inline-block;margin-bottom:5px}
+.phone-card-title{font-size:13px;font-weight:700;color:var(--n900);margin-bottom:3px;line-height:1.2}
+.phone-card-price{font-size:12px;font-weight:700;color:var(--accent)}
+.phone-tab{display:flex;border-top:1px solid var(--div);background:var(--n100)}
+.phone-tab-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0;font-size:9px;color:var(--n700)}
+.phone-tab-item.on .phone-tab-dot{width:28px;height:28px;border-radius:999px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center}
+.phone-tab-item .phone-tab-dot{width:28px;height:28px;border-radius:999px;display:flex;align-items:center;justify-content:center}
+
+/* ── HOW IT WORKS ── */
+.how{background:var(--n100);border-top:1px solid var(--div);border-bottom:1px solid var(--div);padding:5rem 2rem}
+.how-inner{max-width:1100px;margin:0 auto}
+.section-eye{font-size:.65rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--a2-700);margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
+.section-eye::before{content:'';width:1rem;height:1.5px;background:var(--a2-500)}
+.section-title{font-size:clamp(1.75rem,3vw,2.75rem);letter-spacing:-.03em;color:var(--n900);margin-bottom:3rem}
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:0;border:1px solid var(--div);border-radius:24px;overflow:hidden;background:var(--bg)}
+.step{padding:1.75rem 1.5rem;border-right:1px solid var(--div)}
+.step:last-child{border-right:none}
+.step-num{font-size:.62rem;letter-spacing:.1em;color:var(--a2-500);font-weight:700;margin-bottom:.75rem;display:block;font-family:'Figtree',system-ui}
+.step-icon{font-size:1.6rem;margin-bottom:.65rem;display:block}
+.step-title{font-family:var(--h);font-size:1rem;color:var(--n900);margin-bottom:.4rem}
+.step-desc{font-size:.8rem;color:var(--n700);line-height:1.6}
+
+/* ── WHY ── */
+.why{max-width:1100px;margin:0 auto;padding:5rem 2rem}
+.why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-top:3rem}
+.why-card{background:var(--n100);border:1px solid var(--div);border-radius:24px;padding:1.75rem}
+.why-icon{font-size:1.75rem;margin-bottom:.85rem}
+.why-title{font-family:var(--h);font-size:1.1rem;color:var(--n900);margin-bottom:.5rem}
+.why-body{font-size:.85rem;color:var(--n700);line-height:1.65}
+
+/* ── CATEGORIES ── */
+.cats{background:var(--n900);padding:5rem 2rem;border-top:1px solid var(--div)}
+.cats-inner{max-width:1100px;margin:0 auto}
+.cats .section-eye{color:rgba(255,255,255,.3)}
+.cats .section-eye::before{background:rgba(255,255,255,.2)}
+.cats .section-title{color:#fff;margin-bottom:2.5rem}
+.cats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+.cat-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:1.5rem;transition:all .15s;cursor:pointer}
+.cat-card:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.15)}
+.cat-icon{font-size:2rem;margin-bottom:.75rem}
+.cat-name{font-family:var(--h);font-size:1rem;color:#fff;margin-bottom:.3rem}
+.cat-desc{font-size:.78rem;color:rgba(255,255,255,.35);line-height:1.5}
+
+/* ── CTA ── */
+.cta{padding:6rem 2rem;text-align:center;max-width:680px;margin:0 auto}
+.cta-eye{font-size:.65rem;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--a2-700);margin-bottom:.75rem;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.cta-eye::before,.cta-eye::after{content:'';width:1.5rem;height:1.5px;background:var(--a2-500)}
+.cta h2{font-size:clamp(2rem,4vw,3.5rem);letter-spacing:-.03em;color:var(--n900);margin-bottom:1.25rem}
+.cta h2 em{font-style:normal;color:var(--accent)}
+.cta p{font-size:1rem;color:var(--n700);margin-bottom:2.5rem;line-height:1.7}
+.cta-btns{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap}
+.install-note{margin-top:1.25rem;font-size:.78rem;color:var(--n700)}
+.install-note span{background:var(--n200);padding:.2rem .55rem;border-radius:6px;font-size:.72rem;font-weight:600;margin:0 .2rem}
+
+/* ── FOOTER ── */
+footer{background:var(--n900);padding:3rem 2rem 2rem;border-top:1px solid rgba(255,255,255,.06)}
+.footer-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:2.5rem;margin-bottom:2.5rem}
+.footer-logo{display:flex;align-items:center;gap:.5rem;font-family:var(--h);font-size:1.05rem;color:#fff;margin-bottom:.75rem}
+.footer-dot{width:9px;height:9px;border-radius:50%;background:var(--a2-500)}
+.footer-tag{font-size:.82rem;color:rgba(255,255,255,.3);line-height:1.6;max-width:22ch}
+.footer-head{font-size:.6rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.2);margin-bottom:.85rem;font-family:'Figtree',system-ui}
+.footer-link{display:block;font-size:.84rem;color:rgba(255,255,255,.45);margin-bottom:.45rem;transition:color .12s}
+.footer-link:hover{color:rgba(255,255,255,.8)}
+.footer-bottom{max-width:1100px;margin:0 auto;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between}
+.footer-copy{font-size:.72rem;color:rgba(255,255,255,.2);font-family:'Figtree',system-ui}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){
+  .hero{grid-template-columns:1fr;padding:3.5rem 1.5rem 3rem}
+  .phone-wrap{display:none}
+  .steps{grid-template-columns:1fr 1fr}
+  .why-grid{grid-template-columns:1fr}
+  .cats-grid{grid-template-columns:1fr 1fr}
+  .footer-inner{grid-template-columns:1fr 1fr}
+  nav{padding:0 1.25rem}
+  .nav-links{display:none}
+}
+@media(max-width:540px){
+  .steps{grid-template-columns:1fr}
+  .cats-grid{grid-template-columns:1fr 1fr}
+  .hero-stats{gap:1.25rem}
+  .hero-h1{font-size:2.75rem}
+}
+</style>
 </head>
 <body>
-  <p>Loading Swap Yard… <a href="/mobile.html">tap here if it doesn't load</a></p>
-  <script>window.location.replace('/mobile.html');</script>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo"><div class="nav-dot"></div>The Swap Yard</div>
+  <div class="nav-links">
+    <a class="nav-link" href="#how">How it works</a>
+    <a class="nav-link" href="#why">Why swap</a>
+    <a class="nav-link" href="/terms.html">Safety</a>
+  </div>
+  <a href="/mobile.html" class="nav-cta">Open App →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div>
+    <div class="hero-eye">RTP · Nationwide · Est. 2026</div>
+    <h1 class="hero-h1">Buy. Sell.<br><em>Trade</em> &amp; Barter.</h1>
+    <p class="hero-sub">The open marketplace for goods, services, and trades across the Triangle and nationwide. Pay by card, cash, Venmo — or skip money entirely and barter.</p>
+    <div class="hero-btns">
+      <a href="/mobile.html" class="btn-primary">Browse Listings →</a>
+      <a href="/mobile.html" class="btn-secondary">List Something</a>
+    </div>
+    <div class="hero-stats">
+      <div><div class="stat-val">Free</div><div class="stat-label">To join</div></div>
+      <div><div class="stat-val">RTP</div><div class="stat-label">Rooted here</div></div>
+      <div><div class="stat-val">0%</div><div class="stat-label">Barter fee</div></div>
+    </div>
+  </div>
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="phone-status">
+        <span>9:41</span>
+        <div class="phone-notch"></div>
+        <span>100%</span>
+      </div>
+      <div class="phone-screen">
+        <div class="phone-header">
+          <div class="phone-logo">Swap Yard</div>
+          <div class="phone-av">LW</div>
+        </div>
+        <div class="phone-search">Search anything — a drill, a couch…</div>
+        <div class="phone-card">
+          <div class="phone-card-img">🔧</div>
+          <div class="phone-card-body">
+            <div class="phone-card-tag">Trade</div>
+            <div class="phone-card-title">Ryobi 18V drill set, barely used</div>
+            <div class="phone-card-price">$180 or trade</div>
+          </div>
+        </div>
+        <div class="phone-card">
+          <div class="phone-card-img">🌿</div>
+          <div class="phone-card-body">
+            <div class="phone-card-tag" style="background:var(--a100);color:var(--a800)">Barter</div>
+            <div class="phone-card-title">Saturday lawn mowing, any yard</div>
+            <div class="phone-card-price" style="color:var(--n700);font-style:italic;font-weight:400">Barter only</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-tab">
+        <div class="phone-tab-item on"><div class="phone-tab-dot">🏠</div><span>Home</span></div>
+        <div class="phone-tab-item"><div class="phone-tab-dot">🔍</div><span>Browse</span></div>
+        <div class="phone-tab-item"><div class="phone-tab-dot">＋</div><span>List</span></div>
+        <div class="phone-tab-item"><div class="phone-tab-dot">📅</div><span>Events</span></div>
+        <div class="phone-tab-item"><div class="phone-tab-dot">⊞</div><span>Yard</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="how-inner">
+    <div class="section-eye">Simple by design</div>
+    <h2 class="section-title">How it works</h2>
+    <div class="steps">
+      <div class="step">
+        <span class="step-num">01</span>
+        <span class="step-icon">📋</span>
+        <div class="step-title">List for free</div>
+        <div class="step-desc">Post goods, services, or barter offers in under 2 minutes.</div>
+      </div>
+      <div class="step">
+        <span class="step-num">02</span>
+        <span class="step-icon">💬</span>
+        <div class="step-title">Message</div>
+        <div class="step-desc">Chat directly with buyers and sellers — no middleman.</div>
+      </div>
+      <div class="step">
+        <span class="step-num">03</span>
+        <span class="step-icon">💳</span>
+        <div class="step-title">Pay your way</div>
+        <div class="step-desc">Card, cash, Venmo, Zelle, Crypto — or skip money entirely.</div>
+      </div>
+      <div class="step">
+        <span class="step-num">04</span>
+        <span class="step-icon">🤝</span>
+        <div class="step-title">Meet or ship</div>
+        <div class="step-desc">Meet locally at a safe spot or arrange your own shipping.</div>
+      </div>
+      <div class="step">
+        <span class="step-num">05</span>
+        <span class="step-icon">⭐</span>
+        <div class="step-title">Build trust</div>
+        <div class="step-desc">Rate your experience and grow your trader reputation.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY SWAP YARD -->
+<section class="why" id="why">
+  <div class="section-eye">Why The Swap Yard</div>
+  <h2 class="section-title">Trade better. Live greener.</h2>
+  <div class="why-grid">
+    <div class="why-card">
+      <div class="why-icon">♻️</div>
+      <div class="why-title">Good for the planet</div>
+      <div class="why-body">Every item traded is one fewer thing in a landfill. Swap Yard makes sustainable living practical, not preachy.</div>
+    </div>
+    <div class="why-card">
+      <div class="why-icon">💸</div>
+      <div class="why-title">No fees on barter</div>
+      <div class="why-body">Pure trades cost nothing — zero platform fee. Cash transactions have a small fee that keeps the lights on.</div>
+    </div>
+    <div class="why-card">
+      <div class="why-icon">🏡</div>
+      <div class="why-title">Rooted in RTP</div>
+      <div class="why-body">Built for Durham, Raleigh, Chapel Hill, and Cary first — then nationwide. Real people, real neighbors.</div>
+    </div>
+    <div class="why-card">
+      <div class="why-icon">🔒</div>
+      <div class="why-title">Safe by design</div>
+      <div class="why-body">Verified sellers, public meetup spots, escrow for high-value trades, and handoff codes to confirm every deal.</div>
+    </div>
+    <div class="why-card">
+      <div class="why-icon">📱</div>
+      <div class="why-title">App on any phone</div>
+      <div class="why-body">No App Store needed — install directly from your browser to your home screen in two taps. Always up to date.</div>
+    </div>
+    <div class="why-card">
+      <div class="why-icon">🌐</div>
+      <div class="why-title">Your rules</div>
+      <div class="why-body">You set the price, the payment method, and the terms. We just connect you — the deal is always yours.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CATEGORIES -->
+<section class="cats">
+  <div class="cats-inner">
+    <div class="section-eye">What people swap</div>
+    <h2 class="section-title">Everything has value here</h2>
+    <div class="cats-grid">
+      <a href="/mobile.html" class="cat-card">
+        <div class="cat-icon">🔧</div>
+        <div class="cat-name">Tools & Equipment</div>
+        <div class="cat-desc">Power tools, hand tools, yard equipment, ladders</div>
+      </a>
+      <a href="/mobile.html" class="cat-card">
+        <div class="cat-icon">🪑</div>
+        <div class="cat-name">Home & Furniture</div>
+        <div class="cat-desc">Mid-century pieces, appliances, décor, kitchenware</div>
+      </a>
+      <a href="/mobile.html" class="cat-card">
+        <div class="cat-icon">💇</div>
+        <div class="cat-name">Services</div>
+        <div class="cat-desc">Haircuts, tutoring, yard work, web design, repairs</div>
+      </a>
+      <a href="/mobile.html" class="cat-card">
+        <div class="cat-icon">🌱</div>
+        <div class="cat-name">Garden & Outdoors</div>
+        <div class="cat-desc">Plants, seeds, patio furniture, bikes, camping gear</div>
+      </a>
+      <a href="/mobile.html" class="cat-card">
+        <div class="cat-icon">📷</div>
+        <div class="cat-name">Electronics</div>
+        <div class="cat-desc">Cameras, phones, laptops, audio gear, cables</div>
+      </a>
+      <a href="/mobile.html" class="cat-card">
+        <div class="cat-icon">👗</div>
+        <div class="cat-name">Clothing & Fashion</div>
+        <div class="cat-desc">Vintage finds, everyday wear, shoes, accessories</div>
+      </a>
+      <a href="/mobile.html" class="cat-card">
+        <div class="cat-icon">🎵</div>
+        <div class="cat-name">Music & Art</div>
+        <div class="cat-desc">Instruments, vinyl, art supplies, handmade goods</div>
+      </a>
+      <a href="/mobile.html" class="cat-card">
+        <div class="cat-icon">⇄</div>
+        <div class="cat-name">Pure Barter</div>
+        <div class="cat-desc">No money — trade skill for skill, item for item</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="cta-eye">Ready to swap</div>
+  <h2>Your first listing<br>is <em>free</em></h2>
+  <p>Join the Triangle's open trading marketplace. No credit card, no commitment — list something and see who's interested.</p>
+  <div class="cta-btns">
+    <a href="/mobile.html" class="btn-primary">Get Started Free →</a>
+    <a href="/mobile.html" class="btn-secondary">Browse Listings</a>
+  </div>
+  <p class="install-note">
+    Install on iPhone: <span>Share</span> → <span>Add to Home Screen</span><br>
+    Install on Android: <span>Menu</span> → <span>Add to Home Screen</span>
+  </p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-logo"><div class="footer-dot"></div>The Swap Yard</div>
+      <div class="footer-tag">The open marketplace for goods, services, and trades. Rooted in RTP, NC.</div>
+    </div>
+    <div>
+      <div class="footer-head">Marketplace</div>
+      <a class="footer-link" href="/mobile.html">Browse Listings</a>
+      <a class="footer-link" href="/mobile.html">List Something</a>
+      <a class="footer-link" href="/mobile.html">Events</a>
+      <a class="footer-link" href="/mobile.html">Communities</a>
+    </div>
+    <div>
+      <div class="footer-head">Company</div>
+      <a class="footer-link" href="/terms.html">Safety & Legal</a>
+      <a class="footer-link" href="/terms.html">Terms of Service</a>
+      <a class="footer-link" href="/terms.html">Privacy Policy</a>
+    </div>
+    <div>
+      <div class="footer-head">Install the App</div>
+      <a class="footer-link" href="/mobile.html">Open Web App</a>
+      <a class="footer-link" href="/mobile.html">iPhone — Add to Home Screen</a>
+      <a class="footer-link" href="/mobile.html">Android — Add to Home Screen</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-copy">© 2026 The Swap Yard · Durham, NC · All rights reserved</div>
+    <div class="footer-copy">theswapyard.com</div>
+  </div>
+</footer>
+
 </body>
 </html>
