@@ -88,6 +88,24 @@ input,textarea,select{font-family:var(--body);-webkit-appearance:none}
 #toast.show{transform:translateX(-50%) translateY(0)}
 /* iOS banner */
 #ios-banner{display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;padding:20px 16px;background:var(--n900);color:#fff;border-radius:20px 20px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,.3)}
+
+/* ── MESSAGING ── */
+.msg-thread{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--div);cursor:pointer;background:var(--bg);transition:background .12s}
+.msg-thread:hover{background:var(--n200)}
+.msg-thread-unread .msg-preview{font-weight:700;color:var(--text)}
+.msg-preview{font-size:13px;color:var(--n600);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.msg-time{font-size:11px;color:var(--n600);flex-shrink:0}
+.chat-screen{display:flex;flex-direction:column;height:100%}
+.chat-header{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--div);background:var(--bg);flex-shrink:0}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.chat-input-bar{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--div);background:var(--bg);flex-shrink:0;padding-bottom:calc(12px + var(--safe-bot))}
+.chat-inp{flex:1;padding:12px 16px;border-radius:999px;border:1.5px solid var(--div);background:var(--n100);font-family:var(--body);font-size:14px;outline:none;transition:border-color .12s}
+.chat-inp:focus{border-color:var(--accent)}
+.chat-send{width:46px;height:46px;border-radius:999px;background:var(--accent);color:var(--bg);border:0;font-size:18px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.chat-send:disabled{opacity:.45}
+.empty-state{text-align:center;padding:48px 24px;color:var(--n600)}
+.empty-state div:first-child{font-size:2.5rem;margin-bottom:12px}
+
 ::-webkit-scrollbar{width:0;height:0}
 </style>
 </head>
@@ -140,6 +158,7 @@ let st = {
   plan:'Trader Pro', verified:false, aiQ:null, safetyOpen:'s1',
   activeListing:null, activeCommunity:null,
   _postTitle:'', _postDesc:'', _postPrice:'',
+  activeThread:null, threads:[], threadMessages:[], sendingMsg:false,
   liveListings:[], liveEvents:[], liveCommunities:[],
   dashStats:null, commPosts:[], commMembers:[], commChat:[],
   photos:[], uploadingPhotos:false,
@@ -235,6 +254,9 @@ function goto(s) {
   screen = s;
   var c = document.getElementById('content');
   if (c) c.scrollTop = 0;
+  if (s === 'chats' && !st.activeThread && currentUser) {
+    loadInbox().then(function(){ render(); });
+  }
   render();
 }
 function setState(upd) {
@@ -504,19 +526,65 @@ SCREENS['offer'] = function() {
 };
 
 SCREENS['chats'] = function() {
-  return '<div style="display:flex;flex-direction:column;min-height:100vh">'
-    +'<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--div)">'
-    +'<button onclick="goto(\'listing\')" style="width:40px;height:40px;border-radius:999px;border:1px solid var(--div);background:var(--n100);font-size:16px;cursor:pointer">←</button>'
-    +av('DK','var(--a2-200)','var(--a2-800)',40)
-    +'<div style="flex:1"><div style="font-weight:700;font-size:14.5px">Dre K.</div><div style="font-size:12px;color:var(--n700)">Ryobi drill set</div></div></div>'
-    +'<div style="flex:1;padding:16px;display:flex;flex-direction:column;gap:12px">'
-    +'<div class="bubble bubble-in">Still available. What are you thinking?</div>'
-    +'<div style="align-self:flex-end;max-width:86%;background:var(--a200);border:1px solid var(--a300);border-radius:var(--r-md);padding:12px"><div style="font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--a800);margin-bottom:6px">Your offer</div><div style="font-family:var(--h);font-size:19px;color:var(--a800)">$'+st.cash+' + bike pump</div></div>'
-    +'<div class="bubble bubble-in">Drill\'s yours if you add the bike pump. Deal?</div>'
-    +(st.accepted
-      ?'<div style="background:var(--a2-100);border-radius:var(--r-md);padding:16px;text-align:center"><div style="font-family:var(--h);font-size:18px;color:var(--a2-800);margin-bottom:6px">Swap agreed</div><div style="font-size:12.5px;color:var(--a2-700);margin-bottom:12px">Cash is held until you both confirm.</div><button class="pill pill-primary pill-sm" style="width:auto;padding:0 24px" onclick="goto(\'deal\')">Open the deal</button></div>'
-      :'<div style="display:flex;gap:8px"><button class="pill pill-primary" onclick="setState({accepted:true})">Accept</button><button class="pill pill-secondary" onclick="goto(\'offer\')">Counter</button></div>')
-    +'</div></div>';
+  var thread = st.activeThread;
+  var msgs = st.threadMessages;
+  var listing = thread ? thread.listing : (st.activeListing || {});
+
+  if (!thread) {
+    // No active thread - show inbox
+    return '<div class="pad">'
+      +'<h2 style="font-size:26px;margin:0 0 16px">Messages</h2>'
+      +(st.threads.length === 0
+        ? '<div class="empty-state"><div>💬</div><div style="font-family:var(--h);font-size:18px;margin-bottom:8px">No messages yet</div><div style="font-size:14px">Message a seller from any listing to start a conversation.</div></div>'
+        : '<div style="border:1px solid var(--div);border-radius:var(--r-lg);overflow:hidden;background:var(--n100)">'
+          +st.threads.map(function(m) {
+            var isSender = m.sender_id === currentUser.id;
+            var listingTitle = m.listing ? m.listing.title : 'Listing';
+            var preview = (isSender ? 'You: ' : '') + m.body;
+            return '<div class="msg-thread" data-lid="'+m.listing_id+'" onclick="openThread(this.dataset.lid)">'
+              +'<div style="width:44px;height:44px;border-radius:999px;background:var(--a2-200);display:flex;align-items:center;justify-content:center;font-family:var(--h);font-size:16px;flex-shrink:0;color:var(--a2-800)">'
+              +(m.listing&&m.listing.cover_image ? '<img src="'+m.listing.cover_image+'" style="width:44px;height:44px;border-radius:999px;object-fit:cover">' : '💬')
+              +'</div>'
+              +'<div style="flex:1;min-width:0">'
+              +'<div style="font-size:14px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(listingTitle)+'</div>'
+              +'<div class="msg-preview">'+esc(preview)+'</div>'
+              +'</div>'
+              +'<div class="msg-time">'+timeStr(m.created_at)+'</div>'
+              +'</div>';
+          }).join('')
+        +'</div>')
+      +'</div>';
+  }
+
+  // Active thread - show conversation
+  return '<div class="chat-screen">'
+    +'<div class="chat-header">'
+    +'<button onclick="st.activeThread=null;goto(\'chats\')" style="width:40px;height:40px;border-radius:999px;border:1px solid var(--div);background:var(--n100);font-size:16px;cursor:pointer">←</button>'
+    +(listing.cover_image
+      ? '<img src="'+listing.cover_image+'" style="width:40px;height:40px;border-radius:999px;object-fit:cover;flex-shrink:0">'
+      : '<div style="width:40px;height:40px;border-radius:999px;background:var(--a2-200);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+( listing.emoji||'📦')+'</div>')
+    +'<div style="flex:1;min-width:0">'
+    +'<div style="font-weight:700;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(listing.title||'Conversation')+'</div>'
+    +'<div style="font-size:12px;color:var(--n700)">'+(listing.price_usd?'$'+listing.price_usd:listing.mode||'')+'</div>'
+    +'</div>'
+    +'<button onclick="st.activeListing=thread.listing;goto(\'listing\')" style="font-size:12px;font-weight:600;color:var(--a700);background:none;border:0;cursor:pointer;padding:6px;white-space:nowrap">View listing</button>'
+    +'</div>'
+    +'<div class="chat-messages" id="chat-msgs">'
+    +(msgs.length === 0
+      ? '<div class="empty-state"><div>👋</div><div style="font-size:14px">Say hello — ask about availability, condition, or propose a trade.</div></div>'
+      : msgs.map(function(m) {
+          var own = m.sender_id === currentUser.id;
+          return '<div style="display:flex;flex-direction:column;align-items:'+(own?'flex-end':'flex-start')+';gap:2px">'
+            +'<div class="bubble '+(own?'bubble-out':'bubble-in')+'">'+esc(m.body)+(m._temp?'<span style="opacity:.4;font-size:10px;margin-left:6px">sending…</span>':'')+'</div>'
+            +'<div style="font-size:10px;color:var(--n600);padding:0 4px">'+timeStr(m.created_at)+'</div>'
+            +'</div>';
+        }).join(''))
+    +'</div>'
+    +'<div class="chat-input-bar">'
+    +'<input id="chat-msg-inp" type="text" placeholder="Message…" class="chat-inp" onkeydown="if(event.key===\'Enter\')sendChatMsg()">'
+    +'<button class="chat-send" onclick="sendChatMsg()">↑</button>'
+    +'</div>'
+    +'</div>';
 };
 
 SCREENS['deal'] = function() {
@@ -688,7 +756,7 @@ SCREENS['dash'] = function() {
   var kpis=[{v:ds?String(ds.listings):'0',l:'Active listings'},{v:ds?'$'+ds.revenue.toFixed(0):'$0',l:'Revenue'},{v:ds?String(ds.orders.length):'0',l:'Orders'},{v:'4.9',l:'Rating'}];
   var orders=ds&&ds.orders&&ds.orders.length?ds.orders.map(function(o){ return {item:o.listing_title||'Order',who:o.buyer_name||'Buyer',amount:o.amount_usd?'$'+o.amount_usd:'—',status:o.status||'Pending',bg:'var(--n200)',fg:'var(--n800)'}; }):[{item:'Mid-century dresser',who:'Jamal T.',amount:'$240',status:'Shipped',bg:'var(--a2-200)',fg:'var(--a2-800)'},{item:'Ryobi drill set',who:'Dre K.',amount:'$80+trade',status:'Escrow',bg:'var(--a200)',fg:'var(--a800)'},{item:'Canning jars',who:'Priya S.',amount:'$20',status:'Complete',bg:'var(--n200)',fg:'var(--n800)'}];
   var trust=[{n:'Email',s:'Verified',ok:true},{n:'Phone',s:'Verified',ok:true},{n:'Government ID',s:st.verified?'Verified':'Not yet',ok:st.verified}];
-  var rows=[{n:'My listings',m:'View',fn:"goto('browse')"},{n:'Barter trades',m:'3 active',fn:"goto('chats')"},{n:'Plan & billing',m:st.plan,fn:"goto('plans')"},{n:'Safety & legal',m:'',fn:"goto('safety')"}];
+  var rows=[{n:'My listings',m:'View',fn:"goto('browse')"},{n:'Messages',m:(st.threads.length||''),fn:"goto('chats')"},{n:'Plan & billing',m:st.plan,fn:"goto('plans')"},{n:'Safety & legal',m:'',fn:"goto('safety')"}];
   var initials=currentUser&&currentUser.email?currentUser.email[0].toUpperCase():'L';
   var name=currentUser&&currentUser.email?currentUser.email.split('@')[0]:'Latanya W.';
   return '<div class="pad">'
