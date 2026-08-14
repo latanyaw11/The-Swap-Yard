@@ -152,6 +152,7 @@ const SB_URL = 'https://qkmvznvetsfijwhikiar.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrbXZ6bnZldHNmaWp3aGlraWFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyNzE0ODksImV4cCI6MjA5Njg0NzQ4OX0.uaDC_xktlWLEpbavCdA9vAL56Pd2PN3xhU_SmHBzlZw';
 const sb = supabase.createClient(SB_URL, SB_KEY);
 const STRIPE_PK = 'pk_test_51TZd7TPyU1gEZjMMp97f70mBAvNZL5Doaaakb5IbgqG0GyMS9ju6He4rgwYv8KcXCywcW93qMq82ykCia2ZQ0ZBp00hfkKXYq6';
+const VAPID_PK = 'BJ8FnANYn_MXwa1qAMNxbxdZfQoEyosJunO2Uu8sIIJ0K-5r0HzFoNOBeVdM4zX69V5ECOG5H8tp1zTWgzZ0QBg';
 
 // ── STATE ─────────────────────────────────────────────────
 let currentUser = null;
@@ -169,6 +170,7 @@ let st = {
   activeListing:null, activeCommunity:null,
   _postTitle:'', _postDesc:'', _postPrice:'',
   checkingOut:false,
+  pushEnabled:false,
   activeThread:null, threads:[], threadMessages:[], sendingMsg:false,
   liveListings:[], liveEvents:[], liveCommunities:[],
   dashStats:null, commPosts:[], commMembers:[], commChat:[],
@@ -211,6 +213,7 @@ function initDemoMap() {
 window.addEventListener('DOMContentLoaded', async function() {
   checkPaymentReturn();
   initDemoMap();
+  checkPushStatus();
   clockTick();
   setInterval(clockTick, 30000);
   setupPWA();
@@ -832,12 +835,91 @@ async function doAuth() {
     toast('Welcome'+(st.authTab===1?' — check your email to confirm':'!')+'');
     await loadAll();
     goto('home');
+    // Prompt for push after 4 seconds on first sign up
+    if (st.authTab===1) { setTimeout(function(){ requestPushPermission(); }, 4000); }
   } catch(err){showErr(err.message);if(btn){btn.textContent=st.authTab===0?'Sign in':'Create account';btn.disabled=false;}}
 }
 function showErr(msg){var el=document.getElementById('auth-err');if(el){el.textContent=msg;el.style.display='block';}}
 async function doGoogle(){await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:window.location.origin+'/mobile.html'}});}
 async function doSignOut(){await sb.auth.signOut();currentUser=null;st.liveListings=[];st.liveEvents=[];st.liveCommunities=[];goto('signin');}
 
+
+
+
+// ── PUSH NOTIFICATIONS ────────────────────────────────────
+
+async function requestPushPermission() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    toast("Push notifications not supported on this browser");
+    return false;
+  }
+  try {
+    var perm = await Notification.requestPermission();
+    if (perm !== "granted") {
+      toast("Notifications blocked — enable in browser settings");
+      return false;
+    }
+    var reg = await navigator.serviceWorker.ready;
+    var existing = await reg.pushManager.getSubscription();
+    var sub = existing || await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PK),
+    });
+    // Save subscription to Supabase
+    await sb.from("push_subscriptions").upsert({
+      user_id: currentUser.id,
+      subscription: sub.toJSON(),
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "user_id" });
+    setState({ pushEnabled: true });
+    toast("Notifications enabled ✓");
+    return true;
+  } catch(e) {
+    console.error("Push subscription failed:", e);
+    toast("Could not enable notifications");
+    return false;
+  }
+}
+
+async function disablePush() {
+  try {
+    var reg = await navigator.serviceWorker.ready;
+    var sub = await reg.pushManager.getSubscription();
+    if (sub) await sub.unsubscribe();
+    await sb.from("push_subscriptions").delete().eq("user_id", currentUser.id);
+    setState({ pushEnabled: false });
+    toast("Notifications disabled");
+  } catch(e) { toast("Could not disable notifications"); }
+}
+
+async function sendPushToUser(userId, title, body, url, type) {
+  // Call our Netlify function to send the push
+  try {
+    await fetch("/.netlify/functions/send-push", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId, title, body, url, type }),
+    });
+  } catch(e) { console.warn("Push send failed:", e); }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  var padding = "=".repeat((4 - base64String.length % 4) % 4);
+  var base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  var rawData = window.atob(base64);
+  var outputArray = new Uint8Array(rawData.length);
+  for (var i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+async function checkPushStatus() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+  try {
+    var reg = await navigator.serviceWorker.ready;
+    var sub = await reg.pushManager.getSubscription();
+    if (sub) setState({ pushEnabled: true });
+  } catch(e) {}
+}
 
 
 // ── STRIPE CHECKOUT ────────────────────────────────────────
@@ -1023,6 +1105,11 @@ async function sendChatMsg() {
   try {
     await sb.from("messages").insert({ sender_id:currentUser.id, receiver_id:thread.otherId, listing_id:thread.listing.id, thread_id:thread.id, body:body });
     await loadThreadMessages(thread.id, thread.listing.id);
+    // Notify receiver
+    if (thread.otherId) {
+      var senderName = currentUser.email ? currentUser.email.split("@")[0] : "Someone";
+      sendPushToUser(thread.otherId, "New message from "+senderName, body.substring(0,80), "/mobile.html", "message");
+    }
   } catch(e) { toast("Send failed"); st.threadMessages = st.threadMessages.filter(function(m){ return !m._temp; }); }
   render();
   setTimeout(function(){ var el=document.getElementById("chat-msgs"); if(el) el.scrollTop=el.scrollHeight; }, 50);
