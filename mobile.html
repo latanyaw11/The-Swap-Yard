@@ -115,6 +115,8 @@ input,textarea,select{font-family:var(--body);-webkit-appearance:none}
 .pay-method-row:last-child{border-bottom:none}
 .pay-badge{font-size:11px;font-weight:700;letter-spacing:.05em;padding:3px 8px;border-radius:999px;background:var(--a2-100);color:var(--a2-800)}
 
+.spinner{width:32px;height:32px;border:3px solid var(--div);border-top-color:var(--accent);border-radius:999px;animation:spin .7s linear infinite;margin:40px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
 ::-webkit-scrollbar{width:0;height:0}
 </style>
 </head>
@@ -171,6 +173,7 @@ let st = {
   _postTitle:'', _postDesc:'', _postPrice:'',
   checkingOut:false,
   pushEnabled:false,
+  searchQ:'', searchResults:[], searching:false, searchDone:false,
   activeThread:null, threads:[], threadMessages:[], sendingMsg:false,
   liveListings:[], liveEvents:[], liveCommunities:[],
   dashStats:null, commPosts:[], commMembers:[], commChat:[],
@@ -444,7 +447,7 @@ SCREENS['home'] = function() {
     +'<div style="font-family:var(--h);font-size:22px">Swap Yard</div>'
     +av(currentUser&&currentUser.email?currentUser.email[0].toUpperCase():'?','var(--a200)','var(--a800)',44)
     +'</div>'
-    +'<button onclick="goto(\'browse\')" style="width:100%;text-align:left;min-height:48px;border-radius:999px;border:1px solid var(--div);background:var(--n100);color:var(--n600);padding:0 18px;font-size:14.5px;font-family:var(--body);margin-bottom:16px;cursor:pointer">Search anything…</button>'
+    +'<button onclick="gotoSearch()" style="width:100%;text-align:left;min-height:48px;border-radius:999px;border:1px solid var(--div);background:var(--n100);color:var(--n600);padding:0 18px;font-size:14.5px;font-family:var(--body);margin-bottom:16px;cursor:pointer">🔍  Search anything — a drill, a haircut, a couch…</button>'
     +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:24px">'
     +cats.map(function(c){ return '<button onclick="goto(\'browse\')" style="display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;padding:0;font-family:var(--body);cursor:pointer"><span style="width:58px;height:58px;border-radius:999px;background:'+c.bg+';color:'+c.fg+';display:flex;align-items:center;justify-content:center;font-family:var(--h);font-size:19px">'+c.i+'</span><span style="font-size:11.5px;color:var(--n700)">'+c.n+'</span></button>'; }).join('')
     +'</div>'
@@ -464,34 +467,87 @@ SCREENS['home'] = function() {
 };
 
 SCREENS['browse'] = function() {
-  var all = getListings();
-  var fl = st.filter;
-  var filtered = fl==='All' ? all : all.filter(function(l){
-    if(fl==='Goods') return l.type==='goods';
-    if(fl==='Services') return l.type==='service';
-    if(fl==='Trade') return l.mode==='Trade'||l.trade_ok;
-    if(fl==='Barter') return l.mode==='Barter'||l.barter_ok;
-    return true;
-  });
+  var q = st.searchQ;
+  var isSearching = !!q;
+
+  // Determine which listings to show
+  var displayListings;
+  if (isSearching && st.searchDone) {
+    displayListings = st.searchResults;
+  } else if (isSearching && st.searching) {
+    displayListings = null; // show spinner
+  } else {
+    var all = getListings();
+    var fl = st.filter;
+    displayListings = fl==='All' ? all : all.filter(function(l){
+      if(fl==='Goods')    return l.type==='goods';
+      if(fl==='Services') return l.type==='service';
+      if(fl==='Trade')    return l.mode==='Trade'||l.trade_ok;
+      if(fl==='Barter')   return l.mode==='Barter'||l.barter_ok;
+      return true;
+    });
+  }
+
   var filters=['All','Goods','Services','Trade','Barter'];
   var radii=['Any','5 mi','25 mi','50 mi'];
-  return '<div class="pad">'
+
+  var html = '<div class="pad">'
     +'<h2 style="font-size:26px;margin:0 0 12px">Browse</h2>'
-    +'<div style="min-height:46px;border-radius:999px;border:1px solid var(--div);background:var(--n100);color:var(--n600);padding:12px 18px;font-size:14px;margin-bottom:12px">Search listings, services, barter…</div>'
-    +'<div class="hscroll" style="margin-bottom:4px">'+radii.map(function(r){ return chip(r,st.radius===r,"setRadius('" +r+ "')"); }).join('')+'</div>'
-    +'<div class="hscroll" style="margin-bottom:12px">'+filters.map(function(f){ return chip(f,st.filter===f,"setFilter('" +f+ "')"); }).join('')+'</div>'
-    +'<div style="font-size:12.5px;color:var(--n700);margin-bottom:12px">'+filtered.length+' listings · within '+st.radius+'</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
-    +filtered.map(function(l){
-      _storeListing(l);
-      return '<button onclick="openListing(this.dataset.lid)" data-lid="'+l.id+'" style="text-align:left;padding:0;border:1px solid var(--div);background:var(--n100);border-radius:var(--r-md);overflow:hidden;font-family:var(--body);cursor:pointer">'
-        +listingImg(l,96)
-        +'<div style="padding:12px"><div style="font-size:14px;font-weight:700;line-height:1.25;margin-bottom:4px">'+esc(l.title)+'</div>'
-        +'<div style="font-size:12px;color:var(--n700);margin-bottom:6px">'+(l.price_usd?'$'+l.price_usd:'Barter')+'</div>'
-        +modeTg(l.mode)
-        +'</div></button>';
-    }).join('')
-    +'</div></div>';
+    // Search bar
+    +'<div style="display:flex;gap:8px;margin-bottom:12px">'
+    +'<div style="flex:1;position:relative">'
+    +'<input id="search-inp" type="search" value="'+esc(q)+'" placeholder="Search listings, services, trades…" '
+    +'onkeydown="onSearchKey(event)" oninput="onSearchInput(this.value)" '
+    +'style="width:100%;padding:13px 42px 13px 18px;border-radius:999px;border:1.5px solid '+(q?'var(--accent)':'var(--div)')+';background:var(--n100);font-family:var(--body);font-size:14px;outline:none;-webkit-appearance:none">'
+    +(q?'<button onclick="clearSearch()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);border:0;background:none;font-size:18px;color:var(--n600);cursor:pointer;padding:4px">✕</button>':'<span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none">🔍</span>')
+    +'</div>'
+    +'</div>';
+
+  if (!isSearching) {
+    // Show filters only when not searching
+    html += '<div class="hscroll" style="margin-bottom:4px">'+radii.map(function(r){ var on=st.radius===r; return '<button class="chip'+(on?' on':'')+'" data-r="'+r+'" onclick="setRadius(this.dataset.r)">'+r+'</button>'; }).join('')+'</div>'
+      +'<div class="hscroll" style="margin-bottom:12px">'+filters.map(function(f){ var on=st.filter===f; return '<button class="chip'+(on?' on':'')+'" data-f="'+f+'" onclick="setFilter(this.dataset.f)">'+f+'</button>'; }).join('')+'</div>';
+  }
+
+  // Results count / state
+  if (isSearching) {
+    if (st.searching) {
+      html += '<div style="text-align:center;padding:40px 0"><div class="spinner"></div><div style="font-size:13px;color:var(--n600);margin-top:12px">Searching…</div></div>';
+    } else if (st.searchDone) {
+      html += '<div style="font-size:12.5px;color:var(--n700);margin-bottom:12px">'
+        +(displayListings.length ? displayListings.length+' results for "'+esc(q)+'"' : 'No results for "'+esc(q)+'" — try different keywords')
+        +'</div>';
+      if (!displayListings.length) {
+        html += '<div style="text-align:center;padding:32px 16px">'
+          +'<div style="font-size:2.5rem;margin-bottom:12px">🔍</div>'
+          +'<div style="font-family:var(--h);font-size:18px;margin-bottom:8px">Nothing found</div>'
+          +'<div style="font-size:14px;color:var(--n600);margin-bottom:20px">Try searching for a category, city, or item type</div>'
+          +'<button class="pill pill-secondary" onclick="clearSearch()" style="width:auto;padding:0 24px">Clear search</button>'
+          +'</div>';
+      }
+    }
+  } else {
+    html += '<div style="font-size:12.5px;color:var(--n700);margin-bottom:12px">'+(displayListings?displayListings.length:0)+' listings · within '+st.radius+'</div>';
+  }
+
+  // Listing grid
+  if (displayListings && displayListings.length) {
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
+      +displayListings.map(function(l){
+        _storeListing(l);
+        return '<button onclick="openListing(this.dataset.lid)" data-lid="'+l.id+'" style="text-align:left;padding:0;border:1px solid var(--div);background:var(--n100);border-radius:var(--r-md);overflow:hidden;font-family:var(--body);cursor:pointer">'
+          +listingImg(l,96)
+          +'<div style="padding:12px">'
+          +'<div style="font-size:14px;font-weight:700;line-height:1.25;margin-bottom:4px">'+esc(l.title)+'</div>'
+          +'<div style="font-size:12px;color:var(--n700);margin-bottom:6px">'+(l.price_usd?'$'+l.price_usd:'Barter')+'</div>'
+          +modeTg(l.mode)
+          +(l.city?'<span style="font-size:10px;color:var(--n600);margin-left:5px">· '+esc(l.city)+'</span>':'')
+          +'</div></button>';
+      }).join('')
+      +'</div>';
+  }
+
+  return html + '</div>';
 };
 
 SCREENS['listing'] = function() {
@@ -919,6 +975,87 @@ async function checkPushStatus() {
     var sub = await reg.pushManager.getSubscription();
     if (sub) setState({ pushEnabled: true });
   } catch(e) {}
+}
+
+
+
+// ── SEARCH ────────────────────────────────────────────────
+
+async function doSearch(q) {
+  q = (q || "").trim();
+  if (!q) {
+    setState({ searchQ:"", searchResults:[], searchDone:false });
+    return;
+  }
+  setState({ searchQ:q, searching:true, searchDone:false });
+
+  try {
+    // Search Supabase full text + ilike fallback
+    var res = await sb.from("listings")
+      .select("*")
+      .or("title.ilike.%"+q+"%,description.ilike.%"+q+"%,city.ilike.%"+q+"%")
+      .eq("is_active", true)
+      .order("created_at", {ascending:false})
+      .limit(30);
+
+    var live = res.data || [];
+
+    // Also search demo data locally
+    var ql = q.toLowerCase();
+    var demoMatches = (st.liveListings.length ? [] : DL).filter(function(l) {
+      return (l.title||"").toLowerCase().indexOf(ql) >= 0
+          || (l.city||"").toLowerCase().indexOf(ql) >= 0
+          || (l.type||"").toLowerCase().indexOf(ql) >= 0
+          || (l.mode||"").toLowerCase().indexOf(ql) >= 0;
+    });
+
+    // Merge — real results first, then demo matches not already in results
+    var liveIds = live.map(function(l){ return l.id; });
+    var merged = live.concat(demoMatches.filter(function(d){ return liveIds.indexOf(d.id) < 0; }));
+
+    merged.forEach(function(l){ _storeListing(l); });
+    setState({ searchResults:merged, searching:false, searchDone:true });
+  } catch(e) {
+    // Fallback to local search only
+    var ql2 = q.toLowerCase();
+    var local = getListings().filter(function(l) {
+      return (l.title||"").toLowerCase().indexOf(ql2) >= 0
+          || (l.city||"").toLowerCase().indexOf(ql2) >= 0
+          || (l.type||"").toLowerCase().indexOf(ql2) >= 0;
+    });
+    local.forEach(function(l){ _storeListing(l); });
+    setState({ searchResults:local, searching:false, searchDone:true });
+  }
+}
+
+function gotoSearch() {
+  goto("browse");
+  setTimeout(function(){
+    var inp = document.getElementById("search-inp");
+    if (inp) inp.focus();
+  }, 100);
+}
+
+function clearSearch() {
+  setState({ searchQ:"", searchResults:[], searching:false, searchDone:false });
+  var inp = document.getElementById("search-inp");
+  if (inp) { inp.value = ""; inp.focus(); }
+}
+
+function onSearchKey(e) {
+  if (e.key === "Enter") {
+    var inp = document.getElementById("search-inp");
+    if (inp) doSearch(inp.value);
+  }
+  if (e.key === "Escape") clearSearch();
+}
+
+function onSearchInput(val) {
+  st.searchQ = val;
+  // Live search after 400ms pause
+  clearTimeout(st._searchTimer);
+  if (!val.trim()) { clearSearch(); return; }
+  st._searchTimer = setTimeout(function(){ doSearch(val); }, 400);
 }
 
 
