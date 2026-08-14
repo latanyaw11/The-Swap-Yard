@@ -1,41 +1,76 @@
 {
   "name": "The Swap Yard",
   "short_name": "Swap Yard",
-  "description": "Buy, Sell & Trade Marketplace — Research Triangle Park, NC",
-  "start_url": "/",
+  "description": "Buy, sell, trade and barter \u2014 RTP & nationwide",
+  "start_url": "/mobile.html",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#0a0a0f",
-  "theme_color": "#7c3aed",
-  "categories": ["shopping", "lifestyle", "business"],
-  "lang": "en-US",
-  "dir": "ltr",
-  "icons": [
-    { "src": "/icons/icon-72.png",   "sizes": "72x72",   "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icons/icon-96.png",   "sizes": "96x96",   "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icons/icon-128.png",  "sizes": "128x128", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icons/icon-144.png",  "sizes": "144x144", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icons/icon-152.png",  "sizes": "152x152", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icons/icon-192.png",  "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icons/icon-384.png",  "sizes": "384x384", "type": "image/png", "purpose": "any maskable" },
-    { "src": "/icons/icon-512.png",  "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  "background_color": "#f5ead8",
+  "theme_color": "#f5ead8",
+  "categories": [
+    "shopping",
+    "lifestyle",
+    "business"
   ],
-  "screenshots": [
-    { "src": "/assets/screenshot-mobile.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow"  },
-    { "src": "/assets/screenshot-desktop.png","sizes": "1280x800","type": "image/png", "form_factor": "wide"    }
+  "lang": "en-US",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "Browse Listings", "short_name": "Browse",  "description": "Browse all current listings", "url": "/?view=listings", "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }] },
-    { "name": "Post a Listing",  "short_name": "Sell",    "description": "Create a new listing",        "url": "/?view=list",     "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }] },
-    { "name": "My Dashboard",    "short_name": "Dash",    "description": "Open vendor dashboard",       "url": "/vendor-dashboard.html", "icons": [{ "src": "/icons/icon-96.png", "sizes": "96x96" }] }
+    {
+      "name": "Browse Listings",
+      "short_name": "Browse",
+      "url": "/mobile.html#browse",
+      "icons": [
+        {
+          "src": "/icons/icon-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Post a Listing",
+      "short_name": "Sell",
+      "url": "/mobile.html#post",
+      "icons": [
+        {
+          "src": "/icons/icon-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "My Dashboard",
+      "short_name": "Dashboard",
+      "url": "/mobile.html#dash",
+      "icons": [
+        {
+          "src": "/icons/icon-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
   ],
-  "related_applications": [],
-  "prefer_related_applications": false,
-  "iarc_rating_id": "",
   "share_target": {
     "action": "/share-target",
     "method": "GET",
-    "params": { "title": "title", "text": "text", "url": "url" }
-  }
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "prefer_related_applications": false
 }
