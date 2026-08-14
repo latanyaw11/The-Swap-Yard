@@ -171,6 +171,9 @@ const DC = [
 // ── INIT ──────────────────────────────────────────────────
 
 // Pre-store demo data in listing map
+var _listingMap = {};
+function _storeListing(l) { if(l&&l.id) _listingMap[l.id]=l; return l; }
+function openListing(id) { var l=_listingMap[id]; if(l){st.activeListing=l;goto('listing');} }
 function initDemoMap() {
   DL.forEach(function(l){ _listingMap[l.id]=l; });
 }
