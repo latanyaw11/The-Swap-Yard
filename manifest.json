@@ -3,8 +3,13 @@
   "short_name": "Swap Yard",
   "description": "Buy, sell, trade and barter \u2014 RTP & nationwide",
   "start_url": "/mobile.html",
+  "id": "/mobile.html",
   "scope": "/",
   "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "portrait-primary",
   "background_color": "#f5ead8",
   "theme_color": "#f5ead8",
@@ -16,8 +21,44 @@
   "lang": "en-US",
   "icons": [
     {
+      "src": "/icons/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384.png",
+      "sizes": "384x384",
       "type": "image/png",
       "purpose": "any maskable"
     },
@@ -32,7 +73,7 @@
     {
       "name": "Browse Listings",
       "short_name": "Browse",
-      "url": "/mobile.html#browse",
+      "url": "/mobile.html",
       "icons": [
         {
           "src": "/icons/icon-96.png",
@@ -43,7 +84,7 @@
     {
       "name": "Post a Listing",
       "short_name": "Sell",
-      "url": "/mobile.html#post",
+      "url": "/mobile.html",
       "icons": [
         {
           "src": "/icons/icon-96.png",
@@ -53,8 +94,8 @@
     },
     {
       "name": "My Dashboard",
-      "short_name": "Dashboard",
-      "url": "/mobile.html#dash",
+      "short_name": "Yard",
+      "url": "/mobile.html",
       "icons": [
         {
           "src": "/icons/icon-96.png",

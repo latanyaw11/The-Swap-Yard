@@ -121,10 +121,40 @@ input{font-family:var(--body);-webkit-appearance:none}
   <div id="tabbar"></div>
 </div>
 
-<div id="install-banner">
-  <p>Install Swap Yard on your home screen for the full app experience.</p>
-  <button id="install-btn">Install</button>
-  <button onclick="document.getElementById('install-banner').style.display='none'" style="background:transparent;border:0;color:rgba(255,255,255,.6);font-size:18px;padding:0;font-family:var(--body)">✕</button>
+<!-- Android install banner -->
+<div id="install-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;padding:16px;background:var(--a2-800);color:#fff;flex-direction:column;gap:10px;border-radius:20px 20px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,.2)">
+  <div style="display:flex;align-items:center;gap:12px">
+    <span style="width:44px;height:44px;border-radius:12px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🔄</span>
+    <div style="flex:1">
+      <div style="font-weight:700;font-size:15px">Install Swap Yard</div>
+      <div style="font-size:12px;opacity:.7">Add to home screen for the full app</div>
+    </div>
+    <button id="install-close" style="background:transparent;border:0;color:rgba(255,255,255,.5);font-size:22px;padding:0;line-height:1">✕</button>
+  </div>
+  <button id="install-btn" style="width:100%;min-height:48px;border-radius:999px;border:0;background:var(--accent);color:#fff;font-size:15px;font-weight:700;font-family:var(--body)">Add to Home Screen</button>
+</div>
+
+<!-- iOS install instructions -->
+<div id="ios-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:200;padding:20px 16px;background:var(--n900);color:#fff;border-radius:20px 20px 0 0;box-shadow:0 -4px 24px rgba(0,0,0,.3)">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <div style="font-family:var(--h);font-size:18px">Install Swap Yard</div>
+    <button onclick="document.getElementById('ios-banner').style.display='none'" style="background:transparent;border:0;color:rgba(255,255,255,.5);font-size:22px;padding:0">✕</button>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="width:36px;height:36px;border-radius:999px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px">1</span>
+      <span style="font-size:14px;opacity:.85">Tap the <strong>Share</strong> button <span style="font-size:18px">⎋</span> at the bottom of Safari</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="width:36px;height:36px;border-radius:999px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px">2</span>
+      <span style="font-size:14px;opacity:.85">Scroll down and tap <strong>Add to Home Screen</strong></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="width:36px;height:36px;border-radius:999px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px">3</span>
+      <span style="font-size:14px;opacity:.85">Tap <strong>Add</strong> — Swap Yard appears on your home screen</span>
+    </div>
+  </div>
+  <div style="text-align:center;font-size:11px;opacity:.4;letter-spacing:.05em;text-transform:uppercase">Safari only · requires iOS 11.3+</div>
 </div>
 
 <div id="toast"></div>
@@ -395,7 +425,7 @@ function scrHome() {
     + '<div style="font-family:var(--h);font-size:22px">Swap Yard</div>'
     + av(currentUser&&currentUser.email?currentUser.email.charAt(0).toUpperCase():'?','var(--a200)','var(--a800)',44)
     + '</div>'
-    + '<button onclick="goto(\'browse\')" style="width:100%;text-align:left;min-height:48px;border-radius:999px;border:1px solid var(--div);background:var(--n100);color:var(--n600);padding:0 18px;font-size:14.5px;font-family:var(--body);margin-bottom:16px">Search anything…</button>'
+    + (window&&!window.navigator.standalone?'<button onclick="showInstallPrompt()" style="width:100%;min-height:44px;border-radius:999px;background:var(--a2-100);border:1px solid var(--a2-300);color:var(--a2-800);font-size:13px;font-weight:700;font-family:var(--body);margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px">📲 Add to Home Screen</button>':'')+ '<button onclick="goto(\'browse\')" style="width:100%;text-align:left;min-height:48px;border-radius:999px;border:1px solid var(--div);background:var(--n100);color:var(--n600);padding:0 18px;font-size:14.5px;font-family:var(--body);margin-bottom:16px">Search anything…</button>'
     + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:24px">'
     + cats.map(function(c){ return '<button onclick="goto(\'browse\')" style="display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;font-family:var(--body)"><span style="width:58px;height:58px;border-radius:999px;background:'+c.bg+';color:'+c.fg+';display:flex;align-items:center;justify-content:center;font-family:var(--h);font-size:19px">'+c.i+'</span><span style="font-size:11.5px;color:var(--n700)">'+c.n+'</span></button>'; }).join('')
     + '</div>'
@@ -832,6 +862,19 @@ const screens = {
   safety: scrSafety,
 };
 
+// ── INSTALL PROMPT ────────────────────────────────────────────
+function showInstallPrompt() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+  } else if (isIOS) {
+    const b = document.getElementById('ios-banner');
+    if (b) b.style.display = 'block';
+  } else {
+    toast('Open in Chrome or Safari to install');
+  }
+}
+
 // ── STATE MUTATORS ────────────────────────────────────────────
 function setAuthTab(i)       { setState({authTab:i}); }
 function setFilter(f)         { setState({filter:f}); }
@@ -860,21 +903,56 @@ async function doPublish()    {
 // ── PWA INSTALL ───────────────────────────────────────────────
 let deferredPrompt = null;
 function setupPWA() {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isInStandalone = window.navigator.standalone === true
+    || window.matchMedia('(display-mode: standalone)').matches;
+
+  // Don't show if already installed
+  if (isInStandalone) {
+    console.log('Running as installed PWA');
+    return;
+  }
+
+  // iOS: show manual instructions after 3 seconds
+  if (isIOS) {
+    const shown = sessionStorage.getItem('ios-banner-shown');
+    if (!shown) {
+      setTimeout(() => {
+        const b = document.getElementById('ios-banner');
+        if (b) { b.style.display = 'block'; sessionStorage.setItem('ios-banner-shown','1'); }
+      }, 3000);
+    }
+  }
+
+  // Android/Chrome: use beforeinstallprompt
   window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault(); deferredPrompt = e;
+    e.preventDefault();
+    deferredPrompt = e;
     const banner = document.getElementById('install-banner');
-    banner.style.display = 'flex';
-    document.getElementById('install-btn').onclick = async () => {
-      banner.style.display = 'none';
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') toast('Swap Yard installed!');
-      deferredPrompt = null;
-    };
+    if (banner) {
+      banner.style.display = 'flex';
+      const closeBtn = document.getElementById('install-close');
+      if (closeBtn) closeBtn.onclick = () => { banner.style.display = 'none'; };
+      document.getElementById('install-btn').onclick = async () => {
+        banner.style.display = 'none';
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') toast('Swap Yard installed! ✓');
+        deferredPrompt = null;
+      };
+    }
   });
+
+  window.addEventListener('appinstalled', () => {
+    toast('Swap Yard installed! ✓');
+    deferredPrompt = null;
+  });
+
   // Register service worker
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch(()=>{});
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.log('SW error:', err));
   }
 }
 </script>

@@ -10,6 +10,12 @@
   port = 8888
 
 # Redirects
+
+[[redirects]]
+  from = "/mobile"
+  to = "/mobile.html"
+  status = 200
+
 [[redirects]]
   from = "/vendor"
   to = "/vendor-dashboard.html"
