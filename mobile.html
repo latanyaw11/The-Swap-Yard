@@ -101,6 +101,18 @@ input{font-family:var(--body);-webkit-appearance:none}
 /* ── OFFER BUILDER ── */
 .offer-bar{height:10px;border-radius:999px;background:var(--a2-200);overflow:hidden}
 .offer-bar-fill{height:100%;border-radius:999px;background:var(--a2-500);transition:width .3s ease}
+
+/* ── PHOTO UPLOAD ── */
+.photo-upload-zone{border:1.5px dashed var(--a300);background:var(--a100);border-radius:28px;padding:28px 20px;text-align:center;transition:all .15s;user-select:none}
+.photo-upload-zone:hover,.photo-upload-zone.drag-over{background:var(--a200);border-color:var(--accent)}
+.photo-upload-zone input[type=file]{display:none}
+.photo-preview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.photo-preview-item{position:relative;aspect-ratio:1;border-radius:16px;overflow:hidden;background:var(--n200)}
+.photo-preview-item img{width:100%;height:100%;object-fit:cover}
+.photo-preview-del{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:999px;background:rgba(32,30,29,.65);color:#fff;border:0;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1}
+.photo-add-slot{aspect-ratio:1;border-radius:16px;border:1.5px dashed var(--n300);display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;background:var(--n100);color:var(--n600)}
+.photo-uploading{opacity:.5;pointer-events:none}
+
 /* ── SPINNER ── */
 .spinner{width:32px;height:32px;border:3px solid var(--div);border-top-color:var(--accent);border-radius:999px;animation:spin .7s linear infinite;margin:40px auto}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -637,8 +649,11 @@ function scrBrowse() {
     + '<div style="font-size:12.5px;color:var(--n700);margin-bottom:12px">'+filtered.length+' near Durham · within '+st.radius+'</div>'
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
     + filtered.map(function(l){
+        var cardImg = (l.cover_image || (l.images && l.images[0]))
+          ? '<img src="'+(l.cover_image||l.images[0])+'" style="width:100%;height:96px;object-fit:cover" loading="lazy">'
+          : '<div class="photo-ph" style="height:96px;font-size:2rem;display:flex;align-items:center;justify-content:center">'+( l.emoji||'📦')+'</div>';
         return '<button onclick="st.activeListing=l;goto(\'listing\')" style="text-align:left;padding:0;border:1px solid var(--div);background:var(--n100);border-radius:var(--r-md);overflow:hidden;font-family:var(--body)">'
-          + '<div class="photo-ph" style="height:96px;font-size:2rem;display:flex;align-items:center;justify-content:center">'+l.emoji+'</div>'
+          + cardImg
           + '<div style="padding:12px"><div style="font-size:14px;font-weight:700;line-height:1.25;margin-bottom:4px">'+esc(l.title)+'</div>'
           + '<div style="font-size:12px;color:var(--n700);margin-bottom:6px">'+(l.price_usd?'$'+l.price_usd:'Barter')+'</div>'
           + tg(l.mode, modeStyle(l.mode), '')+'</div></button>';
@@ -654,9 +669,27 @@ function scrListing() {
   var city = l.city || 'Durham';
   var desc = l.description || 'Two batteries, charger, hard case. Used on one deck build.';
   var emoji = l.emoji || '📦';
+  // Build photo carousel or single photo
+  var heroImg;
+  var imgs = l.images && l.images.length ? l.images : (l.cover_image ? [l.cover_image] : []);
+  if (imgs.length) {
+    heroImg = '<div style="position:relative;height:240px;overflow:hidden;background:var(--n200)">'
+      + '<img id="listing-hero-img" src="'+imgs[0]+'" style="width:100%;height:240px;object-fit:cover" loading="eager">'
+      + (imgs.length > 1
+        ? '<div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:6px">'
+          + imgs.map(function(url, i) {
+              return '<button onclick="document.getElementById(\'listing-hero-img\').src=\''+url+'\';this.parentNode.querySelectorAll(\'button\').forEach(function(b){b.style.background=\'rgba(255,255,255,.4)\'});this.style.background=\'#fff\'" '
+                + 'style="width:8px;height:8px;border-radius:999px;border:0;background:'+(i===0?'#fff':'rgba(255,255,255,.4)')+';padding:0;cursor:pointer"></button>';
+            }).join('')
+          + '</div>'
+        : '')
+      + '</div>';
+  } else {
+    heroImg = photoHTML(240, '');
+  }
   return '<div>'
     + '<div class="listing-hero">'
-    + photoHTML(240,'')
+    + heroImg
     + '<button onclick="goto(\'browse\')" style="position:absolute;top:16px;left:16px;width:44px;height:44px;border-radius:999px;border:0;background:var(--bg);font-size:17px;box-shadow:0 1px 4px rgba(0,0,0,.15)">←</button>'
     + '<button onclick="toggleSave()" style="position:absolute;top:16px;right:16px;width:44px;height:44px;border-radius:999px;border:0;background:var(--bg);font-size:20px;box-shadow:0 1px 4px rgba(0,0,0,.15);color:'+(st.saved?'var(--a600)':'var(--n800)')+'">'+( st.saved?'♥':'♡')+'</button>'
     + '</div><div class="listing-body">'
@@ -796,13 +829,9 @@ function scrPost() {
     + '<h2 style="font-size:26px;margin:0 0 12px">List something</h2>'
     + seg(['Photos','Details','Terms'], st.postStep-1, 'setPostStep');
   if (st.postStep===1) {
-    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
-      + '<div style="grid-column:1/-1;height:150px;border-radius:28px;border:1.5px dashed var(--a300);background:var(--a100);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px">'
-      + '<span style="font-family:var(--h);font-size:17px;color:var(--a800)">Add photos</span>'
-      + '<span style="font-family:monospace;font-size:10.5px;color:var(--a800)">camera · library · up to 5</span></div>'
-      + '<div class="photo-ph" style="height:88px;border-radius:var(--r-md)"></div>'
-      + '<div style="height:88px;border-radius:var(--r-md);border:1.5px dashed var(--n300)"></div></div>'
-      + '<button class="pill pill-primary" onclick="setPostStep(1)" style="margin-top:24px">Next — details</button>';
+    html += renderPhotoStep();
+    html += '<button class="pill pill-primary" onclick="setPostStep(1)" style="margin-top:20px">'
+      + (st.uploadedPhotos.length ? 'Next — details →' : 'Skip for now →') + '</button>';
   } else if (st.postStep===2) {
     html += '<div style="display:flex;flex-direction:column;gap:16px">'
       + '<div><div class="field-lbl">Title *</div><input id="post-title" type="text" placeholder="e.g. Kayak, 10ft sit-on-top" style="width:100%;padding:13px 18px;border-radius:999px;border:1.5px solid var(--div);background:var(--n100);font-family:var(--body);font-size:14px;outline:none"></div>'
@@ -1127,7 +1156,127 @@ function openCommunity(id) {
   }
 }
 
-// ── STATE MUTATORS ────────────────────────────────────────────
+
+// ── PHOTO UPLOAD ──────────────────────────────────────────────
+function openPhotoPicker() { /* handled by label element */ }
+
+function onPhotoDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  var zone = e.currentTarget || document.getElementById('photo-drop-zone');
+  if (zone) zone.classList.remove('drag-over');
+  var files = e.dataTransfer ? e.dataTransfer.files : e.target.files;
+  if (files && files.length) handlePhotoFiles(Array.from(files));
+}
+
+function onPhotoDragOver(e) {
+  e.preventDefault();
+  var zone = document.getElementById('photo-drop-zone');
+  if (zone) zone.classList.add('drag-over');
+}
+
+function onPhotoDragLeave() {
+  var zone = document.getElementById('photo-drop-zone');
+  if (zone) zone.classList.remove('drag-over');
+}
+
+async function handlePhotoFiles(files) {
+  if (!currentUser) { toast('Sign in to upload photos'); return; }
+  var allowed = files.filter(function(f) {
+    return f.type.startsWith('image/') && f.size <= 5 * 1024 * 1024;
+  });
+  if (!allowed.length) { toast('Images only, max 5MB each'); return; }
+  var remaining = 5 - st.uploadedPhotos.length;
+  if (remaining <= 0) { toast('Max 5 photos per listing'); return; }
+  allowed = allowed.slice(0, remaining);
+
+  setState({ uploadingPhotos: true });
+  toast('Uploading ' + allowed.length + ' photo' + (allowed.length > 1 ? 's' : '') + '…');
+
+  var results = [];
+  for (var i = 0; i < allowed.length; i++) {
+    var file = allowed[i];
+    var ext  = file.name.split('.').pop().toLowerCase() || 'jpg';
+    var path = currentUser.id + '/' + Date.now() + '_' + i + '.' + ext;
+    try {
+      var { data, error } = await sb.storage
+        .from('listing-images')
+        .upload(path, file, { upsert: false, contentType: file.type });
+      if (error) { toast('Upload failed: ' + error.message); continue; }
+      var { data: urlData } = sb.storage
+        .from('listing-images')
+        .getPublicUrl(path);
+      results.push({ url: urlData.publicUrl, path: path });
+    } catch(err) {
+      toast('Upload error — check connection');
+    }
+  }
+
+  if (results.length) {
+    setState(function(s) {
+      return { uploadedPhotos: s.uploadedPhotos.concat(results), uploadingPhotos: false };
+    });
+    toast(results.length + ' photo' + (results.length > 1 ? 's' : '') + ' uploaded ✓');
+  } else {
+    setState({ uploadingPhotos: false });
+  }
+}
+
+async function deletePhoto(idx) {
+  var photo = st.uploadedPhotos[idx];
+  if (!photo) return;
+  try {
+    await sb.storage.from('listing-images').remove([photo.path]);
+  } catch(e) {}
+  setState(function(s) {
+    var photos = s.uploadedPhotos.slice();
+    photos.splice(idx, 1);
+    return { uploadedPhotos: photos };
+  });
+}
+
+function renderPhotoStep() {
+  var photos = st.uploadedPhotos;
+  var uploading = st.uploadingPhotos;
+
+  // Use <label> wrapping the file input — works on iOS Safari, Android Chrome
+  // The label triggers the native file picker on tap without needing JS click()
+  var html = '<div style="margin-bottom:12px">'
+    + '<label for="photo-file-input" style="display:block;cursor:pointer">'
+    + '<div class="photo-upload-zone' + (uploading ? ' photo-uploading' : '') + '" '
+    + 'ondrop="onPhotoDrop(event)" '
+    + 'ondragover="onPhotoDragOver(event)" '
+    + 'ondragleave="onPhotoDragLeave()">'
+    + '<div style="font-size:2.5rem;margin-bottom:10px">' + (uploading ? '⏳' : '📸') + '</div>'
+    + '<div style="font-family:var(--h);font-size:18px;color:var(--a800);margin-bottom:6px">'
+    + (uploading ? 'Uploading…' : photos.length ? 'Add more photos' : 'Tap to add photos') + '</div>'
+    + '<div style="font-size:11px;color:var(--a700)">up to 5 photos · max 5MB each</div>'
+    + '</div>'
+    + '</label>'
+    + '<input type="file" id="photo-file-input" accept="image/*" multiple '
+    + 'style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" '
+    + 'onchange="handlePhotoFiles(Array.from(this.files))">'
+    + '</div>';
+
+  if (photos.length) {
+    html += '<div class="photo-preview-grid">';
+    photos.forEach(function(p, i) {
+      html += '<div class="photo-preview-item">'
+        + '<img src="' + p.url + '" alt="listing photo" style="width:100%;height:100%;object-fit:cover">'
+        + '<button class="photo-preview-del" onclick="deletePhoto(' + i + ')">×</button>'
+        + '</div>';
+    });
+    if (photos.length < 5) {
+      html += '<label for="photo-file-input" class="photo-add-slot" style="cursor:pointer">+</label>';
+    }
+    html += '</div>';
+    html += '<div style="font-size:12px;color:var(--n700);text-align:center;margin-top:8px">'
+      + photos.length + ' of 5 photos added</div>';
+  }
+  return html;
+}
+
+
 function setAuthTab(i)       { setState({authTab:i}); }
 function setFilter(f)         { setState({filter:f}); }
 function setRadius(r)         { setState({radius:r}); }
@@ -1158,11 +1307,15 @@ async function doPublish() {
   const btn = document.getElementById('publish-btn');
   if (btn) { btn.textContent = 'Publishing…'; btn.disabled = true; }
   toast('Publishing…');
+  var photoUrls = st.uploadedPhotos.map(function(p) { return p.url; });
+  var coverImage = photoUrls.length ? photoUrls[0] : null;
   const { error } = await sb.from('listings').insert({
     title, price_usd: price||null, description: desc,
     type: st.cat.toLowerCase(), city: 'Durham',
     barter_ok: !!st.pays.Barter, ships: false,
     user_id: currentUser.id, is_active: true,
+    images: photoUrls,
+    cover_image: coverImage,
   });
   if (error) {
     toast('Error: '+error.message);
@@ -1171,7 +1324,7 @@ async function doPublish() {
   }
   await loadAllData();
   toast('Listing published! ✓');
-  setState({postStep:1, fmv:false, legal:false, cat:'Outdoors', pays:{Cash:true,Card:true,Barter:true}});
+  setState({postStep:1, fmv:false, legal:false, cat:'Outdoors', pays:{Cash:true,Card:true,Barter:true}, uploadedPhotos:[], uploadingPhotos:false});
   goto('browse');
 }
 
@@ -1319,6 +1472,18 @@ input{font-family:var(--body);-webkit-appearance:none}
 /* ── OFFER BUILDER ── */
 .offer-bar{height:10px;border-radius:999px;background:var(--a2-200);overflow:hidden}
 .offer-bar-fill{height:100%;border-radius:999px;background:var(--a2-500);transition:width .3s ease}
+
+/* ── PHOTO UPLOAD ── */
+.photo-upload-zone{border:1.5px dashed var(--a300);background:var(--a100);border-radius:28px;padding:28px 20px;text-align:center;transition:all .15s;user-select:none}
+.photo-upload-zone:hover,.photo-upload-zone.drag-over{background:var(--a200);border-color:var(--accent)}
+.photo-upload-zone input[type=file]{display:none}
+.photo-preview-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.photo-preview-item{position:relative;aspect-ratio:1;border-radius:16px;overflow:hidden;background:var(--n200)}
+.photo-preview-item img{width:100%;height:100%;object-fit:cover}
+.photo-preview-del{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:999px;background:rgba(32,30,29,.65);color:#fff;border:0;font-size:14px;display:flex;align-items:center;justify-content:center;cursor:pointer;line-height:1}
+.photo-add-slot{aspect-ratio:1;border-radius:16px;border:1.5px dashed var(--n300);display:flex;align-items:center;justify-content:center;font-size:1.5rem;cursor:pointer;background:var(--n100);color:var(--n600)}
+.photo-uploading{opacity:.5;pointer-events:none}
+
 /* ── SPINNER ── */
 .spinner{width:32px;height:32px;border:3px solid var(--div);border-top-color:var(--accent);border-radius:999px;animation:spin .7s linear infinite;margin:40px auto}
 @keyframes spin{to{transform:rotate(360deg)}}
