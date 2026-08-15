@@ -527,23 +527,27 @@ SCREENS['home'] = function() {
   var joinedComms = getCommunities().filter(function(c){
     return st.joined[c.id||c.key];
   });
-  // Show joined communities as bubbles, or default categories if none joined yet
-  var homeBubbles = joinedComms.length ? joinedComms.map(function(c){
-    return {n:c.name.split(' ').slice(0,2).join(' '), icon:c.icon||'👥', bg:'var(--a2-100)', fg:'var(--a2-800)', cid:c.id||c.key};
-  }).slice(0,4) : [
-    {n:'RTP Gardeners',  icon:'🌱', bg:'var(--a2-100)', fg:'var(--a2-800)', cid:'c1'},
-    {n:'Tool Library',   icon:'🔧', bg:'var(--a100)',   fg:'var(--a800)',   cid:'c2'},
-    {n:'Durham Wrenches',icon:'🚗', bg:'var(--n200)',   fg:'var(--n800)',   cid:'c3'},
-    {n:'Bull City Vinyl',icon:'🎵', bg:'var(--a2-200)', fg:'var(--a2-800)', cid:'c4'},
+  var tileColors = [
+    {bg:'var(--a2-100)',fg:'var(--a2-800)'},{bg:'var(--a100)',fg:'var(--a800)'},
+    {bg:'var(--n200)',fg:'var(--n900)'},{bg:'var(--a2-200)',fg:'var(--a2-800)'},
   ];
-  return '<div class="pad">'
-    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
-    +'<div style="font-family:var(--h);font-size:22px">Swap Yard</div>'
-    +av(currentUser&&currentUser.email?currentUser.email[0].toUpperCase():'?','var(--a200)','var(--a800)',44)
-    +'</div>'
-    +'<button onclick="gotoSearch()" style="width:100%;text-align:left;min-height:48px;border-radius:999px;border:1px solid var(--div);background:var(--n100);color:var(--n600);padding:0 18px;font-size:14.5px;font-family:var(--body);margin-bottom:16px;cursor:pointer">🔍  Search anything — a drill, a haircut, a couch…</button>'
-    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:24px">'
-    +homeBubbles.map(function(q){ return '<button onclick="openComm(this.dataset.cid)" data-cid="'+q.cid+'" style="display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;padding:0;font-family:var(--body);cursor:pointer"><span style="width:58px;height:58px;border-radius:999px;background:'+q.bg+';color:'+q.fg+';display:flex;align-items:center;justify-content:center;font-size:20px">'+q.icon+'</span><span style="font-size:10.5px;color:var(--n700);line-height:1.2;text-align:center">'+q.n+'</span></button>'; }).join('')
+  var homeTiles = joinedComms.length ? joinedComms.slice(0,4) : getCommunities().slice(0,4);
+  +homeTiles.map(function(c,idx){
+    var col = tileColors[idx % tileColors.length];
+    var shortName = c.name || 'Community';
+    // Max 2 words for tile label
+    var label = shortName.split(' ').slice(0,3).join(' ');
+    return '<button onclick="openComm(this.dataset.cid)" data-cid="'+(c.id||c.key)+'" '
+      +'style="display:flex;flex-direction:column;justify-content:flex-end;'
+      +'width:100%;aspect-ratio:1;border-radius:16px;padding:10px;'
+      +'background:'+col.bg+';border:0;cursor:pointer;text-align:left;'
+      +'transition:all .15s;-webkit-tap-highlight-color:transparent">'
+      +'<span style="font-family:var(--body);font-size:12px;font-weight:700;'
+      +'color:'+col.fg+';line-height:1.25;word-break:break-word">'+label+'</span>'
+      +'<span style="font-family:var(--body);font-size:10px;color:'+col.fg+';'
+      +'opacity:.6;margin-top:2px">'+(c.member_count||0)+' members</span>'
+      +'</button>';
+  }).join('')
     +'</div>'
     +'<div style="display:flex;gap:8px;margin-bottom:24px">'
     +[{v:'Free',l:'To Join'},{v:'Events',l:'This Week',goto:'eventsScr'},{v:'0%',l:'Barter Fee'}].map(function(s){ return '<div data-goto="'+(s.goto||'')+'" onclick="if(this.dataset.goto)handleNav(this)" style="flex:1;background:var(--n100);border:1px solid var(--div);border-radius:var(--r-md);padding:12px;text-align:center;cursor:'+(s.goto?'pointer':'default')+'"><div style="font-family:var(--h);font-size:20px;color:var(--a700)">'+s.v+'</div><div style="font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--n700)">'+s.l+'</div></div>'; }).join('')
