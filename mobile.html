@@ -188,6 +188,7 @@ let st = {
   pushEnabled:false,
   searchQ:'', searchResults:[], searching:false, searchDone:false,
   viewingProfile:null, profileListings:[], profileLoading:false,
+  savedListings:{}, savedLoading:false,
   activeThread:null, threads:[], threadMessages:[], sendingMsg:false,
   liveListings:[], liveEvents:[], liveCommunities:[],
   dashStats:null, commPosts:[], commMembers:[], commChat:[],
@@ -272,6 +273,7 @@ async function loadAll() {
     // unused assignment suppressor
     void(0);
     if (currentUser) {
+      loadSavedListings();
       var rsvps = await sb.from('event_rsvps').select('event_id').eq('user_id',currentUser.id);
       var mems  = await sb.from('community_members').select('community_id').eq('user_id',currentUser.id);
       if (rsvps.data) rsvps.data.forEach(function(r){ st.rsvp[r.event_id]=true; });
@@ -493,7 +495,10 @@ SCREENS['browse'] = function() {
   } else {
     var all = getListings();
     var fl = st.filter;
-    displayListings = fl==='All' ? all : all.filter(function(l){
+    if (fl === 'Saved') {
+      displayListings = all.filter(function(l){ return st.savedListings && !!st.savedListings[l.id]; });
+      if (!displayListings.length && currentUser) { viewSaved(); displayListings = null; }
+    } else displayListings = fl==='All' ? all : all.filter(function(l){
       if(fl==='Goods')    return l.type==='goods';
       if(fl==='Services') return l.type==='service';
       if(fl==='Trade')    return l.mode==='Trade'||l.trade_ok;
@@ -502,7 +507,7 @@ SCREENS['browse'] = function() {
     });
   }
 
-  var filters=['All','Goods','Services','Trade','Barter'];
+  var filters=['All','Goods','Services','Trade','Barter','Saved'];
   var radii=['Any','5 mi','25 mi','50 mi'];
 
   var html = '<div class="pad">'
@@ -529,7 +534,7 @@ SCREENS['browse'] = function() {
       html += '<div style="text-align:center;padding:40px 0"><div class="spinner"></div><div style="font-size:13px;color:var(--n600);margin-top:12px">Searching…</div></div>';
     } else if (st.searchDone) {
       html += '<div style="font-size:12.5px;color:var(--n700);margin-bottom:12px">'
-        +(displayListings.length ? displayListings.length+' results for "'+esc(q)+'"' : 'No results for "'+esc(q)+'" — try different keywords')
+        +(q==='saved' ? (displayListings.length+' saved listings') : (displayListings.length ? displayListings.length+' results for "'+esc(q)+'"' : 'No results for "'+esc(q)+'" — try different keywords'))
         +'</div>';
       if (!displayListings.length) {
         html += '<div style="text-align:center;padding:32px 16px">'
@@ -1115,6 +1120,86 @@ async function viewProfile(userId) {
 }
 
 
+
+// ── SAVED LISTINGS / PRICE DROP ALERTS ───────────────────
+
+async function toggleSaveListing(listingId, price) {
+  if (!currentUser) { toast("Sign in to save listings"); goto("signin"); return; }
+  if (!listingId) return;
+
+  var isSaved = !!st.savedListings[listingId];
+
+  // Optimistic update
+  setState(function(s) {
+    var saved = Object.assign({}, s.savedListings);
+    if (isSaved) { delete saved[listingId]; }
+    else { saved[listingId] = true; }
+    return { savedListings: saved };
+  });
+  render();
+
+  try {
+    if (isSaved) {
+      await sb.from("wishlists").delete()
+        .eq("user_id", currentUser.id)
+        .eq("listing_id", listingId);
+      toast("Removed from saved");
+    } else {
+      await sb.from("wishlists").upsert({
+        user_id: currentUser.id,
+        listing_id: listingId,
+        price_at_save: price || null,
+        notify_drop: true,
+      }, { onConflict: "user_id,listing_id" });
+      toast("Saved! We'll alert you if the price drops ↓");
+    }
+  } catch(e) {
+    // Revert on error
+    setState(function(s) {
+      var saved = Object.assign({}, s.savedListings);
+      if (isSaved) { saved[listingId] = true; }
+      else { delete saved[listingId]; }
+      return { savedListings: saved };
+    });
+    toast("Could not save — check connection");
+  }
+}
+
+async function loadSavedListings() {
+  if (!currentUser) return;
+  try {
+    var res = await sb.from("wishlists")
+      .select("listing_id")
+      .eq("user_id", currentUser.id);
+    if (res.data) {
+      var saved = {};
+      res.data.forEach(function(w){ saved[w.listing_id] = true; });
+      setState({ savedListings: saved });
+    }
+  } catch(e) {}
+}
+
+async function viewSaved() {
+  if (!currentUser) { toast("Sign in to view saved listings"); return; }
+  setState({ searching: true, searchDone: false, searchQ: "" });
+  goto("browse");
+  try {
+    var res = await sb.from("wishlists")
+      .select("*, listing:listings(*)")
+      .eq("user_id", currentUser.id)
+      .order("created_at", { ascending: false });
+    var listings = (res.data || [])
+      .filter(function(w){ return w.listing; })
+      .map(function(w){ return w.listing; });
+    listings.forEach(function(l){ _storeListing(l); });
+    setState({ searchResults: listings, searching: false, searchDone: true, searchQ: "saved" });
+  } catch(e) {
+    setState({ searching: false, searchDone: false });
+    toast("Could not load saved listings");
+  }
+}
+
+
 // ── SEARCH ────────────────────────────────────────────────
 
 async function doSearch(q) {
@@ -1580,7 +1665,7 @@ function setCommTab(i)     { setState({commTab:['Feed','Chat','Members'][i]}); }
 function setOfferMode(i)   { setState({offerMode:['Cash only','Trade only','Cash + trade'][i]}); }
 function setPostStep(i)    { setState({postStep:i+1}); }
 function setCond(i)        { setState({cond:['New','Good','Rough'][i]}); }
-function toggleSave()      { setState({saved:!st.saved}); }
+function toggleSave()      { /* replaced by toggleSaveListing */ }
 function toggleLegal()     { setState({legal:!st.legal}); }
 function togglePick(k)     { setState(function(s){ var p=Object.assign({},s.picked);p[k]=!p[k];return {picked:p}; }); updateOfferBar(); }
 function togglePay(k)      { setState(function(s){ var p=Object.assign({},s.pays);p[k]=!p[k];return {pays:p}; }); }
