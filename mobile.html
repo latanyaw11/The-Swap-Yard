@@ -117,6 +117,19 @@ input,textarea,select{font-family:var(--body);-webkit-appearance:none}
 
 .spinner{width:32px;height:32px;border:3px solid var(--div);border-top-color:var(--accent);border-radius:999px;animation:spin .7s linear infinite;margin:40px auto}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── SELLER PROFILE ── */
+.profile-hero{background:var(--n900);padding:32px 16px 20px;text-align:center}
+.profile-av-lg{width:80px;height:80px;border-radius:999px;background:var(--a200);color:var(--a800);display:flex;align-items:center;justify-content:center;font-family:var(--h);font-size:28px;margin:0 auto 12px;border:3px solid rgba(255,255,255,.15)}
+.profile-stat{text-align:center}
+.profile-stat-val{font-family:var(--h);font-size:22px;color:var(--accent)}
+.profile-stat-lbl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--n600)}
+.trust-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px}
+.trust-verified{background:var(--a2-100);color:var(--a2-800)}
+.trust-unverified{background:var(--n200);color:var(--n700)}
+.review-card{background:var(--n100);border:1px solid var(--div);border-radius:var(--r-lg);padding:14px}
+.star{color:#f59e0b;font-size:13px}
+
 ::-webkit-scrollbar{width:0;height:0}
 </style>
 </head>
@@ -174,6 +187,7 @@ let st = {
   checkingOut:false,
   pushEnabled:false,
   searchQ:'', searchResults:[], searching:false, searchDone:false,
+  viewingProfile:null, profileListings:[], profileLoading:false,
   activeThread:null, threads:[], threadMessages:[], sendingMsg:false,
   liveListings:[], liveEvents:[], liveCommunities:[],
   dashStats:null, commPosts:[], commMembers:[], commChat:[],
@@ -566,10 +580,10 @@ SCREENS['listing'] = function() {
     +'<div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">'+tg('0.8 mi · '+(l.city||'Durham'),'var(--n200)','var(--n700)')+'</div>'
     +'<h2 style="font-size:26px;margin:0 0 6px;line-height:1.1">'+esc(l.title)+'</h2>'
     +'<div style="font-family:var(--h);font-size:22px;color:var(--a700);margin-bottom:16px">'+(l.price_usd?'$'+l.price_usd+' <span style="font-family:var(--body);font-size:13px;font-weight:600;color:var(--n700)">or trade</span>':'Barter only')+'</div>'
-    +'<div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--r-md);background:var(--n100);border:1px solid var(--div);margin-bottom:16px">'
-    +av('DK','var(--a2-200)','var(--a2-800)',44)
-    +'<div style="flex:1"><div style="font-weight:700;font-size:14px">Dre K.</div><div style="font-size:12px;color:var(--n700)">4.9 ★ · 61 swaps</div></div>'
-    +tg('ID verified','var(--a2-100)','var(--a2-700)')+'</div>'
+    +'<button onclick="viewProfile(\''+( l.user_id||'')+'\')" style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:var(--r-md);background:var(--n100);border:1px solid var(--div);margin-bottom:16px;width:100%;text-align:left;cursor:pointer;font-family:var(--body)">'
+    +av(l.user_id?l.user_id[0].toUpperCase():'S','var(--a2-200)','var(--a2-800)',44)
+    +'<div style="flex:1"><div style="font-weight:700;font-size:14px">'+(l.seller_name||'View seller profile')+'</div><div style="font-size:12px;color:var(--n700)">Tap to see all listings &amp; reviews</div></div>'
+    +tg('View profile','var(--a2-100)','var(--a2-700)')+'</button>'
     +'<p style="font-size:14px;color:var(--n800);margin-bottom:16px">'+(esc(l.description)||'Barely used, excellent condition.')+'</p>'
     +'<div style="background:var(--a2-100);border-radius:var(--r-md);padding:12px 16px;margin-bottom:16px;font-size:12.5px;color:var(--a2-700)">Two of your yard items match what they want.</div>'
     +'<div style="display:flex;gap:8px">'
@@ -736,6 +750,91 @@ SCREENS['post'] = function() {
   }
   return html+'</div>';
 };
+
+SCREENS['profile'] = function() {
+  if (st.profileLoading) {
+    return '<div class="pad" style="text-align:center;padding-top:60px">'
+      +'<div class="spinner"></div>'
+      +'<div style="font-size:13px;color:var(--n600);margin-top:12px">Loading profile…</div>'
+      +'</div>';
+  }
+
+  var p = st.viewingProfile || {};
+  var listings = st.profileListings || [];
+  var name = p.display_name || p.email || "Swap Yard Seller";
+  var initials = name.charAt(0).toUpperCase();
+  var isMe = currentUser && p.id === currentUser.id;
+
+  // Stats
+  var swapCount = p.swap_count || listings.length || 0;
+  var rating    = p.avg_rating ? p.avg_rating.toFixed(1) : "New";
+  var joinYear  = p.created_at ? new Date(p.created_at).getFullYear() : "2026";
+  var verified  = p.id_verified || false;
+
+  // Demo reviews if no real ones
+  var reviews = p.reviews || [
+    {who:"Marisol R.", stars:5, text:"Fast response, item exactly as described. Would swap again!", when:"2 weeks ago"},
+    {who:"Jamal T.",   stars:5, text:"Smooth transaction. Great communication throughout.", when:"1 month ago"},
+    {who:"Priya S.",   stars:4, text:"Good deal, minor delay on pickup but worked out fine.", when:"2 months ago"},
+  ];
+
+  return '<div>'
+    // Header
+    +'<div class="profile-hero">'
+    +'<button onclick="history.back()" style="position:absolute;left:16px;top:calc(var(--safe-top)+54px);width:40px;height:40px;border-radius:999px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:16px;cursor:pointer">←</button>'
+    +'<div class="profile-av-lg">'+initials+'</div>'
+    +'<div style="font-family:var(--h);font-size:22px;color:#fff;margin-bottom:6px">'+esc(name)+'</div>'
+    +'<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px">'
+    +'<span class="trust-badge '+(verified?'trust-verified':'trust-unverified')+'">'+(verified?'✓ Verified':'Unverified')+'</span>'
+    +'<span style="font-size:12px;color:rgba(255,255,255,.4)">Member since '+joinYear+'</span>'
+    +'</div>'
+    // Stats row
+    +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px">'
+    +'<div class="profile-stat"><div class="profile-stat-val">'+swapCount+'</div><div class="profile-stat-lbl">Swaps</div></div>'
+    +'<div class="profile-stat"><div class="profile-stat-val">'+rating+'</div><div class="profile-stat-lbl">Rating</div></div>'
+    +'<div class="profile-stat"><div class="profile-stat-val">'+listings.length+'</div><div class="profile-stat-lbl">Active</div></div>'
+    +'</div>'
+    // Action buttons
+    +(!isMe
+      ? '<div style="display:flex;gap:8px;margin-top:16px;justify-content:center">'
+        +'<button onclick="messageProfile()" class="pill pill-primary pill-sm" style="width:auto;padding:0 24px">Message</button>'
+        +'</div>'
+      : '<div style="margin-top:16px"><button onclick="goto(\'dash\')" class="pill pill-secondary pill-sm" style="width:auto;padding:0 20px;margin:0 auto">Edit profile</button></div>')
+    +'</div>'
+    // Listings
+    +'<div class="pad">'
+    +(listings.length
+      ? '<div style="font-family:var(--h);font-size:20px;margin-bottom:12px">'+( isMe?"Your listings":esc(name.split(" ")[0])+"'s listings")+'</div>'
+        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px">'
+        +listings.map(function(l){
+          return '<button onclick="openListing(this.dataset.lid)" data-lid="'+l.id+'" style="text-align:left;padding:0;border:1px solid var(--div);background:var(--n100);border-radius:var(--r-md);overflow:hidden;font-family:var(--body);cursor:pointer">'
+            +listingImg(l,96)
+            +'<div style="padding:10px 12px">'
+            +'<div style="font-size:13px;font-weight:700;line-height:1.25;margin-bottom:3px">'+esc(l.title)+'</div>'
+            +'<div style="font-size:12px;color:var(--n700)">'+(l.price_usd?'$'+l.price_usd:'Barter')+'</div>'
+            +'</div></button>';
+        }).join('')
+        +'</div>'
+      : '<div style="text-align:center;padding:24px;color:var(--n600);font-size:14px">No active listings right now</div>')
+    // Reviews
+    +'<div style="font-family:var(--h);font-size:20px;margin-bottom:12px">Reviews</div>'
+    +'<div style="display:flex;flex-direction:column;gap:10px">'
+    +reviews.map(function(r){
+      var stars = "★".repeat(r.stars)+"☆".repeat(5-r.stars);
+      return '<div class="review-card">'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'
+        +'<div style="font-size:13.5px;font-weight:700">'+esc(r.who||r.reviewer_name||"Buyer")+'</div>'
+        +'<div style="font-size:12px;color:var(--n600)">'+esc(r.when||"Recently")+'</div>'
+        +'</div>'
+        +'<div style="font-size:13px;margin-bottom:6px;color:#f59e0b;letter-spacing:2px">'+stars+'</div>'
+        +'<div style="font-size:13.5px;color:var(--n800);line-height:1.5">'+esc(r.text||r.body||"Great experience!")+'</div>'
+        +'</div>';
+    }).join('')
+    +'</div>'
+    +'</div>'
+    +'</div>';
+};
+
 
 SCREENS['eventsScr'] = function() {
   var evts = getEvents();
@@ -977,6 +1076,43 @@ async function checkPushStatus() {
   } catch(e) {}
 }
 
+
+
+
+// ── SELLER PROFILES ───────────────────────────────────────
+
+function messageProfile() {
+  var p = st.viewingProfile;
+  if (!p) return;
+  var listing = st.profileListings && st.profileListings[0];
+  if (listing) {
+    startConversation(listing);
+  } else {
+    // Create a virtual listing for direct messaging
+    startConversation({ id: "msg_"+p.id, user_id: p.id, title: "Direct message", price_usd: null });
+  }
+}
+
+async function viewProfile(userId) {
+  if (!userId) { toast("No seller info"); return; }
+  setState({ profileLoading:true, viewingProfile:null, profileListings:[] });
+  goto("profile");
+
+  try {
+    var [profRes, listRes] = await Promise.all([
+      sb.from("profiles").select("*").eq("id", userId).single(),
+      sb.from("listings").select("*").eq("user_id", userId).eq("is_active", true)
+        .order("created_at", {ascending:false}).limit(12),
+    ]);
+
+    var profile = profRes.data || { id: userId, display_name: "Swap Yard Seller" };
+    var listings = listRes.data || [];
+    listings.forEach(function(l){ _storeListing(l); });
+    setState({ viewingProfile:profile, profileListings:listings, profileLoading:false });
+  } catch(e) {
+    setState({ viewingProfile:{ id:userId, display_name:"Seller" }, profileListings:[], profileLoading:false });
+  }
+}
 
 
 // ── SEARCH ────────────────────────────────────────────────
