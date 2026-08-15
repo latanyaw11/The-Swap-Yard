@@ -622,9 +622,9 @@ SCREENS['browse'] = function() {
       var active = st.searchQ === s.q;
       return '<button data-sq="'+s.q+'" data-sf="'+s.f+'" onclick="subcatClick(this)" '
         +'style="flex-shrink:0;height:36px;padding:0 16px;border-radius:999px;'
-        +'border:1.5px solid '+(active?'var(--accent)':'var(--div)')+';'
-        +'background:'+(active?'var(--accent)':'var(--n100)')+';'
-        +'color:'+(active?'#fff':'var(--n800)')+';'
+        +'border:1.5px solid '+(active?'var(--a2-400)':'var(--div)')+';'
+        +'background:'+(active?'var(--a2-100)':'var(--n100)')+';'
+        +'color:'+(active?'var(--a2-800)':'var(--n800)')+';'
         +'font-size:13px;font-weight:600;font-family:var(--body);'
         +'white-space:nowrap;cursor:pointer;transition:all .12s">'
         +s.n+'</button>';
@@ -981,23 +981,42 @@ SCREENS['eventsScr'] = function() {
 };
 
 SCREENS['community'] = function() {
-  var comms=getCommunities();
-  var filters=['All','Gardening','Automotive','Music','Home','Outdoors'];
+  var comms = getCommunities();
+  var filters = ['All','Gardening','Automotive','Music','Home','Outdoors'];
+
+  // Category labels for post_count display
+  var catLabel = {gardening:'Gardening',tools:'Tools',automotive:'Automotive',music:'Music',home:'Home',outdoors:'Outdoors',general:'General'};
+
   return '<div class="pad">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'
     +'<h2 style="font-size:26px">Communities</h2>'
-    +'<button style="min-height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--div);background:var(--n100);font-family:var(--body);font-size:13px;cursor:pointer">+ Create</button></div>'
-    +'<div class="hscroll" style="margin-bottom:12px">'+filters.map(function(f){ return chip(f,st.commFilter===f,"setCommFilter('" +f+ "')"); }).join('')+'</div>'
-    +'<div style="display:flex;flex-direction:column;gap:8px">'
-    +comms.map(function(c){
-      var on=!!st.joined[c.id||c.key];
-      return '<div style="display:flex;align-items:center;gap:12px;padding:12px;border-radius:28px;background:var(--n100);border:1px solid var(--div)">'
-        +'<button onclick="openComm(this.dataset.cid)" data-cid="'+(c.id||c.key)+'" style="display:flex;align-items:center;gap:12px;flex:1;text-align:left;background:none;border:0;padding:0;font-family:var(--body);cursor:pointer">'
-        +'<span style="width:48px;height:48px;border-radius:999px;background:var(--a2-200);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">'+(c.icon||'🔄')+'</span>'
-        +'<span style="flex:1"><span style="display:block;font-size:14.5px;font-weight:700">'+esc(c.name)+'</span>'
-        +'<span style="display:block;font-size:12px;color:var(--n700)">'+(c.member_count||0)+' members</span></span></button>'
-        +'<button onclick="doJoin(this.dataset.cid)" data-cid="'+(c.id||c.key)+'" style="min-height:38px;padding:0 15px;border-radius:999px;flex-shrink:0;border:1.5px solid '+(on?'var(--a2-400)':'var(--accent)')+';background:'+(on?'var(--a2-100)':'var(--accent)')+';color:'+(on?'var(--a2-800)':'var(--bg)')+';font-size:12.5px;font-weight:700;font-family:var(--body);cursor:pointer">'+(on?'Joined':'Join')+'</button></div>';
-    }).join('')+'</div></div>';
+    +'<button onclick="showCreateCommunity()" style="min-height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--div);background:var(--n100);font-family:var(--body);font-size:13px;cursor:pointer">+ Create</button></div>'
+    +'<div class="hscroll" style="margin-bottom:14px">'+filters.map(function(f){ return chip(f,st.commFilter===f,"setCommFilter('"+f+"')"); }).join('')+'</div>'
+    +'<div style="border:1px solid var(--div);border-radius:var(--r-lg);overflow:hidden;background:var(--n100)">'
+    +comms.map(function(c, idx){
+      var on  = !!st.joined[c.id||c.key];
+      var cat = catLabel[c.category] || '';
+      var sep = idx > 0 ? 'border-top:1px solid var(--div);' : '';
+      return '<div style="display:flex;align-items:center;gap:12px;padding:14px 16px;'+sep+'">'
+        +'<button onclick="openComm(this.dataset.cid)" data-cid="'+(c.id||c.key)+'" '
+        +'style="display:flex;flex-direction:column;flex:1;text-align:left;background:none;border:0;padding:0;font-family:var(--body);cursor:pointer;gap:3px">'
+        +'<span style="font-size:15px;font-weight:700;color:var(--text)">'+esc(c.name)+'</span>'
+        +'<span style="font-size:12px;color:var(--n600)">'
+        +(cat?'<span style="color:var(--a2-700);font-weight:600">'+cat+'</span> · ':'')
+        +(c.member_count||0)+' members'
+        +(c.post_count?' · '+(c.post_count)+' posts':'')
+        +'</span>'
+        +'</button>'
+        +'<button onclick="doJoin(this.dataset.cid)" data-cid="'+(c.id||c.key)+'" '
+        +'style="min-height:34px;padding:0 14px;border-radius:999px;flex-shrink:0;'
+        +'border:1.5px solid '+(on?'var(--a2-400)':'var(--div)')+';'
+        +'background:'+(on?'var(--a2-100)':'transparent')+';'
+        +'color:'+(on?'var(--a2-800)':'var(--n800)')+';'
+        +'font-size:12.5px;font-weight:700;font-family:var(--body);cursor:pointer">'
+        +(on?'Joined':'Join')+'</button>'
+        +'</div>';
+    }).join('')
+    +'</div></div>';
 };
 
 SCREENS['commDetail'] = function() {
@@ -1346,6 +1365,70 @@ async function viewSaved() {
     setState({ searching: false, searchDone: false });
     toast("Could not load saved listings");
   }
+}
+
+
+
+function showCreateCommunity() {
+  if (!currentUser) { toast("Sign in to create a community"); return; }
+  var m = document.createElement("div");
+  m.id = "create-comm-modal";
+  m.style.cssText = "position:fixed;inset:0;background:rgba(32,30,29,.55);z-index:300;display:flex;align-items:flex-end";
+  m.innerHTML = [
+    '<div style="width:100%;background:var(--bg);border-radius:28px 28px 0 0;padding:24px 16px 44px">',
+    '<div style="font-family:var(--h);font-size:22px;margin-bottom:16px">Create a community</div>',
+    '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">',
+    '<input id="cc-name" placeholder="Community name" style="width:100%;padding:13px 18px;border-radius:999px;border:1.5px solid var(--div);background:var(--n100);font-family:var(--body);font-size:14px;outline:none">',
+    '<textarea id="cc-desc" placeholder="What is this community about?" style="width:100%;padding:13px 18px;border-radius:20px;border:1.5px solid var(--div);background:var(--n100);font-family:var(--body);font-size:14px;outline:none;resize:none;min-height:72px"></textarea>',
+    '<select id="cc-cat" style="width:100%;padding:13px 18px;border-radius:999px;border:1.5px solid var(--div);background:var(--n100);font-family:var(--body);font-size:14px;outline:none;color:var(--text);-webkit-appearance:none">',
+    '<option value="general">General</option>',
+    '<option value="gardening">Gardening</option>',
+    '<option value="tools">Tools</option>',
+    '<option value="automotive">Automotive</option>',
+    '<option value="music">Music</option>',
+    '<option value="home">Home</option>',
+    '<option value="outdoors">Outdoors</option>',
+    '</select>',
+    '</div>',
+    '<div style="display:flex;gap:8px">',
+    '<button onclick="submitCreateCommunity()" class="pill pill-primary">Create community</button>',
+    '<button onclick="document.getElementById(\'create-comm-modal\').remove()" class="pill pill-secondary" style="width:auto;padding:0 20px">Cancel</button>',
+    '</div></div>',
+  ].join("");
+  document.body.appendChild(m);
+  m.onclick = function(e){ if(e.target===m) m.remove(); };
+  setTimeout(function(){ document.getElementById("cc-name").focus(); }, 100);
+}
+
+async function submitCreateCommunity() {
+  var name = document.getElementById("cc-name");
+  var desc = document.getElementById("cc-desc");
+  var cat  = document.getElementById("cc-cat");
+  if (!name || !name.value.trim()) { toast("Add a community name"); return; }
+  try {
+    var res = await sb.from("communities").insert({
+      name: name.value.trim(),
+      description: desc ? desc.value.trim() : "",
+      category: cat ? cat.value : "general",
+      created_by: currentUser.id,
+      member_count: 1,
+      is_active: true,
+    });
+    if (res.error) { toast("Error: "+res.error.message); return; }
+    // Auto-join as creator
+    var newComm = res.data && res.data[0];
+    if (newComm) {
+      await sb.from("community_members").insert({
+        community_id: newComm.id,
+        user_id: currentUser.id,
+        role: "admin",
+      });
+    }
+    document.getElementById("create-comm-modal").remove();
+    toast("Community created ✓");
+    await loadAll();
+    goto("community");
+  } catch(e) { toast("Could not create community"); }
 }
 
 
