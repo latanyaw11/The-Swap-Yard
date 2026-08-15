@@ -524,31 +524,32 @@ SCREENS['signin'] = function() {
 
 SCREENS['home'] = function() {
   var feed = getListings().slice(0,3);
-  var joinedComms = getCommunities().filter(function(c){
-    return st.joined[c.id||c.key];
-  });
-  var tileColors = [
-    {bg:'var(--a2-100)',fg:'var(--a2-800)'},{bg:'var(--a100)',fg:'var(--a800)'},
-    {bg:'var(--n200)',fg:'var(--n900)'},{bg:'var(--a2-200)',fg:'var(--a2-800)'},
+  var joinedComms = getCommunities().filter(function(c){ return st.joined[c.id||c.key]; });
+  var commPills = joinedComms.length ? joinedComms.slice(0,6) : getCommunities().slice(0,6);
+  var palettes = [
+    {bg:'var(--a2-200)',fg:'var(--a2-800)',border:'var(--a2-400)'},
+    {bg:'var(--a200)',  fg:'var(--a800)',  border:'var(--a300)'},
+    {bg:'var(--n200)',  fg:'var(--n900)',  border:'var(--n300)'},
+    {bg:'var(--a2-100)',fg:'var(--a2-700)',border:'var(--a2-300)'},
+    {bg:'var(--a100)',  fg:'var(--a700)',  border:'var(--a200)'},
+    {bg:'var(--a2-200)',fg:'var(--a2-800)',border:'var(--a2-400)'},
   ];
-  var homeTiles = joinedComms.length ? joinedComms.slice(0,4) : getCommunities().slice(0,4);
-  +homeTiles.map(function(c,idx){
-    var col = tileColors[idx % tileColors.length];
-    var shortName = c.name || 'Community';
-    // Max 2 words for tile label
-    var label = shortName.split(' ').slice(0,3).join(' ');
+  var commPillsHtml = commPills.map(function(c,idx){
+    var p = palettes[idx % palettes.length];
     return '<button onclick="openComm(this.dataset.cid)" data-cid="'+(c.id||c.key)+'" '
-      +'style="display:flex;flex-direction:column;justify-content:flex-end;'
-      +'width:100%;aspect-ratio:1;border-radius:16px;padding:10px;'
-      +'background:'+col.bg+';border:0;cursor:pointer;text-align:left;'
-      +'transition:all .15s;-webkit-tap-highlight-color:transparent">'
-      +'<span style="font-family:var(--body);font-size:12px;font-weight:700;'
-      +'color:'+col.fg+';line-height:1.25;word-break:break-word">'+label+'</span>'
-      +'<span style="font-family:var(--body);font-size:10px;color:'+col.fg+';'
-      +'opacity:.6;margin-top:2px">'+(c.member_count||0)+' members</span>'
-      +'</button>';
-  }).join('')
-    +'</div>'
+      +'style="flex-shrink:0;height:36px;padding:0 16px;border-radius:999px;'
+      +'border:1.5px solid '+p.border+';background:'+p.bg+';'
+      +'color:'+p.fg+';font-size:13px;font-weight:700;'
+      +'font-family:var(--body);white-space:nowrap;cursor:pointer;transition:all .12s">'
+      +(c.name||'Community')+'</button>';
+  }).join('');
+  return '<div class="pad">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +av(currentUser&&currentUser.email?currentUser.email[0].toUpperCase():'?','var(--a200)','var(--a800)',44)
+    +'<div style="font-family:var(--h);font-size:22px">Swap Yard</div></div>'
+    +'<button onclick="gotoSearch()" style="width:100%;text-align:left;min-height:48px;border-radius:999px;border:1px solid var(--div);background:var(--n100);color:var(--n600);padding:0 18px;font-size:14.5px;font-family:var(--body);margin-bottom:16px;cursor:pointer">🔍  Search anything…</button>'
+    +'<div style="margin-bottom:8px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--n700)">Communities</div>'
+    +'<div class="hscroll" style="gap:6px;margin-bottom:20px">'+commPillsHtml+'</div>'
     +'<div style="display:flex;gap:8px;margin-bottom:24px">'
     +[{v:'Free',l:'To Join'},{v:'Events',l:'This Week',goto:'eventsScr'},{v:'0%',l:'Barter Fee'}].map(function(s){ return '<div data-goto="'+(s.goto||'')+'" onclick="if(this.dataset.goto)handleNav(this)" style="flex:1;background:var(--n100);border:1px solid var(--div);border-radius:var(--r-md);padding:12px;text-align:center;cursor:'+(s.goto?'pointer':'default')+'"><div style="font-family:var(--h);font-size:20px;color:var(--a700)">'+s.v+'</div><div style="font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--n700)">'+s.l+'</div></div>'; }).join('')
     +'</div>'
