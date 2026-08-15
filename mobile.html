@@ -6,9 +6,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Swap Yard">
+<meta name="apple-mobile-web-app-title" content="The Swap Yard">
 <meta name="theme-color" content="#f5ead8">
-<title>Swap Yard</title>
+<title>The Swap Yard</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icons/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
@@ -148,7 +148,7 @@ input,textarea,select{font-family:var(--body);-webkit-appearance:none}
 <!-- iOS install -->
 <div id="ios-banner">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-    <div style="font-family:var(--h);font-size:18px">Install Swap Yard</div>
+    <div style="font-family:var(--h);font-size:18px">Install The Swap Yard</div>
     <button onclick="document.getElementById('ios-banner').style.display='none'" style="color:rgba(255,255,255,.5);font-size:22px;padding:0">✕</button>
   </div>
   <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:12px">
@@ -539,7 +539,7 @@ SCREENS['signin'] = function() {
   return '<div class="pad" style="min-height:100%;display:flex;flex-direction:column">'
     +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:32px">'
     +'<span style="width:12px;height:12px;border-radius:999px;background:var(--a2-500);display:inline-block"></span>'
-    +'<span style="font-family:var(--h);font-size:19px">Swap Yard</span></div>'
+    +'<span style="font-family:var(--h);font-size:19px">The Swap Yard</span></div>'
     +'<h2 style="font-size:34px;margin:0 0 8px">Trade better.<br>Live greener.</h2>'
     +'<p style="font-size:14px;color:var(--n700);margin-bottom:24px">Buyers, sellers and traders nationwide.</p>'
     +seg(['Sign in','Create account'],st.authTab,'setAuthTab')
@@ -583,7 +583,7 @@ SCREENS['home'] = function() {
   return '<div class="pad">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
     +av(currentUser&&currentUser.email?currentUser.email[0].toUpperCase():'?','var(--a200)','var(--a800)',44)
-    +'<div style="font-family:var(--h);font-size:22px">Swap Yard</div></div>'
+    +'<div style="font-family:var(--h);font-size:22px">The Swap Yard</div></div>'
     +'<button onclick="gotoSearch()" style="width:100%;text-align:left;min-height:48px;border-radius:999px;border:1px solid var(--div);background:var(--n100);color:var(--n600);padding:0 18px;font-size:14.5px;font-family:var(--body);margin-bottom:16px;cursor:pointer">🔍  Search anything…</button>'
     +'<div style="margin-bottom:8px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--n700)">Communities</div>'
     +'<div class="hscroll" style="gap:6px;margin-bottom:20px">'+commPillsHtml+'</div>'
@@ -908,7 +908,7 @@ SCREENS['profile'] = function() {
 
   var p = st.viewingProfile || {};
   var listings = st.profileListings || [];
-  var name = p.display_name || p.email || "Swap Yard Seller";
+  var name = p.display_name || p.email || "The Swap Yard Seller";
   var initials = name.charAt(0).toUpperCase();
   var isMe = currentUser && p.id === currentUser.id;
 
@@ -1285,7 +1285,7 @@ async function viewProfile(userId) {
         .order("created_at", {ascending:false}).limit(12),
     ]);
 
-    var profile = profRes.data || { id: userId, display_name: "Swap Yard Seller" };
+    var profile = profRes.data || { id: userId, display_name: "The Swap Yard Seller" };
     var listings = listRes.data || [];
     listings.forEach(function(l){ _storeListing(l); });
     setState({ viewingProfile:profile, profileListings:listings, profileLoading:false });
