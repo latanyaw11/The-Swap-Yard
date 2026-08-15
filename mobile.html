@@ -445,6 +445,43 @@ function listingImg(l,h) {
   }
   return ph(h, l&&l.emoji ? l.emoji : '');
 }
+
+function listingGradientCard(l) {
+  // Gradient based on listing type/mode
+  var gradients = {
+    Trade:   'linear-gradient(135deg,#3d472b 0%,#8fa073 100%)',
+    Barter:  'linear-gradient(135deg,#643312 0%,#c67139 100%)',
+    Cash:    'linear-gradient(135deg,#2e2b25 0%,#645c50 100%)',
+    goods:   'linear-gradient(135deg,#3d472b 0%,#56633f 100%)',
+    service: 'linear-gradient(135deg,#8c491a 0%,#c67139 100%)',
+    digital: 'linear-gradient(135deg,#1e3a5f 0%,#2563eb 100%)',
+    outdoors:'linear-gradient(135deg,#14532d 0%,#16a34a 100%)',
+  };
+  var hasPhoto = l && (l.cover_image||(l.images&&l.images[0]));
+  var grad = gradients[l&&l.mode] || gradients[l&&l.type] || 'linear-gradient(135deg,#2e2b25 0%,#645c50 100%)';
+  var price = l&&l.price_usd ? '$'+l.price_usd : 'Barter';
+  var mode  = l&&l.mode || '';
+
+  if (hasPhoto) {
+    return '<div style="position:relative;height:140px;overflow:hidden">'
+      +'<img src="'+(l.cover_image||(l.images&&l.images[0]))+'" style="width:100%;height:100%;object-fit:cover" loading="lazy">'
+      +'<div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(32,30,29,.85) 0%,transparent 55%)">'
+      +'<div style="position:absolute;bottom:0;left:0;right:0;padding:10px 12px">'
+      +'<div style="font-size:13px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:4px">'+esc(l.title)+'</div>'
+      +'<div style="display:flex;align-items:center;gap:6px">'
+      +'<span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.9)">'+price+'</span>'
+      +(mode?'<span style="font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.2);color:#fff">'+mode+'</span>':'')
+      +'</div></div></div></div>';
+  }
+
+  return '<div style="position:relative;height:140px;overflow:hidden;background:'+grad+'">'
+    +'<div style="position:absolute;inset:0;padding:14px 12px;display:flex;flex-direction:column;justify-content:flex-end">'
+    +'<div style="font-size:13px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:4px">'+esc(l.title)+'</div>'
+    +'<div style="display:flex;align-items:center;gap:6px">'
+    +'<span style="font-size:12px;font-weight:700;color:rgba(255,255,255,.9)">'+price+'</span>'
+    +(mode?'<span style="font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.2);color:#fff">'+mode+'</span>':'')
+    +'</div></div></div>';
+}
 function backBtn(fn) {
   // fn is like "goto('community')" - encode as data attribute
   return '<button data-back="'+encodeURIComponent(fn)+'" onclick="back_click(this)" style="width:44px;height:44px;border-radius:999px;border:1px solid var(--div);background:var(--n100);font-size:17px;margin-bottom:12px;cursor:pointer">←</button>';
@@ -561,7 +598,7 @@ SCREENS['home'] = function() {
     +'<h3 style="font-family:var(--h);font-size:20px">Near you</h3>'
     +'<button onclick="goto(\'browse\')" style="color:var(--a700);font-size:13px;font-weight:600;font-family:var(--body);padding:6px;cursor:pointer">See all</button></div>'
     +'<div style="display:flex;flex-direction:column;gap:12px">'
-    +feed.map(function(l){ return '<div class="card" onclick="openListing(this.dataset.lid)" data-lid="'+(_storeListing(l),l.id)+'" style="cursor:pointer">'+listingImg(l,132)+'<div style="padding:12px 16px 16px"><div style="display:flex;gap:6px;margin-bottom:8px">'+modeTg(l.mode)+'</div><div style="font-family:var(--h);font-size:17px;line-height:1.2;margin-bottom:4px">'+esc(l.title)+'</div><div style="font-size:13px;color:var(--n700)">'+(l.price_usd?'$'+l.price_usd:'Barter only')+'</div></div></div>'; }).join('')
+    +feed.map(function(l){ return '<div onclick="openListing(this.dataset.lid)" data-lid="'+(_storeListing(l),l.id)+'" style="cursor:pointer;border:1px solid var(--div);border-radius:var(--r-lg);overflow:hidden">'+listingGradientCard(l)+(l.city?'<div style="padding:6px 12px 10px;font-size:10.5px;color:var(--n600);">📍 '+esc(l.city)+'</div>':'<div style="height:8px"></div>')+'</div>'; }).join('')
     +'</div></div>';
 };
 
@@ -663,14 +700,10 @@ SCREENS['browse'] = function() {
     html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
       +displayListings.map(function(l){
         _storeListing(l);
-        return '<button onclick="openListing(this.dataset.lid)" data-lid="'+l.id+'" style="text-align:left;padding:0;border:1px solid var(--div);background:var(--n100);border-radius:var(--r-md);overflow:hidden;font-family:var(--body);cursor:pointer">'
-          +listingImg(l,96)
-          +'<div style="padding:12px">'
-          +'<div style="font-size:14px;font-weight:700;line-height:1.25;margin-bottom:4px">'+esc(l.title)+'</div>'
-          +'<div style="font-size:12px;color:var(--n700);margin-bottom:6px">'+(l.price_usd?'$'+l.price_usd:'Barter')+'</div>'
-          +modeTg(l.mode)
-          +(l.city?'<span style="font-size:10px;color:var(--n600);margin-left:5px">· '+esc(l.city)+'</span>':'')
-          +'</div></button>';
+        return '<button onclick="openListing(this.dataset.lid)" data-lid="'+l.id+'" style="text-align:left;padding:0;border:1px solid var(--div);border-radius:var(--r-lg);overflow:hidden;font-family:var(--body);cursor:pointer;background:var(--n100)">'
+          +listingGradientCard(l)
+          +(l.city?'<div style="padding:6px 12px 10px;font-size:10.5px;color:var(--n600)">📍 '+esc(l.city)+'</div>':'<div style="height:8px"></div>')
+          +'</button>';
       }).join('')
       +'</div>';
   }
