@@ -591,14 +591,14 @@ SCREENS['browse'] = function() {
 
   // Subcategory quick filters
   var subcats = [
-    {n:'Tools',    icon:'🔧', f:'Goods',    q:'tools'},
-    {n:'Home',     icon:'🪑', f:'Goods',    q:'home'},
-    {n:'Garden',   icon:'🌱', f:'Goods',    q:'garden'},
-    {n:'Services', icon:'✂️', f:'Services', q:'service'},
-    {n:'Barter',   icon:'⇄',  f:'Barter',  q:'barter'},
-    {n:'Digital',  icon:'💻', f:'Goods',    q:'digital'},
-    {n:'Music',    icon:'🎵', f:'Goods',    q:'music'},
-    {n:'Outdoors', icon:'🏕',  f:'Goods',   q:'outdoors'},
+    {n:'Tools',    f:'Goods',    q:'tools'},
+    {n:'Home',     f:'Goods',    q:'home'},
+    {n:'Garden',   f:'Goods',    q:'garden'},
+    {n:'Services', f:'Services', q:'service'},
+    {n:'Barter',   f:'Barter',   q:'barter'},
+    {n:'Digital',  f:'Goods',    q:'digital'},
+    {n:'Music',    f:'Goods',    q:'music'},
+    {n:'Outdoors', f:'Goods',    q:'outdoors'},
   ];
 
   var html = '<div class="pad">'
@@ -612,13 +612,17 @@ SCREENS['browse'] = function() {
     +(q?'<button onclick="clearSearch()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);border:0;background:none;font-size:18px;color:var(--n600);cursor:pointer;padding:4px">✕</button>':'<span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none">🔍</span>')
     +'</div>'
     +'</div>'
-    +'<div class="hscroll" style="gap:10px;padding:4px 0 12px">'
+    +'<div class="hscroll" style="gap:6px;padding:4px 0 14px">'
     +subcats.map(function(s){
-      var active = st.searchQ===s.q || st.filter===s.f;
-      return '<button data-sq="'+s.q+'" data-sf="'+s.f+'" onclick="subcatClick(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:0;cursor:pointer;flex-shrink:0">'
-        +'<span style="width:52px;height:52px;border-radius:999px;background:'+(active?'var(--accent)':'var(--n200)')+';color:'+(active?'#fff':'var(--n800)')+';display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .12s">'+s.icon+'</span>'
-        +'<span style="font-size:10.5px;color:var(--n700);white-space:nowrap">'+s.n+'</span>'
-        +'</button>';
+      var active = st.searchQ === s.q;
+      return '<button data-sq="'+s.q+'" data-sf="'+s.f+'" onclick="subcatClick(this)" '
+        +'style="flex-shrink:0;height:36px;padding:0 16px;border-radius:999px;'
+        +'border:1.5px solid '+(active?'var(--accent)':'var(--div)')+';'
+        +'background:'+(active?'var(--accent)':'var(--n100)')+';'
+        +'color:'+(active?'#fff':'var(--n800)')+';'
+        +'font-size:13px;font-weight:600;font-family:var(--body);'
+        +'white-space:nowrap;cursor:pointer;transition:all .12s">'
+        +s.n+'</button>';
     }).join('')
     +'</div>';
 
