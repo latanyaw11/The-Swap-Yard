@@ -70,3 +70,9 @@
     X-Frame-Options        = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy        = "strict-origin-when-cross-origin"
+
+# ── SCHEDULED FUNCTIONS ────────────────────────────────────
+
+[functions."price-drop-alerts"]
+  schedule = "0 9 * * *"  # Run daily at 9am UTC
+
