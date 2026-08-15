@@ -373,7 +373,52 @@ function modeTg(m) {
 }
 function av(init,bg,fg,sz) { sz=sz||44; return '<span class="av" style="width:'+sz+'px;height:'+sz+'px;background:'+bg+';color:'+fg+';font-size:'+(sz*.3)+'px">'+init+'</span>'; }
 function tg(lbl,bg,fg)     { return '<span class="tag" style="background:'+bg+';color:'+fg+'">'+esc(lbl)+'</span>'; }
-function chip(lbl,on,fn)   { return '<button class="chip'+(on?' on':'')+'" onclick="\'+fn+\'">'+lbl+'</button>'; }
+function chip(lbl,on,fn) {
+  // Store fn in data attribute, dispatch via chip_click
+  return '<button class="chip'+(on?' on':'')+'" data-chipfn="'+encodeURIComponent(fn||'')+'" onclick="chip_click(this)">'+lbl+'</button>';
+}
+
+function row_click(btn) {
+  var fn = decodeURIComponent(btn.getAttribute('data-rowfn')||'');
+  if (!fn) return;
+  // Parse and execute safe function calls
+  // Patterns: goto('x'), viewProfile(expr), viewSaved(), disablePush(), requestPushPermission(), goto('x')
+  var simple = fn.match(/^([\w]+)\(\)$/);
+  var gotoM  = fn.match(/^goto\(['"](\w+)['"]\)$/);
+  var profileM = fn.match(/^viewProfile\(/);
+  if (gotoM)    { goto(gotoM[1]); }
+  else if (simple) {
+    var safeFns = {
+      viewSaved: viewSaved, disablePush: disablePush,
+      requestPushPermission: requestPushPermission,
+    };
+    if (safeFns[simple[1]]) safeFns[simple[1]]();
+  } else if (profileM) { viewProfile(currentUser && currentUser.id); }
+  else {
+    // Last resort - try Function constructor with safe scope
+    try { new Function('goto','viewProfile','viewSaved','disablePush','requestPushPermission', fn)(goto,viewProfile,viewSaved,disablePush,requestPushPermission); }
+    catch(e) { console.warn('row_click failed:', fn, e); }
+  }
+}
+
+
+function chip_click(btn) {
+  var fn = decodeURIComponent(btn.getAttribute('data-chipfn')||'');
+  // Only allow safe function calls: word(arg) or word('arg') patterns
+  var m1 = fn.match(/^(\w+)\('?([^')]*)'?\)$/);  // fn('arg') or fn(arg)
+  var m2 = fn.match(/^(\w+)\((\d+)\)$/);           // fn(number)
+  if (m1) {
+    var chipFns = {
+      setFilter: setFilter, setRadius: setRadius,
+      setEventFilter: setEventFilter, setCommFilter: setCommFilter,
+      setState: setState,
+    };
+    if (chipFns[m1[1]]) chipFns[m1[1]](m1[2]);
+  } else if (m2) {
+    var chipFns2 = { setFilter: setFilter, setRadius: setRadius };
+    if (chipFns2[m2[1]]) chipFns2[m2[1]](Number(m2[2]));
+  }
+}
 function seg(lbls,act,fn) {
   return '<div class="seg">'+lbls.map(function(l,i){
     return '<button class="seg-btn'+(act===i?' on':'')+'" data-fn="'+fn+'" data-i="'+i+'" onclick="seg_click(this)">'+l+'</button>';
@@ -479,11 +524,17 @@ SCREENS['signin'] = function() {
 
 SCREENS['home'] = function() {
   var feed = getListings().slice(0,3);
-  var quickLinks = [
-    {n:'Events',  icon:'📅', bg:'var(--a2-200)', fg:'var(--a2-800)', fn:"goto(\\'eventsScr\\')"},
-    {n:'Saved',   icon:'♥',  bg:'var(--a100)',   fg:'var(--a800)',   fn:"viewSaved()"},
-    {n:'Search',  icon:'🔍', bg:'var(--n200)',   fg:'var(--n800)',   fn:"gotoSearch()"},
-    {n:'Sell',    icon:'➕', bg:'var(--a200)',   fg:'var(--a800)',   fn:"goto(\\'post\\')"},
+  var joinedComms = getCommunities().filter(function(c){
+    return st.joined[c.id||c.key];
+  });
+  // Show joined communities as bubbles, or default categories if none joined yet
+  var homeBubbles = joinedComms.length ? joinedComms.map(function(c){
+    return {n:c.name.split(' ').slice(0,2).join(' '), icon:c.icon||'👥', bg:'var(--a2-100)', fg:'var(--a2-800)', cid:c.id||c.key};
+  }).slice(0,4) : [
+    {n:'RTP Gardeners',  icon:'🌱', bg:'var(--a2-100)', fg:'var(--a2-800)', cid:'c1'},
+    {n:'Tool Library',   icon:'🔧', bg:'var(--a100)',   fg:'var(--a800)',   cid:'c2'},
+    {n:'Durham Wrenches',icon:'🚗', bg:'var(--n200)',   fg:'var(--n800)',   cid:'c3'},
+    {n:'Bull City Vinyl',icon:'🎵', bg:'var(--a2-200)', fg:'var(--a2-800)', cid:'c4'},
   ];
   return '<div class="pad">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
@@ -492,7 +543,7 @@ SCREENS['home'] = function() {
     +'</div>'
     +'<button onclick="gotoSearch()" style="width:100%;text-align:left;min-height:48px;border-radius:999px;border:1px solid var(--div);background:var(--n100);color:var(--n600);padding:0 18px;font-size:14.5px;font-family:var(--body);margin-bottom:16px;cursor:pointer">🔍  Search anything — a drill, a haircut, a couch…</button>'
     +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:24px">'
-    +quickLinks.map(function(q){ return '<button onclick="'+q.fn+'"" style="display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;padding:0;font-family:var(--body);cursor:pointer"><span style="width:58px;height:58px;border-radius:999px;background:'+q.bg+';color:'+q.fg+';display:flex;align-items:center;justify-content:center;font-size:20px">'+q.icon+'</span><span style="font-size:11px;color:var(--n700)">'+q.n+'</span></button>'; }).join('')
+    +homeBubbles.map(function(q){ return '<button onclick="openComm(this.dataset.cid)" data-cid="'+q.cid+'" style="display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:0;padding:0;font-family:var(--body);cursor:pointer"><span style="width:58px;height:58px;border-radius:999px;background:'+q.bg+';color:'+q.fg+';display:flex;align-items:center;justify-content:center;font-size:20px">'+q.icon+'</span><span style="font-size:10.5px;color:var(--n700);line-height:1.2;text-align:center">'+q.n+'</span></button>'; }).join('')
     +'</div>'
     +'<div style="display:flex;gap:8px;margin-bottom:24px">'
     +[{v:'Free',l:'To Join'},{v:'Events',l:'This Week',goto:'eventsScr'},{v:'0%',l:'Barter Fee'}].map(function(s){ return '<div data-goto="'+(s.goto||'')+'" onclick="if(this.dataset.goto)handleNav(this)" style="flex:1;background:var(--n100);border:1px solid var(--div);border-radius:var(--r-md);padding:12px;text-align:center;cursor:'+(s.goto?'pointer':'default')+'"><div style="font-family:var(--h);font-size:20px;color:var(--a700)">'+s.v+'</div><div style="font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--n700)">'+s.l+'</div></div>'; }).join('')
@@ -537,6 +588,19 @@ SCREENS['browse'] = function() {
   var filters=['All','Goods','Services','Trade','Barter','Saved'];
   var radii=['Any','5 mi','25 mi','50 mi'];
 
+
+  // Subcategory quick filters
+  var subcats = [
+    {n:'Tools',    icon:'🔧', f:'Goods',    q:'tools'},
+    {n:'Home',     icon:'🪑', f:'Goods',    q:'home'},
+    {n:'Garden',   icon:'🌱', f:'Goods',    q:'garden'},
+    {n:'Services', icon:'✂️', f:'Services', q:'service'},
+    {n:'Barter',   icon:'⇄',  f:'Barter',  q:'barter'},
+    {n:'Digital',  icon:'💻', f:'Goods',    q:'digital'},
+    {n:'Music',    icon:'🎵', f:'Goods',    q:'music'},
+    {n:'Outdoors', icon:'🏕',  f:'Goods',   q:'outdoors'},
+  ];
+
   var html = '<div class="pad">'
     +'<h2 style="font-size:26px;margin:0 0 12px">Browse</h2>'
     // Search bar
@@ -547,6 +611,15 @@ SCREENS['browse'] = function() {
     +'style="width:100%;padding:13px 42px 13px 18px;border-radius:999px;border:1.5px solid '+(q?'var(--accent)':'var(--div)')+';background:var(--n100);font-family:var(--body);font-size:14px;outline:none;-webkit-appearance:none">'
     +(q?'<button onclick="clearSearch()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);border:0;background:none;font-size:18px;color:var(--n600);cursor:pointer;padding:4px">✕</button>':'<span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none">🔍</span>')
     +'</div>'
+    +'</div>'
+    +'<div class="hscroll" style="gap:10px;padding:4px 0 12px">'
+    +subcats.map(function(s){
+      var active = st.searchQ===s.q || st.filter===s.f;
+      return '<button data-sq="'+s.q+'" data-sf="'+s.f+'" onclick="subcatClick(this)" style="display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:0;cursor:pointer;flex-shrink:0">'
+        +'<span style="width:52px;height:52px;border-radius:999px;background:'+(active?'var(--accent)':'var(--n200)')+';color:'+(active?'#fff':'var(--n800)')+';display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .12s">'+s.icon+'</span>'
+        +'<span style="font-size:10.5px;color:var(--n700);white-space:nowrap">'+s.n+'</span>'
+        +'</button>';
+    }).join('')
     +'</div>';
 
   if (!isSearching) {
@@ -991,7 +1064,7 @@ SCREENS['dash'] = function() {
     +'<div style="font-family:var(--h);font-size:19px;color:var(--a2-800);margin-bottom:12px">Verification · level '+(st.verified?3:2)+' of 3</div>'
     +'<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px">'+trust.map(function(t){ return '<div style="display:flex;align-items:center;gap:10px"><span style="width:22px;height:22px;border-radius:999px;background:'+(t.ok?'var(--a2-500)':'var(--a2-200)')+';color:'+(t.ok?'var(--bg)':'var(--a2-800)')+';display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700">'+(t.ok?'✓':'')+'</span><span style="flex:1;font-size:13.5px;color:var(--a2-800)">'+t.n+'</span><span style="font-size:12px;color:var(--a2-700)">'+t.s+'</span></div>'; }).join('')+'</div>'
     +'<button class="pill pill-primary pill-sm" onclick="setState({verified:true})">'+(st.verified?'Level 3 achieved ✓':'Verify ID for level 3')+'</button></div>'
-    +'<div class="row-list" style="margin-bottom:16px">'+rows.map(function(r){ return '<button class="row-btn" onclick="\'+r.fn+\'"><span>'+r.n+'</span><span style="font-size:12.5px;color:var(--n600)">'+r.m+' ›</span></button>'; }).join('')+'</div>'
+    +'<div class="row-list" style="margin-bottom:16px">'+rows.map(function(r){ return '<button class="row-btn" data-rowfn="'+encodeURIComponent(r.fn||'')+'" onclick="row_click(this)"><span>'+r.n+'</span><span style="font-size:12.5px;color:var(--n600)">'+r.m+' ›</span></button>'; }).join('')+'</div>'
     +'<button class="pill pill-secondary" onclick="doSignOut()" style="margin-bottom:16px">Sign out</button>'
     +'</div>';
 };
@@ -1314,6 +1387,13 @@ async function doSearch(q) {
     local.forEach(function(l){ _storeListing(l); });
     setState({ searchResults:local, searching:false, searchDone:true });
   }
+}
+
+function subcatClick(btn) {
+  var q = btn.getAttribute('data-sq');
+  var f = btn.getAttribute('data-sf');
+  if (q) doSearch(q);
+  if (f && f !== st.filter) setFilter(f);
 }
 
 function gotoSearch() {
