@@ -3,140 +3,194 @@
 // File: netlify/functions/escrow.js
 //
 // HOW IT WORKS:
-//   1. Buyer pays into Stripe-held escrow (payment_intent with capture_method=manual)
-//   2. Seller sees "Escrow Funded" — arranges meetup
-//   3. After meetup, buyer confirms receipt → funds released to seller
-//   4. If buyer disputes, 72-hour review window opens
-//   5. If no confirmation after 7 days → auto-release to seller
-//   6. The Swap Yard earns the platform fee on top
+//   1. Buyer authorizes a card payment (payment_intent, capture_method=manual —
+//      the card is verified and the funds are set aside, but not yet captured).
+//   2. Stripe confirms the authorization via webhook → escrow flips to "funded".
+//   3. Seller arranges the meetup/handoff.
+//   4. After the meetup, buyer confirms receipt → funds are captured and
+//      transferred to the seller's connected Stripe account (minus fees).
+//   5. If the buyer disputes, a 72-hour review window opens.
+//   6. If the buyer never confirms, funds auto-release after AUTO_RELEASE_HOURS.
 //
-// ESCROW FEE: 1% of transaction (on top of plan fee)
-// MAX ESCROW HOLD: 7 days
+// WHY 24 HOURS, NOT 7 DAYS:
+//   Stripe automatically cancels an uncaptured card authorization after
+//   ~7 days no matter what — that's a hard ceiling this code cannot extend
+//   past. The original 7-day auto-release was set right at that ceiling,
+//   which meant sellers could wait a full week to get paid for an item
+//   they'd already handed over. Since these are local, in-person meetups
+//   (not shipped goods), there's no reason to wait anywhere near that long —
+//   AUTO_RELEASE_HOURS defaults to 24 and can be safely set anywhere up to
+//   a few days without any risk of hitting Stripe's expiration window.
+//
+// SECURITY NOTE (fixed from the original version of this file):
+//   create_escrow no longer trusts a client-supplied vendorStripeAccountId
+//   or vendorPlan. A buyer's browser could previously be tampered with to
+//   redirect a payment to an arbitrary Stripe account. This version looks
+//   up the seller's real connected account and plan server-side from the
+//   listing and profiles table, so the destination can't be spoofed.
+//
+// ESCROW FEE: 1% of transaction (on top of the plan's platform fee)
 // ═══════════════════════════════════════════════════════════════
 
 const Stripe = require('stripe');
 const { createClient } = require('@supabase/supabase-js');
 
-const ESCROW_FEE_RATE  = 0.01;  // 1% escrow service fee
-const AUTO_RELEASE_DAYS = 7;    // Auto-release after 7 days if buyer doesn't respond
+const ESCROW_FEE_RATE     = 0.01; // 1% escrow service fee
+const AUTO_RELEASE_HOURS  = 24;   // Auto-release if the buyer never confirms
+const PLAN_FEES = { free: 0.05, trader_pro: 0.04, verified_vendor: 0.03, business: 0.02 };
 
 exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') return { statusCode: 405 };
   const h = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
 
+  // Netlify's scheduled-function invocations don't send a POST body — they
+  // just call the handler on a cron. Treat a bodyless invocation as the
+  // auto-release sweep rather than failing on JSON.parse(undefined).
+  let action, params;
+  if (!event.body) {
+    action = 'auto_release_check';
+    params = {};
+  } else {
+    if (event.httpMethod && event.httpMethod !== 'POST') return { statusCode: 405 };
+    try {
+      ({ action, ...params } = JSON.parse(event.body));
+    } catch (e) {
+      return { statusCode: 400, headers: h, body: JSON.stringify({ error: 'Invalid JSON body' }) };
+    }
+  }
+
+  const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
+  const sb     = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+
   try {
-    const { action, ...params } = JSON.parse(event.body);
-    const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
-    const sb     = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-
-    // ── CREATE ESCROW (buyer pays, funds held) ──
+    // ── CREATE ESCROW (buyer authorizes, funds are held) ──────
     if (action === 'create_escrow') {
-      const { listingId, buyerId, buyerEmail, vendorStripeAccountId, amount, vendorPlan = 'free' } = params;
+      const { listingId, buyerId, buyerEmail } = params;
+      if (!listingId || !buyerId) {
+        return { statusCode: 400, headers: h, body: JSON.stringify({ error: 'listingId and buyerId are required' }) };
+      }
 
-      const PLAN_FEES = { free: 0.05, trader_pro: 0.04, verified_vendor: 0.03, business: 0.02 };
-      const platformFee  = Math.round(amount * 100 * (PLAN_FEES[vendorPlan] || 0.05));
+      const { data: listing } = await sb.from('listings')
+        .select('id,title,price_usd,user_id,is_active').eq('id', listingId).single();
+      if (!listing || !listing.is_active) {
+        return { statusCode: 404, headers: h, body: JSON.stringify({ error: 'Listing not found or no longer active' }) };
+      }
+      if (!listing.price_usd || listing.price_usd <= 0) {
+        return { statusCode: 400, headers: h, body: JSON.stringify({ error: 'This listing has no price set — arrange payment directly with the seller' }) };
+      }
+      if (listing.user_id === buyerId) {
+        return { statusCode: 400, headers: h, body: JSON.stringify({ error: "You can't buy your own listing" }) };
+      }
+
+      const { data: seller } = await sb.from('profiles')
+        .select('stripe_account_id,plan').eq('id', listing.user_id).single();
+      if (!seller || !seller.stripe_account_id) {
+        return { statusCode: 400, headers: h, body: JSON.stringify({ error: 'seller_not_connected', message: "This seller hasn't set up card payouts yet — message them to arrange another payment method." }) };
+      }
+
+      const amount       = parseFloat(listing.price_usd);
+      const vendorPlan   = seller.plan || 'free';
+      const platformFee  = Math.round(amount * 100 * (PLAN_FEES[vendorPlan] || PLAN_FEES.free));
       const escrowFee    = Math.round(amount * 100 * ESCROW_FEE_RATE);
       const totalFees    = platformFee + escrowFee;
-      const autoReleaseAt = new Date(Date.now() + AUTO_RELEASE_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
-      // Create payment intent with manual capture = funds held but not captured
+      // Manual capture: this authorizes and holds the card, it does not
+      // charge it yet. Funds move only when confirm_receipt or the
+      // auto-release sweep later calls stripe.paymentIntents.capture().
       const paymentIntent = await stripe.paymentIntents.create({
-        amount:           Math.round(amount * 100),
-        currency:         'usd',
-        capture_method:   'manual',       // ← KEY: holds funds without releasing
-        payment_method_types: ['card'],
-        receipt_email:    buyerEmail,
-        description:      `Escrow — The Swap Yard listing ${listingId}`,
+        amount:                Math.round(amount * 100),
+        currency:              'usd',
+        capture_method:        'manual',
+        payment_method_types:  ['card'],
+        receipt_email:         buyerEmail,
+        description:           `The Swap Yard — ${listing.title} (listing ${listingId})`,
         application_fee_amount: totalFees,
-        transfer_data:    { destination: vendorStripeAccountId },
+        transfer_data:         { destination: seller.stripe_account_id },
         metadata: {
-          listingId, buyerId, vendorStripeAccountId, vendorPlan,
+          listingId, buyerId, sellerId: listing.user_id, vendorPlan,
           platformFee: (platformFee / 100).toFixed(2),
-          escrowFee:   (escrowFee   / 100).toFixed(2),
-          autoReleaseAt,
+          escrowFee:   (escrowFee / 100).toFixed(2),
         },
       });
 
-      // Save escrow record to Supabase
-      const { data: escrow } = await sb.from('escrows').insert({
-        listing_id:             listingId,
-        buyer_id:               buyerId,
-        stripe_payment_intent:  paymentIntent.id,
-        amount_usd:             amount,
-        platform_fee:           platformFee / 100,
-        escrow_fee:             escrowFee   / 100,
-        status:                 'funded',
-        auto_release_at:        autoReleaseAt,
-        created_at:             new Date().toISOString(),
+      // Status starts as 'pending' — it is NOT funded yet. The
+      // payment_intent.amount_capturable_updated webhook flips it to
+      // 'funded' once Stripe confirms the card was actually authorized.
+      const { data: escrow, error: insErr } = await sb.from('escrows').insert({
+        listing_id:            listingId,
+        buyer_id:              buyerId,
+        stripe_payment_intent: paymentIntent.id,
+        amount_usd:            amount,
+        platform_fee:          platformFee / 100,
+        escrow_fee:            escrowFee / 100,
+        status:                'pending',
       }).select().single();
+
+      if (insErr) {
+        console.error('Failed to record escrow:', insErr);
+        return { statusCode: 500, headers: h, body: JSON.stringify({ error: 'Could not start the transaction — try again.' }) };
+      }
 
       return {
         statusCode: 200, headers: h,
         body: JSON.stringify({
-          escrowId:        escrow?.id,
-          clientSecret:    paymentIntent.client_secret,
-          paymentIntentId: paymentIntent.id,
-          autoReleaseAt,
-          message:         'Funds held in escrow. Complete your meetup then confirm receipt.',
+          escrowId:     escrow.id,
+          clientSecret: paymentIntent.client_secret,
+          amount, platformFee: platformFee / 100, escrowFee: escrowFee / 100,
+          total: amount + (totalFees / 100),
         }),
       };
     }
 
-    // ── CONFIRM RECEIPT (buyer releases funds to seller) ──
+    // ── CONFIRM RECEIPT (buyer releases funds to seller) ──────
     if (action === 'confirm_receipt') {
       const { escrowId, buyerId } = params;
-
       const { data: escrow } = await sb.from('escrows').select('*').eq('id', escrowId).single();
       if (!escrow) return { statusCode: 404, headers: h, body: JSON.stringify({ error: 'Escrow not found' }) };
       if (escrow.buyer_id !== buyerId) return { statusCode: 403, headers: h, body: JSON.stringify({ error: 'Not authorized' }) };
-      if (escrow.status !== 'funded') return { statusCode: 400, headers: h, body: JSON.stringify({ error: `Escrow is ${escrow.status}` }) };
+      if (escrow.status !== 'funded') return { statusCode: 400, headers: h, body: JSON.stringify({ error: `This escrow is "${escrow.status}", not ready to release` }) };
 
-      // Capture the payment — releases funds to seller (minus fees)
       await stripe.paymentIntents.capture(escrow.stripe_payment_intent);
-
+      // Optimistic local update — the payment_intent.succeeded webhook is
+      // the authoritative confirmation and will also write the order record.
       await sb.from('escrows').update({ status: 'released', released_at: new Date().toISOString() }).eq('id', escrowId);
 
-      return { statusCode: 200, headers: h, body: JSON.stringify({ success: true, message: 'Funds released to seller.' }) };
+      return { statusCode: 200, headers: h, body: JSON.stringify({ success: true, message: 'Funds released to the seller.' }) };
     }
 
-    // ── OPEN DISPUTE (buyer disputes before release) ──
+    // ── OPEN DISPUTE (buyer disputes before release) ──────────
     if (action === 'open_dispute') {
       const { escrowId, buyerId, reason } = params;
-
       const { data: escrow } = await sb.from('escrows').select('*').eq('id', escrowId).single();
       if (!escrow) return { statusCode: 404, headers: h, body: JSON.stringify({ error: 'Escrow not found' }) };
       if (escrow.buyer_id !== buyerId) return { statusCode: 403, headers: h, body: JSON.stringify({ error: 'Not authorized' }) };
-      if (escrow.status !== 'funded') return { statusCode: 400, headers: h, body: JSON.stringify({ error: `Cannot dispute — escrow is ${escrow.status}` }) };
+      if (escrow.status !== 'funded') return { statusCode: 400, headers: h, body: JSON.stringify({ error: `Can't dispute — escrow is "${escrow.status}"` }) };
 
       const reviewDeadline = new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString();
-
       await sb.from('escrows').update({
-        status:          'disputed',
-        dispute_reason:  reason,
-        dispute_opened_at: new Date().toISOString(),
-        review_deadline:   reviewDeadline,
+        status:             'disputed',
+        dispute_reason:     reason || null,
+        dispute_opened_at:  new Date().toISOString(),
+        review_deadline:    reviewDeadline,
       }).eq('id', escrowId);
 
-      // Notify The Swap Yard team
-      await fetch('/.netlify/functions/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to:   process.env.ADMIN_EMAIL || 'disputes@theswapyard.com',
-          type: 'custom',
-          subject: `⚠️ Escrow Dispute Opened — ${escrowId}`,
-          data: { body: `Dispute reason: ${reason}. Review by ${reviewDeadline}.` },
-        }),
-      });
+      if (process.env.URL) {
+        fetch(`${process.env.URL}/.netlify/functions/send-email`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: process.env.ADMIN_EMAIL || 'disputes@theswapyard.com', type: 'custom',
+            subject: `⚠️ Escrow dispute opened — ${escrowId}`,
+            data: { body: `Reason: ${reason || '(none given)'}. Review by ${reviewDeadline}.` },
+          }),
+        }).catch(function(){});
+      }
 
-      return { statusCode: 200, headers: h, body: JSON.stringify({ success: true, reviewDeadline, message: 'Dispute opened. The Swap Yard will review within 72 hours.' }) };
+      return { statusCode: 200, headers: h, body: JSON.stringify({ success: true, reviewDeadline, message: "Dispute opened. We'll review within 72 hours." }) };
     }
 
-    // ── AUTO-RELEASE CHECK (called by scheduled function) ──
+    // ── AUTO-RELEASE SWEEP (scheduled — hourly) ───────────────
     if (action === 'auto_release_check') {
       const { data: overdue } = await sb.from('escrows')
-        .select('*').eq('status', 'funded')
-        .lt('auto_release_at', new Date().toISOString());
+        .select('*').eq('status', 'funded').lt('auto_release_at', new Date().toISOString());
 
       let released = 0;
       for (const escrow of overdue || []) {
@@ -144,18 +198,37 @@ exports.handler = async (event) => {
           await stripe.paymentIntents.capture(escrow.stripe_payment_intent);
           await sb.from('escrows').update({ status: 'auto_released', released_at: new Date().toISOString() }).eq('id', escrow.id);
           released++;
-        } catch (e) { console.error(`Failed auto-release for escrow ${escrow.id}:`, e); }
+        } catch (e) { console.error(`Failed auto-release for escrow ${escrow.id}:`, e.message); }
       }
-
-      return { statusCode: 200, headers: h, body: JSON.stringify({ autoReleased: released }) };
+      return { statusCode: 200, headers: h, body: JSON.stringify({ autoReleased: released, checked: (overdue || []).length }) };
     }
 
-    // ── GET ESCROW STATUS ──
+    // ── GET ONE ESCROW ─────────────────────────────────────────
     if (action === 'get_status') {
       const { escrowId } = params;
       const { data: escrow } = await sb.from('escrows').select('*').eq('id', escrowId).single();
       if (!escrow) return { statusCode: 404, headers: h, body: JSON.stringify({ error: 'Not found' }) };
       return { statusCode: 200, headers: h, body: JSON.stringify(escrow) };
+    }
+
+    // ── MY PURCHASES (buyer-side pending/active escrows) ──────
+    if (action === 'get_my_purchases') {
+      const { buyerId } = params;
+      const { data } = await sb.from('escrows')
+        .select('*, listing:listings(title,emoji,price_usd)')
+        .eq('buyer_id', buyerId).in('status', ['pending', 'funded', 'disputed'])
+        .order('created_at', { ascending: false });
+      return { statusCode: 200, headers: h, body: JSON.stringify({ purchases: data || [] }) };
+    }
+
+    // ── MY SALES (seller-side pending/active escrows) ─────────
+    if (action === 'get_my_sales') {
+      const { sellerId } = params;
+      const { data } = await sb.from('escrows')
+        .select('*, listing:listings!inner(title,emoji,price_usd,user_id)')
+        .eq('listing.user_id', sellerId).in('status', ['pending', 'funded', 'disputed'])
+        .order('created_at', { ascending: false });
+      return { statusCode: 200, headers: h, body: JSON.stringify({ sales: data || [] }) };
     }
 
     return { statusCode: 400, headers: h, body: JSON.stringify({ error: 'Unknown action' }) };
@@ -164,3 +237,7 @@ exports.handler = async (event) => {
     return { statusCode: 500, headers: h, body: JSON.stringify({ error: e.message }) };
   }
 };
+
+// Exported for the webhook to reuse the exact same window when it flips an
+// escrow to 'funded' — keeping the "how long" logic in one place.
+exports.AUTO_RELEASE_HOURS = AUTO_RELEASE_HOURS;
