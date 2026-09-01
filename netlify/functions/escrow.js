@@ -37,7 +37,17 @@ const { createClient } = require('@supabase/supabase-js');
 
 const ESCROW_FEE_RATE     = 0.01; // 1% escrow service fee
 const AUTO_RELEASE_HOURS  = 24;   // Auto-release if the buyer never confirms
-const PLAN_FEES = { free: 0.05, trader_pro: 0.04, verified_vendor: 0.03, business: 0.02 };
+// Three tiers (Free / Plus / Business) per the Pricing & Tiers proposal,
+// Option 2 — consolidated from the original four (Free / Trader Pro /
+// Verified Vendor / Business). Any profile still holding one of the old
+// tier names is normalized below rather than silently falling through
+// to the Free rate.
+const PLAN_FEES = { free: 0.07, plus: 0.04, business: 0.025 };
+function normalizePlanKey(raw) {
+  if (raw === 'plus' || raw === 'trader_pro') return 'plus';
+  if (raw === 'business' || raw === 'verified_vendor') return 'business';
+  return 'free';
+}
 
 exports.handler = async (event) => {
   const h = { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' };
@@ -88,8 +98,8 @@ exports.handler = async (event) => {
       }
 
       const amount       = parseFloat(listing.price_usd);
-      const vendorPlan   = seller.plan || 'free';
-      const platformFee  = Math.round(amount * 100 * (PLAN_FEES[vendorPlan] || PLAN_FEES.free));
+      const vendorPlan   = normalizePlanKey(seller.plan);
+      const platformFee  = Math.round(amount * 100 * PLAN_FEES[vendorPlan]);
       const escrowFee    = Math.round(amount * 100 * ESCROW_FEE_RATE);
       const totalFees    = platformFee + escrowFee;
 
