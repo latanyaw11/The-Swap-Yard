@@ -76,3 +76,6 @@
 [functions."price-drop-alerts"]
   schedule = "0 9 * * *"  # Run daily at 9am UTC
 
+[functions."escrow"]
+  schedule = "0 * * * *"  # Hourly — sweeps escrows whose 24h auto-release window has passed
+
